@@ -24,11 +24,11 @@
       "CREATE UNIQUE INDEX `idx_planners_week_id_user` ON `planners` (`week_id`, `user`) WHERE `user` IS NOT NULL",
       "CREATE UNIQUE INDEX `idx_planners_week_id_nouser` ON `planners` (`week_id`) WHERE `user` IS NULL"
     ],
-    "listRule": "@request.auth.id != \"\" && user = @request.auth.id", 
-    "viewRule": "@request.auth.id != \"\" && user = @request.auth.id", 
-    "createRule": "@request.auth.id != \"\"", 
-    "updateRule": "@request.auth.id != \"\" && user = @request.auth.id", 
-    "deleteRule": "@request.auth.id != \"\" && user = @request.auth.id", 
+    "listRule": "", 
+    "viewRule": "", 
+    "createRule": "", 
+    "updateRule": "", 
+    "deleteRule": "", 
     "options": {}
   },
   {
@@ -53,11 +53,11 @@
     "indexes": [
       "CREATE UNIQUE INDEX `idx_app_config_key` ON `app_config` (`config_key`)"
     ],
-    "listRule": "@request.auth.id != \"\"", 
-    "viewRule": "@request.auth.id != \"\"", 
-    "createRule": "@request.auth.admin = true", 
-    "updateRule": "@request.auth.admin = true", 
-    "deleteRule": "@request.auth.admin = true",
+    "listRule": "", 
+    "viewRule": "", 
+    "createRule": "", 
+    "updateRule": "", 
+    "deleteRule": "",
     "options": {}
   }
 ]
