@@ -17,23 +17,24 @@ td.dc, th.dc { border-right: 1px solid #e0e0e0; }
 td.dc:nth-child(4n+5), th.dc:nth-child(4n+5) { border-right: 1px solid #ccc; }
 .current-day { background-color: #fff8e1 !important; }
 .mini-input { width: 100%; height: 3mm; padding: 0; border: none; text-align: center; font-size: 7pt; background-color: #e6f7ff; }
-.mini-input:focus { outline: none; background-color: #fff !important; box-shadow: inset 0 0 0 1px #4299e1 !important; }
+.mini-input:focus { outline: none; background-color: #fff !important; box-shadow: inset 0 0 0 2px rgba(66, 153, 225, 0.5) !important; }
 tr:has(.mini-input:focus) td { background-color: #f0f7ff !important; }
 .mini-input.time-value-input { width:9mm; }
 .mini-input.task-description-input { text-align:left; }
 .mini-input.grocery-budget-input { width:8mm; margin-left:1mm; vertical-align:middle; }
-.mini-input.measurement-value-input, .mini-input.financial-value-input { width:8mm; }
+.mini-input.measurement-value-input { width:8mm; }
+.mini-input.financial-value-input { width:8mm; }
 .section { margin-top: 2mm; }
 .list { padding-left: 2mm; margin-top: 0.5mm; list-style-type: disc; }
 .list-item { margin-bottom: 0.5mm; line-height: 1; }
-.section-title { margin-bottom: 1mm; font-size: 8pt; font-weight: bold; display:flex; align-items:center; }
-#save-status, #sync-status, #notification { position: fixed; right: 10px; padding: 5px 10px; border-radius: 5px; font-size: 12px; font-weight: bold; z-index: 1000; }
+.section-title { margin-bottom: 1mm; font-size: 8pt; font-weight: bold; position: relative; display:flex; align-items:center; }
+#save-status, #sync-status { position: fixed; right: 10px; padding: 5px 10px; border-radius: 5px; font-size: 12px; font-weight: bold; z-index: 1000; }
 #save-status { bottom: 10px; }
 #sync-status { bottom: 40px; }
-#notification { top: 20px; background-color: #f8d7da; color: #721c24; display: none; z-index: 1100; }
 .status-saved, .status-synced { background-color: #d4edda; color: #155724; }
 .status-saving, .status-pending { background-color: #fff3cd; color: #856404; }
 .status-error { background-color: #f8d7da; color: #721c24; }
+#notification { position: fixed; top: 20px; right: 20px; padding: 10px 15px; border-radius: 5px; font-size: 12px; font-weight: bold; z-index: 1100; background-color: #f8d7da; color: #721c24; display: none; }
 #notification.show { display: block; animation: fadeOut 5s forwards; }
 @keyframes fadeOut { 0%, 70% { opacity: 1; } 100% { opacity: 0; } }
 .text-xs { font-size: 7pt; line-height: 1.2; }
@@ -59,8 +60,9 @@ tr:has(.mini-input:focus) td { background-color: #f0f7ff !important; }
 tr:first-child td { border-top: 1px solid #ccc; }
 td.bold:not(:empty) { border-left: 2px solid #aaa; }
 tr:has(td.bold:not(:empty)):not(:first-child) { border-top: 2px solid #f0f0f0; }
-.exercise { display: flex; justify-content: space-between; align-items: center; height: 3mm; margin-bottom: 0.5mm; }
+.exercise { display: flex; justify-content: space-between; align-items: center; height: 3mm; margin-bottom: 0.5mm; position: relative; }
 .exercise-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex-grow: 1; margin-right: 0.5mm; cursor: pointer; font-size:7pt; }
+.exercise-name:hover { background-color: #f0f7ff; }
 .exercise-inputs { display: flex; align-items: center; }
 .exercise-inputs input { width: 4mm; height: 3mm; font-size:7pt; }
 .exercise-inputs input.sets { width: 2mm; }
@@ -70,6 +72,7 @@ tr:has(td.bold:not(:empty)):not(:first-child) { border-top: 2px solid #f0f0f0; }
 .workout-day-name { font-size:7pt; }
 .form-row { display: flex; align-items: center; margin-bottom: 0.5mm; }
 .form-label { font-weight: bold; margin-right: 1mm; cursor: pointer; }
+.form-label:hover { background-color: #f0f7ff; }
 .form-field { display: inline-flex; align-items: center; margin-right: 2mm; }
 .task-completed { background-color: #f8f8f8; }
 .task-completed input { color: #888; text-decoration: line-through; }
@@ -89,9 +92,9 @@ tr:has(.completed-task) td input:not(.completed-task) { text-decoration: line-th
 .score-medium .mini-input { background-color: #fff3cd; color: #856404; }
 .score-high .mini-input { background-color: #d4edda; color: #155724; }
 .editable { position: relative; cursor: pointer; }
-.editable:hover, .form-label:hover, .exercise-name:hover { background-color: #f0f7ff; }
-.inline-edit-input, .inline-edit-textarea { width: 100%; height: 100%; border: none; background-color: #fff; font-size: 7pt; padding: 0 1mm; outline: none; box-shadow: inset 0 0 0 1px #4299e1; }
-.inline-edit-textarea { min-height: 3mm; resize: vertical; }
+.editable:hover { background-color: #f0f7ff; }
+.inline-edit-input { width: 100%; height: 100%; border: none; background-color: #fff; font-size: 7pt; padding: 0 1mm; outline: none; box-shadow: inset 0 0 0 1px #4299e1; }
+.inline-edit-textarea { width: 100%; min-height: 3mm; border: none; background-color: #fff; font-size: 7pt; padding: 0 1mm; outline: none; box-shadow: inset 0 0 0 1px #4299e1; resize: vertical; }
 @media print {
   html, body { width: 210mm; height: 297mm; background-color: white; margin: 0; padding: 0; }
   .card { box-shadow: none; }

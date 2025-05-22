@@ -36,16 +36,16 @@
     <table>
       <thead>
         <tr>
-          <th style="width:18mm" class="editable" @dblclick="editInline($event, 'mainTableHeader', 0, uiConfig.mainTableHeaders[0])" x-text="uiConfig.mainTableHeaders[0]"></th>
-          <th style="width:18mm" class="editable" @dblclick="editInline($event, 'mainTableHeader', 1, uiConfig.mainTableHeaders[1])" x-text="uiConfig.mainTableHeaders[1]"></th>
-          <th class="ac editable" @dblclick="editInline($event, 'mainTableHeader', 2, uiConfig.mainTableHeaders[2])" x-text="uiConfig.mainTableHeaders[2]"></th>
+          <th style="width:18mm" class="editable" @dblclick="editInline($event, 'mainTableHeader', 0, uiConfig.mainTableHeaders?.[0])" x-text="uiConfig.mainTableHeaders?.[0]"></th>
+          <th style="width:18mm" class="editable" @dblclick="editInline($event, 'mainTableHeader', 1, uiConfig.mainTableHeaders?.[1])" x-text="uiConfig.mainTableHeaders?.[1]"></th>
+          <th class="ac editable" @dblclick="editInline($event, 'mainTableHeader', 2, uiConfig.mainTableHeaders?.[2])" x-text="uiConfig.mainTableHeaders?.[2]"></th>
           <template x-for="(dayKey, i) in ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN']" :key="dayKey">
-            <th class="dc editable" :class="{'current-day': i === (currentDay || 7) - 1}" @dblclick="editInline($event, 'dayHeader', i, uiConfig.dayHeaders[i])" x-text="uiConfig.dayHeaders[i]"></th>
-            <th class="dc editable" :class="{'current-day': i === (currentDay || 7) - 1}" @dblclick="editInline($event, 'maxHeader', i, uiConfig.maxHeaders[i])" x-text="uiConfig.maxHeaders[i]"></th>
+            <th class="dc editable" :class="{'current-day': i === (currentDay || 7) - 1}" @dblclick="editInline($event, 'dayHeader', i, uiConfig.dayHeaders?.[i])" x-text="uiConfig.dayHeaders?.[i]"></th>
+            <th class="dc editable" :class="{'current-day': i === (currentDay || 7) - 1}" @dblclick="editInline($event, 'maxHeader', i, uiConfig.maxHeaders?.[i])" x-text="uiConfig.maxHeaders?.[i]"></th>
           </template>
-          <th class="dc editable" @dblclick="editInline($event, 'mainTableHeader', 3, uiConfig.mainTableHeaders[3])" x-text="uiConfig.mainTableHeaders[3]"></th>
-          <th class="dc editable" @dblclick="editInline($event, 'mainTableHeader', 4, uiConfig.mainTableHeaders[4])" x-text="uiConfig.mainTableHeaders[4]"></th>
-          <th class="dc editable" @dblclick="editInline($event, 'mainTableHeader', 5, uiConfig.mainTableHeaders[5])" x-text="uiConfig.mainTableHeaders[5]"></th>
+          <th class="dc editable" @dblclick="editInline($event, 'mainTableHeader', 3, uiConfig.mainTableHeaders?.[3])" x-text="uiConfig.mainTableHeaders?.[3]"></th>
+          <th class="dc editable" @dblclick="editInline($event, 'mainTableHeader', 4, uiConfig.mainTableHeaders?.[4])" x-text="uiConfig.mainTableHeaders?.[4]"></th>
+          <th class="dc editable" @dblclick="editInline($event, 'mainTableHeader', 5, uiConfig.mainTableHeaders?.[5])" x-text="uiConfig.mainTableHeaders?.[5]"></th>
         </tr>
       </thead>
       <tbody>
@@ -59,11 +59,11 @@
               </td>
               <template x-for="(day, i) in ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']" :key="day">
                 <td class="dc" :class="{'current-day': i === (currentDay || 7) - 1}">
-                  <template x-if="activity.days[day]">
+                  <template x-if="activity.days && activity.days[day]">
                     <input type="number" class="mini-input" x-model.number="activity.days[day].value" :min="0" :max="activity.days[day].max < 10 ? 9 : 99" @input="validateNumberInput($event); calculateScores(); saveData()" :readonly="section.name === 'TOTAL'">
                   </template>
                 </td>
-                <td class="dc editable" :class="{'current-day': i === (currentDay || 7) - 1}" @dblclick="editInline($event, 'maxValue', {sIdx, aIdx, day, activityId: activity.id}, activity.days[day]?.max || '')" x-text="activity.days[day]?.max || ''"></td>
+                <td class="dc editable" :class="{'current-day': i === (currentDay || 7) - 1}" @dblclick="editInline($event, 'maxValue', {sIdx, aIdx, day, activityId: activity.id}, activity.days?.[day]?.max || '')" x-text="activity.days?.[day]?.max || ''"></td>
               </template>
               <td class="dc" :class="{ 'score-low': activity.maxScore > 0 && (activity.score / activity.maxScore) < 0.33, 'score-medium': activity.maxScore > 0 && (activity.score / activity.maxScore) >= 0.33 && (activity.score / activity.maxScore) < 0.66, 'score-high': activity.maxScore > 0 && (activity.score / activity.maxScore) >= 0.66 }">
                 <input type="number" class="mini-input" x-model.number="activity.score" readonly>
@@ -74,7 +74,7 @@
               </td>
             </tr>
           </template>
-          <tr x-if="section.name === 'TOTAL' && section.activities.length > 0 && section.activities[0].maxScore > 0">
+          <tr x-if="section.name === 'TOTAL' && section.activities?.length > 0 && section.activities[0].maxScore > 0">
             <td colspan="19" class="progress-container">
               <div class="progress-bar" :style="`width: ${Math.min(100, (section.activities[0].score / section.activities[0].maxScore) * 100)}%;`" :class="{ 'progress-low': (section.activities[0].score / section.activities[0].maxScore) < 0.33, 'progress-medium': (section.activities[0].score / section.activities[0].maxScore) >= 0.33 && (section.activities[0].score / section.activities[0].maxScore) < 0.66, 'progress-high': (section.activities[0].score / section.activities[0].maxScore) >= 0.66 }"></div>
             </td>
@@ -84,20 +84,20 @@
     </table>
 
     <div class="section">
-      <h3 class="section-title editable" @dblclick="editInline($event, 'sectionTitle', 'tasks', uiConfig.sectionTitles.tasks)" x-text="uiConfig.sectionTitles.tasks"></h3>
+      <h3 class="section-title editable" @dblclick="editInline($event, 'sectionTitle', 'tasks', uiConfig.sectionTitles?.tasks)" x-text="uiConfig.sectionTitles?.tasks"></h3>
       <table>
         <thead>
           <tr>
-            <th style="width:5mm" class="editable" @dblclick="editInline($event, 'taskHeader', 0, uiConfig.taskHeaders[0])" x-text="uiConfig.taskHeaders[0]"></th>
-            <th style="width:5mm" class="editable" @dblclick="editInline($event, 'taskHeader', 1, uiConfig.taskHeaders[1])" x-text="uiConfig.taskHeaders[1]"></th>
-            <th style="width:5mm" class="editable" @dblclick="editInline($event, 'taskHeader', 2, uiConfig.taskHeaders[2])" x-text="uiConfig.taskHeaders[2]"></th>
-            <th style="text-align:left" class="editable" @dblclick="editInline($event, 'taskHeader', 3, uiConfig.taskHeaders[3])" x-text="uiConfig.taskHeaders[3]"></th>
-            <th style="width:10mm" class="editable" @dblclick="editInline($event, 'taskHeader', 4, uiConfig.taskHeaders[4])" x-text="uiConfig.taskHeaders[4]"></th>
-            <th style="width:5mm" class="editable" @dblclick="editInline($event, 'taskHeader', 5, uiConfig.taskHeaders[5])" x-text="uiConfig.taskHeaders[5]"></th>
+            <th style="width:5mm" class="editable" @dblclick="editInline($event, 'taskHeader', 0, uiConfig.taskHeaders?.[0])" x-text="uiConfig.taskHeaders?.[0]"></th>
+            <th style="width:5mm" class="editable" @dblclick="editInline($event, 'taskHeader', 1, uiConfig.taskHeaders?.[1])" x-text="uiConfig.taskHeaders?.[1]"></th>
+            <th style="width:5mm" class="editable" @dblclick="editInline($event, 'taskHeader', 2, uiConfig.taskHeaders?.[2])" x-text="uiConfig.taskHeaders?.[2]"></th>
+            <th style="text-align:left" class="editable" @dblclick="editInline($event, 'taskHeader', 3, uiConfig.taskHeaders?.[3])" x-text="uiConfig.taskHeaders?.[3]"></th>
+            <th style="width:10mm" class="editable" @dblclick="editInline($event, 'taskHeader', 4, uiConfig.taskHeaders?.[4])" x-text="uiConfig.taskHeaders?.[4]"></th>
+            <th style="width:5mm" class="editable" @dblclick="editInline($event, 'taskHeader', 5, uiConfig.taskHeaders?.[5])" x-text="uiConfig.taskHeaders?.[5]"></th>
           </tr>
         </thead>
         <tbody>
-          <template x-for="(task, i) in tasks" :key="i">
+          <template x-for="(task, i) in tasks" :key="task.id || i">
             <tr :class="{'task-completed': task.completed === '✓'}">
               <td><input type="text" class="mini-input" x-model="task.num" :placeholder="i + 1" @change="validateTextInput($event); saveData();"></td>
               <td><input type="text" class="mini-input" x-model="task.priority" placeholder="A" @change="validateTextInput($event); saveData();"></td>
@@ -112,7 +112,7 @@
     </div>
 
     <div class="section">
-      <h3 class="section-title editable" @dblclick="editInline($event, 'sectionTitle', 'workout', uiConfig.sectionTitles.workout)" x-text="uiConfig.sectionTitles.workout"></h3>
+      <h3 class="section-title editable" @dblclick="editInline($event, 'sectionTitle', 'workout', uiConfig.sectionTitles?.workout)" x-text="uiConfig.sectionTitles?.workout"></h3>
       <div class="grid">
         <template x-for="(day, dayIdx) in workoutPlan" :key="day.id || dayIdx">
           <div class="p-1 workout-day-card">
@@ -138,7 +138,7 @@
     </div>
 
     <div class="section">
-      <h3 class="section-title editable" @dblclick="editInline($event, 'sectionTitle', 'meals', uiConfig.sectionTitles.meals)" x-text="uiConfig.sectionTitles.meals"></h3>
+      <h3 class="section-title editable" @dblclick="editInline($event, 'sectionTitle', 'meals', uiConfig.sectionTitles?.meals)" x-text="uiConfig.sectionTitles?.meals"></h3>
       <ul class="list text-xs">
         <template x-for="(meal, i) in meals" :key="meal.id || i">
           <li class="list-item">
@@ -150,8 +150,8 @@
     </div>
 
     <div class="section">
-      <h3 class="section-title editable" @dblclick="editInline($event, 'sectionTitle', 'grocery', uiConfig.sectionTitles.grocery)">
-        <span x-text="uiConfig.sectionTitles.grocery"></span>
+      <h3 class="section-title editable" @dblclick="editInline($event, 'sectionTitle', 'grocery', uiConfig.sectionTitles?.grocery)">
+        <span x-text="uiConfig.sectionTitles?.grocery"></span>
         <input type="text" class="mini-input grocery-budget-input" x-model="groceryBudget" placeholder="£120" @change="validateTextInput($event); saveData();">
       </h3>
       <ul class="list text-xs">
@@ -165,7 +165,7 @@
     </div>
 
     <div class="section">
-      <h3 class="section-title editable" @dblclick="editInline($event, 'sectionTitle', 'measurements', uiConfig.sectionTitles.measurements)" x-text="uiConfig.sectionTitles.measurements"></h3>
+      <h3 class="section-title editable" @dblclick="editInline($event, 'sectionTitle', 'measurements', uiConfig.sectionTitles?.measurements)" x-text="uiConfig.sectionTitles?.measurements"></h3>
       <div class="form-row text-xs">
         <template x-for="(m, i) in bodyMeasurements" :key="m.id || i">
           <div class="form-field">
@@ -177,7 +177,7 @@
     </div>
 
     <div class="section">
-      <h3 class="section-title editable" @dblclick="editInline($event, 'sectionTitle', 'financials', uiConfig.sectionTitles.financials)" x-text="uiConfig.sectionTitles.financials"></h3>
+      <h3 class="section-title editable" @dblclick="editInline($event, 'sectionTitle', 'financials', uiConfig.sectionTitles?.financials)" x-text="uiConfig.sectionTitles?.financials"></h3>
       <div class="form-row text-xs">
         <template x-for="(item, i) in financials" :key="item.id || i">
           <div class="form-field">
