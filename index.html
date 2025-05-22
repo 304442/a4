@@ -20,10 +20,12 @@
     <div class="flex between center mb-1">
       <h1 class="text-sm bold editable" tabindex="0" @dblclick="editInline($event, 'plannerTitle', null, plannerTitle)" x-text="plannerTitle"></h1>
       <div class="flex center text-xs">
-        <template x-for="(time, i) in times" :key="i">
+        <template x-for="(time, i) in times" :key="'time-' + i">
           <div class="flex center">
             <span class="editable" tabindex="0" @dblclick="editInline($event, 'timeLabel', i, time.label)" x-text="time.label + ':'"></span>
-            <input type="text" class="mini-input time-value-input" x-model="time.value" @change="hasUnsavedChanges = true; saveData()">
+            <input type="text" class="mini-input time-value-input"
+                   :id="'time-value-' + i" :name="'time-value-' + i"
+                   x-model="time.value" @change="hasUnsavedChanges = true; saveData()">
           </div>
         </template>
         <span class="ml-1">|</span>
@@ -40,7 +42,7 @@
           <th style="width:18mm" class="editable" tabindex="0" @dblclick="editInline($event, 'mainTableHeader', 0, uiConfig.mainTableHeaders[0])" x-text="uiConfig.mainTableHeaders[0]"></th>
           <th style="width:18mm" class="editable" tabindex="0" @dblclick="editInline($event, 'mainTableHeader', 1, uiConfig.mainTableHeaders[1])" x-text="uiConfig.mainTableHeaders[1]"></th>
           <th class="ac editable" tabindex="0" @dblclick="editInline($event, 'mainTableHeader', 2, uiConfig.mainTableHeaders[2])" x-text="uiConfig.mainTableHeaders[2]"></th>
-          <template x-for="(dayKey, i) in uiConfig.dayHeaders" :key="dayKey">
+          <template x-for="(dayKeyText, i) in uiConfig.dayHeaders" :key="'day-header-' + i">
             <th class="dc editable" tabindex="0" :class="{'current-day': (currentDay === 0 ? 6 : currentDay - 1) === i}" @dblclick="editInline($event, 'dayHeader', i, uiConfig.dayHeaders[i])" x-text="uiConfig.dayHeaders[i]"></th>
             <th class="dc editable" tabindex="0" :class="{'current-day': (currentDay === 0 ? 6 : currentDay - 1) === i}" @dblclick="editInline($event, 'maxHeader', i, uiConfig.maxHeaders[i])" x-text="uiConfig.maxHeaders[i]"></th>
           </template>
@@ -50,24 +52,32 @@
         </tr>
       </thead>
       <tbody>
-        <template x-for="(section, sIdx) in schedule.slice().reverse()" :key="section.name + sIdx">
-          <template x-for="(activity, aIdx) in section.activities" :key="activity.name + aIdx">
+        <template x-for="(section, sIdx) in schedule.slice().reverse()" :key="section.name + '-' + sIdx">
+          <template x-for="(activity, aIdx) in section.activities" :key="activity.name + '-' + aIdx">
             <tr :class="{'total': section.name === 'TOTAL'}">
               <td class="bold editable" tabindex="0" @dblclick="editInline($event, 'sectionName', sIdx, section.name)" x-text="aIdx === 0 ? section.name : ''" :data-original-value="section.name"></td>
               <td class="bold editable" tabindex="0" @dblclick="editInline($event, 'activityPrefix', {sIdx, aIdx}, activity.name.includes(':') ? activity.name.split(':')[0].trim() : '')" x-text="activity.name.includes(':') ? activity.name.split(':')[0].trim() : ''" :data-original-value="activity.name.includes(':') ? activity.name.split(':')[0].trim() : ''"></td>
               <td class="ac editable" tabindex="0" @dblclick="editInline($event, 'activityName', {sIdx, aIdx}, activity.name.includes(':') ? activity.name.split(':')[1].trim() : activity.name)" :data-original-value="activity.name.includes(':') ? activity.name.split(':')[1].trim() : activity.name">
                 <span x-text="activity.name.includes(':') ? activity.name.split(':')[1].trim() : activity.name"></span>
               </td>
-              <template x-for="(day, dayIndex) in ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']" :key="dayIndex">
-                <td class="dc" :class="{'current-day': (currentDay === 0 ? 6 : currentDay - 1) === dayIndex}">
-                  <template x-if="activity.days[day]">
-                    <input type="number" class="mini-input" x-model.number="activity.days[day].value" :min="0" :max="activity.days[day].max < 10 ? 9 : (activity.days[day].max > 99 ? 99 : activity.days[day].max || 99)" @change="validateNumberInput($event)" :readonly="section.name === 'TOTAL'">
+              <template x-for="(day, dayKey) in ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']" :key="dayKey">
+                <td class="dc" :class="{'current-day': (currentDay === 0 ? 6 : currentDay - 1) === ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'].indexOf(dayKey)}">
+                  <template x-if="activity.days[dayKey]">
+                    <input type="number" class="mini-input"
+                           :id="'activity-' + sIdx + '-' + aIdx + '-day-' + dayKey + '-value'"
+                           :name="'activity-' + sIdx + '-' + aIdx + '-day-' + dayKey + '-value'"
+                           x-model.number="activity.days[dayKey].value"
+                           :min="0" :max="activity.days[dayKey].max < 10 ? 9 : (activity.days[dayKey].max > 99 ? 99 : activity.days[dayKey].max || 99)"
+                           @change="validateNumberInput($event)" :readonly="section.name === 'TOTAL'">
                   </template>
                 </td>
-                <td class="dc editable" tabindex="0" :class="{'current-day': (currentDay === 0 ? 6 : currentDay - 1) === dayIndex}" @dblclick="editInline($event, 'maxValue', {sIdx, aIdx, day}, activity.days[day]?.max || '')" x-text="activity.days[day]?.max || ''" :data-original-value="activity.days[day]?.max || ''"></td>
+                <td class="dc editable" tabindex="0" :class="{'current-day': (currentDay === 0 ? 6 : currentDay - 1) === ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'].indexOf(dayKey)}" @dblclick="editInline($event, 'maxValue', {sIdx, aIdx, day: dayKey}, activity.days[dayKey]?.max || '')" x-text="activity.days[dayKey]?.max || ''" :data-original-value="activity.days[dayKey]?.max || ''"></td>
               </template>
               <td class="dc" :class="{ 'score-low': activity.maxScore > 0 && (activity.score / activity.maxScore) < 0.33, 'score-medium': activity.maxScore > 0 && (activity.score / activity.maxScore) >= 0.33 && (activity.score / activity.maxScore) < 0.66, 'score-high': activity.maxScore > 0 && (activity.score / activity.maxScore) >= 0.66 }">
-                <input type="number" class="mini-input" x-model.number="activity.score" readonly>
+                <input type="number" class="mini-input"
+                       :id="'activity-' + sIdx + '-' + aIdx + '-score'"
+                       :name="'activity-' + sIdx + '-' + aIdx + '-score'"
+                       x-model.number="activity.score" readonly>
               </td>
               <td class="dc editable" tabindex="0" @dblclick="editInline($event, 'maxScore', {sIdx, aIdx}, activity.maxScore)" x-text="activity.maxScore" :data-original-value="activity.maxScore"></td>
               <td class="dc streak-cell" :class="{'has-streak': activity.streaks?.current > 2}">
@@ -89,20 +99,20 @@
       <table>
         <thead>
           <tr>
-            <template x-for="(header, hIdx) in uiConfig.taskHeaders" :key="hIdx">
+            <template x-for="(header, hIdx) in uiConfig.taskHeaders" :key="'task-header-' + hIdx">
               <th :style="[0,1,2,5].includes(hIdx) ? 'width:5mm' : (hIdx === 4 ? 'width:10mm' : (hIdx === 3 ? 'text-align:left;' : ''))" class="editable" tabindex="0" @dblclick="editInline($event, 'taskHeader', hIdx, header)" x-text="header"></th>
             </template>
           </tr>
         </thead>
         <tbody>
-          <template x-for="(task, i) in tasks" :key="i">
+          <template x-for="(task, i) in tasks" :key="'task-' + i">
             <tr :class="{'task-completed': task.completed === '✓'}">
-              <td><input type="text" class="mini-input" x-model="task.num" :placeholder="i + 1" @change="validateTextInput($event)"></td>
-              <td><input type="text" class="mini-input" x-model="task.priority" placeholder="A" @change="validateTextInput($event)"></td>
-              <td><input type="text" class="mini-input" x-model="task.tag" placeholder="W" @change="validateTextInput($event)"></td>
-              <td><input type="text" class="mini-input task-description-input" x-model="task.description" placeholder="Task description" @change="validateTextInput($event)"></td>
-              <td><input type="text" class="mini-input" x-model="task.date" :placeholder="formatShortDate(i)" @change="validateTextInput($event)"></td>
-              <td><input type="text" class="mini-input" x-model="task.completed" @click.prevent="toggleTaskCompletion(task)" :class="{'completed-task': task.completed === '✓'}" placeholder="☐"></td>
+              <td><input type="text" class="mini-input" :id="'task-num-' + i" :name="'task-num-' + i" x-model="task.num" :placeholder="i + 1" @change="validateTextInput($event)"></td>
+              <td><input type="text" class="mini-input" :id="'task-priority-' + i" :name="'task-priority-' + i" x-model="task.priority" placeholder="A" @change="validateTextInput($event)"></td>
+              <td><input type="text" class="mini-input" :id="'task-tag-' + i" :name="'task-tag-' + i" x-model="task.tag" placeholder="W" @change="validateTextInput($event)"></td>
+              <td><input type="text" class="mini-input task-description-input" :id="'task-desc-' + i" :name="'task-desc-' + i" x-model="task.description" placeholder="Task description" @change="validateTextInput($event)"></td>
+              <td><input type="text" class="mini-input" :id="'task-date-' + i" :name="'task-date-' + i" x-model="task.date" :placeholder="formatShortDate(i)" @change="validateTextInput($event)"></td>
+              <td><input type="text" class="mini-input" :id="'task-completed-' + i" :name="'task-completed-' + i" x-model="task.completed" @click.prevent="toggleTaskCompletion(task)" :class="{'completed-task': task.completed === '✓'}" placeholder="☐"></td>
             </tr>
           </template>
         </tbody>
@@ -112,21 +122,21 @@
     <div class="section">
       <h3 class="section-title editable" tabindex="0" @dblclick="editInline($event, 'sectionTitle', 'workout', uiConfig.sectionTitles.workout)" x-text="uiConfig.sectionTitles.workout"></h3>
       <div class="grid">
-        <template x-for="(day, dayIdx) in workoutPlan" :key="dayIdx">
+        <template x-for="(day, dayIdx) in workoutPlan" :key="'workout-day-' + dayIdx">
           <div class="p-1 workout-day-card">
             <p class="bold text-center mb-1 editable workout-day-name" tabindex="0" @dblclick="editInline($event, 'workoutDayName', dayIdx, day.name)" x-text="day.name" :data-original-value="day.name"></p>
-            <template x-for="(ex, exIdx) in day.exercises" :key="exIdx">
+            <template x-for="(ex, exIdx) in day.exercises" :key="'exercise-' + dayIdx + '-' + exIdx">
               <div class="exercise">
                 <div class="exercise-name editable" tabindex="0" :title="ex.prefix + ex.name" @dblclick="editInline($event, 'exerciseName', {dayIdx, exIdx}, ex.name)" :data-original-value="ex.name">
                   <span class="editable" tabindex="0" @dblclick.stop="editInline($event, 'exercisePrefix', {dayIdx, exIdx}, ex.prefix)" x-text="ex.prefix" :data-original-value="ex.prefix"></span>
                   <span x-text="ex.name"></span>:
                 </div>
                 <div class="exercise-inputs">
-                  <input type="number" class="mini-input" x-model.number="ex.weight" @change="validateNumberInput($event)" :placeholder="ex.defaultWeight">
+                  <input type="number" class="mini-input" :id="'ex-weight-' + dayIdx + '-' + exIdx" :name="'ex-weight-' + dayIdx + '-' + exIdx" x-model.number="ex.weight" @change="validateNumberInput($event)" :placeholder="ex.defaultWeight">
                   <span class="exercise-unit">kg,</span>
-                  <input type="number" class="mini-input sets" x-model.number="ex.sets" @change="validateNumberInput($event)" :placeholder="ex.defaultSets">
+                  <input type="number" class="mini-input sets" :id="'ex-sets-' + dayIdx + '-' + exIdx" :name="'ex-sets-' + dayIdx + '-' + exIdx" x-model.number="ex.sets" @change="validateNumberInput($event)" :placeholder="ex.defaultSets">
                   <span class="exercise-unit">×</span>
-                  <input type="number" class="mini-input reps" x-model.number="ex.reps" @change="validateNumberInput($event)" :placeholder="ex.defaultReps">
+                  <input type="number" class="mini-input reps" :id="'ex-reps-' + dayIdx + '-' + exIdx" :name="'ex-reps-' + dayIdx + '-' + exIdx" x-model.number="ex.reps" @change="validateNumberInput($event)" :placeholder="ex.defaultReps">
                 </div>
               </div>
             </template>
@@ -138,7 +148,7 @@
     <div class="section">
       <h3 class="section-title editable" tabindex="0" @dblclick="editInline($event, 'sectionTitle', 'meals', uiConfig.sectionTitles.meals)" x-text="uiConfig.sectionTitles.meals"></h3>
       <ul class="list text-xs">
-        <template x-for="(meal, i) in meals" :key="i">
+        <template x-for="(meal, i) in meals" :key="'meal-' + i">
           <li class="list-item">
             <span class="bold editable" tabindex="0" @dblclick="editInline($event, 'mealName', i, meal.name)" x-text="meal.name + ':'" :data-original-value="meal.name"></span>
             <span class="editable" tabindex="0" @dblclick="editInline($event, 'mealIngredients', i, meal.ingredients)" x-text="meal.ingredients" :data-original-value="meal.ingredients"></span>
@@ -150,10 +160,10 @@
     <div class="section">
       <h3 class="section-title editable" tabindex="0" @dblclick="editInline($event, 'sectionTitle', 'grocery', uiConfig.sectionTitles.grocery)">
         <span x-text="uiConfig.sectionTitles.grocery"></span>
-        <input type="text" class="mini-input grocery-budget-input" x-model="groceryBudget" placeholder="£120" @change="validateTextInput($event)">
+        <input type="text" class="mini-input grocery-budget-input" id="grocery-budget" name="grocery-budget" x-model="groceryBudget" placeholder="£120" @change="validateTextInput($event)">
       </h3>
       <ul class="list text-xs">
-        <template x-for="(cat, i) in groceryList" :key="i">
+        <template x-for="(cat, i) in groceryList" :key="'grocery-cat-' + i">
           <li class="list-item">
             <span class="bold editable" tabindex="0" @dblclick="editInline($event, 'groceryCategoryName', i, cat.name)" x-text="cat.name + ':'" :data-original-value="cat.name"></span>
             <span class="editable" tabindex="0" @dblclick="editInline($event, 'groceryCategoryItems', i, cat.items)" x-text="cat.items" :data-original-value="cat.items"></span>
@@ -165,10 +175,12 @@
     <div class="section">
       <h3 class="section-title editable" tabindex="0" @dblclick="editInline($event, 'sectionTitle', 'measurements', uiConfig.sectionTitles.measurements)" x-text="uiConfig.sectionTitles.measurements"></h3>
       <div class="form-row text-xs">
-        <template x-for="(m, i) in bodyMeasurements" :key="i">
+        <template x-for="(m, i) in bodyMeasurements" :key="'measurement-' + i">
           <div class="form-field">
             <span class="form-label editable" tabindex="0" @dblclick="editInline($event, 'measurementName', i, m.name)" x-text="m.name + ':'" :data-original-value="m.name"></span>
-            <input type="text" class="mini-input measurement-value-input" x-model="m.value" :placeholder="m.placeholder" @change="validateTextInput($event)">
+            <input type="text" class="mini-input measurement-value-input"
+                   :id="'measurement-value-' + i" :name="'measurement-value-' + i"
+                   x-model="m.value" :placeholder="m.placeholder" @change="validateTextInput($event)">
           </div>
         </template>
       </div>
@@ -177,10 +189,12 @@
     <div class="section">
       <h3 class="section-title editable" tabindex="0" @dblclick="editInline($event, 'sectionTitle', 'financials', uiConfig.sectionTitles.financials)" x-text="uiConfig.sectionTitles.financials"></h3>
       <div class="form-row text-xs">
-        <template x-for="(item, i) in financials" :key="i">
+        <template x-for="(item, i) in financials" :key="'financial-' + i">
           <div class="form-field">
             <span class="form-label editable" tabindex="0" @dblclick="editInline($event, 'financialName', i, item.name)" x-text="item.name + ':'" :data-original-value="item.name"></span>
-            £<input type="text" class="mini-input financial-value-input" x-model="item.value" :placeholder="item.placeholder" @change="validateTextInput($event)">
+            £<input type="text" class="mini-input financial-value-input"
+                    :id="'financial-value-' + i" :name="'financial-value-' + i"
+                    x-model="item.value" :placeholder="item.placeholder" @change="validateTextInput($event)">
             <span class="editable" tabindex="0" @dblclick="editInline($event, 'financialAccount', i, item.account)" x-text="item.account" :data-original-value="item.account"></span>
           </div>
         </template>
