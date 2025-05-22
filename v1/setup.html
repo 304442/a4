@@ -35,7 +35,10 @@
         input[type="text"]:focus, input[type="password"]:focus, textarea:focus {
             border-color: #007bff; box-shadow: 0 0 0 0.2rem rgba(0,123,255,.25); outline: none;
         }
-        textarea { min-height: 120px; resize: vertical; }
+        textarea {
+            /* min-height: 80px; /* Adjusted min-height */
+            resize: vertical;
+        }
         button {
             display: block; width: 100%; padding: 10px 15px; margin-top: 20px;
             cursor: pointer; background-color: #007bff; color: white;
@@ -48,7 +51,8 @@
         pre#logOutput {
             background-color: #212529; color: #e9ecef; padding: 15px;
             border-radius: 4px; white-space: pre-wrap; word-wrap: break-word;
-            max-height: 350px; overflow-y: auto; font-size: 0.875em; border: 1px solid #343a40;
+            max-height: 250px; /* Adjusted max-height for log */
+            overflow-y: auto; font-size: 0.875em; border: 1px solid #343a40;
         }
         .log-entry { padding: 2px 0; }
         .log-entry.error { color: #dc3545; font-weight: bold;}
@@ -81,11 +85,11 @@
         </div>
         <div class="form-group">
             <label for="schemaJson">Collections Schema JSON:</label>
-            <textarea id="schemaJson" rows="10"></textarea>
+            <textarea id="schemaJson" rows="6"></textarea> {/* Changed rows from 10 to 6 */}
         </div>
          <div class="form-group">
             <label for="seedDataJson">Seed Data for 'planner_templates':</label>
-            <textarea id="seedDataJson" rows="12"></textarea>
+            <textarea id="seedDataJson" rows="8"></textarea> {/* Changed rows from 12 to 8 */}
         </div>
 
         <button id="setupButton">Run Full Setup</button>
@@ -97,78 +101,32 @@
     </div>
 
 <script>
-// --- ID Generation Helpers ---
+// JavaScript (exactly the same as the previous version with full seed data keys)
 let uniqueIdCounter = 0;
 const generateId = (prefix = 'id') => `${prefix}_${Date.now()}_${uniqueIdCounter++}_${Math.random().toString(36).substring(2, 9)}`;
+const ensureIdsInArray = (items = [], idField = 'id') => { return items.map(item => { const newItem = { ...item }; if (!newItem[idField]) { newItem[idField] = generateId(idField.replace('_id', '')); } if (newItem.activities && Array.isArray(newItem.activities)) { newItem.activities = ensureIdsInArray(newItem.activities, 'id'); } if (newItem.exercises && Array.isArray(newItem.exercises)) { newItem.exercises = ensureIdsInArray(newItem.exercises, 'id'); } return newItem; }); };
+const ensureDeepIdsInSchedule = (schedule = []) => { return schedule.map(section => { const newSection = { ...section }; if (!newSection.id) newSection.id = generateId('sec'); newSection.activities = ensureIdsInArray(newSection.activities || [], 'id'); return newSection; }); };
+const ensureDeepIdsInWorkout = (workoutPlan = []) => { return workoutPlan.map(day => { const newDay = { ...day }; if (!newDay.id) newDay.id = generateId('wday'); newDay.exercises = ensureIdsInArray(newDay.exercises || [], 'id'); return newDay; }); };
 
-const ensureIdsInArray = (items = [], idField = 'id') => {
-    return items.map(item => {
-        const newItem = { ...item }; // Create a shallow copy
-        if (!newItem[idField]) {
-            newItem[idField] = generateId(idField.replace('_id', ''));
-        }
-        // Recursively ensure IDs for nested arrays if known structures exist
-        if (newItem.activities && Array.isArray(newItem.activities)) {
-            newItem.activities = ensureIdsInArray(newItem.activities, 'id');
-        }
-        if (newItem.exercises && Array.isArray(newItem.exercises)) {
-            newItem.exercises = ensureIdsInArray(newItem.exercises, 'id');
-        }
-        return newItem;
-    });
-};
-
-const ensureDeepIdsInSchedule = (schedule = []) => {
-    return schedule.map(section => {
-        const newSection = { ...section };
-        if (!newSection.id) newSection.id = generateId('sec');
-        newSection.activities = ensureIdsInArray(newSection.activities || [], 'id');
-        return newSection;
-    });
-};
-
-const ensureDeepIdsInWorkout = (workoutPlan = []) => {
-    return workoutPlan.map(day => {
-        const newDay = { ...day };
-        if (!newDay.id) newDay.id = generateId('wday');
-        newDay.exercises = ensureIdsInArray(newDay.exercises || [], 'id');
-        return newDay;
-    });
-};
-
-
-// --- Default Schema for A4 Planner ---
 const a4PlannerSchema = [
-  {
-    "name": "planners", "type": "base", "system": false,
-    "listRule": null, "viewRule": null, "createRule": "", "updateRule": "", "deleteRule": "", "options": {},
+  { "name": "planners", "type": "base", "system": false, "listRule": null, "viewRule": null, "createRule": "", "updateRule": "", "deleteRule": "", "options": {},
     "fields": [
       {"name": "week_id", "type": "text", "required": true, "unique": true, "presentable": true, "options": {}},
-      {"name": "dateRange", "type": "text", "required": false, "options": {}},
-      {"name": "city", "type": "text", "required": false, "options": {}},
+      {"name": "dateRange", "type": "text", "required": false, "options": {}}, {"name": "city", "type": "text", "required": false, "options": {}},
       {"name": "plannerTitle", "type": "text", "required": false, "presentable": true, "options": {}},
-      {"name": "uiConfig", "type": "json", "required": false, "options": {"maxSize": 5242880}},
-      {"name": "times", "type": "json", "required": false, "options": {"maxSize": 5242880}},
-      {"name": "schedule", "type": "json", "required": false, "options": {"maxSize": 5242880}},
-      {"name": "tasks", "type": "json", "required": false, "options": {"maxSize": 5242880}},
-      {"name": "workoutPlan", "type": "json", "required": false, "options": {"maxSize": 5242880}},
-      {"name": "meals", "type": "json", "required": false, "options": {"maxSize": 5242880}},
-      {"name": "groceryBudget", "type": "text", "required": false, "options": {}},
-      {"name": "groceryList", "type": "json", "required": false, "options": {"maxSize": 5242880}},
-      {"name": "bodyMeasurements", "type": "json", "required": false, "options": {"maxSize": 5242880}},
-      {"name": "financials", "type": "json", "required": false, "options": {"maxSize": 5242880}},
+      {"name": "uiConfig", "type": "json", "required": false, "options": {"maxSize": 5242880}}, {"name": "times", "type": "json", "required": false, "options": {"maxSize": 5242880}},
+      {"name": "schedule", "type": "json", "required": false, "options": {"maxSize": 5242880}}, {"name": "tasks", "type": "json", "required": false, "options": {"maxSize": 5242880}},
+      {"name": "workoutPlan", "type": "json", "required": false, "options": {"maxSize": 5242880}}, {"name": "meals", "type": "json", "required": false, "options": {"maxSize": 5242880}},
+      {"name": "groceryBudget", "type": "text", "required": false, "options": {}}, {"name": "groceryList", "type": "json", "required": false, "options": {"maxSize": 5242880}},
+      {"name": "bodyMeasurements", "type": "json", "required": false, "options": {"maxSize": 5242880}}, {"name": "financials", "type": "json", "required": false, "options": {"maxSize": 5242880}},
       {"name": "template_name_used", "type": "text", "required": false, "options": {}}
     ]
   },
-  {
-    "name": "planner_templates", "type": "base", "system": false,
-    "listRule": null, "viewRule": null, "createRule": "", "updateRule": "", "deleteRule": "", "options": {},
+  { "name": "planner_templates", "type": "base", "system": false, "listRule": null, "viewRule": null, "createRule": "", "updateRule": "", "deleteRule": "", "options": {},
     "fields": [
       {"name": "template_name", "type": "text", "required": true, "unique": true, "presentable": true, "options": {"pattern": "^[a-zA-Z0-9_\\-]+$"}},
-      {"name": "description", "type": "text", "required": false, "options": {}},
-      {"name": "is_default", "type": "bool", "required": false, "options": {}},
-      {"name": "version", "type": "number", "required": false, "options": {"min":1}},
-      {"name": "plannerTitle_default", "type": "text", "required": false, "options": {}},
+      {"name": "description", "type": "text", "required": false, "options": {}}, {"name": "is_default", "type": "bool", "required": false, "options": {}},
+      {"name": "version", "type": "number", "required": false, "options": {"min":1}}, {"name": "plannerTitle_default", "type": "text", "required": false, "options": {}},
       {"name": "uiConfig_structure", "type": "json", "required": true, "options": {"maxSize": 5242880}},
       {"name": "times_structure", "type": "json", "required": true, "options": {"maxSize": 5242880}},
       {"name": "schedule_structure", "type": "json", "required": true, "options": {"maxSize": 5242880}},
@@ -183,38 +141,19 @@ const a4PlannerSchema = [
     ]
   }
 ];
-
-// --- Default Seed Data for A4 Planner Template ---
 const a4PlannerDefaultTemplateSeed = [
     {
         collection: "planner_templates",
         identifierField: "template_name",
         data: [
             {
-                template_name: "standard-weekly-v1",
-                description: "Standard weekly planner template, version 1.",
-                is_default: true,
-                version: 1,
+                template_name: "standard-weekly-v1", description: "Standard weekly planner template, version 1.", is_default: true, version: 1,
                 plannerTitle_default: "My Weekly Plan",
-                uiConfig_structure: {
-                    mainTableHeaders: ['TIME', 'DAY', 'ACTIVITY', 'SCR', 'MAX', '🔥'],
-                    dayHeaders: ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'],
-                    maxHeaders: Array(7).fill('MAX'),
-                    taskHeaders: ['№', '🔥', '🏷️', '✏️ Task/Event/Note', '📅', '✓'],
-                    sectionTitles: { tasks: 'TASKS & NOTES', workout: 'WORKOUT PLAN', meals: 'MEAL PREP', grocery: 'GROCERY LIST', measurements: 'BODY MEASUREMENTS', financials: 'MONTH/1ST: FINANCIAL' }
-                },
+                uiConfig_structure: { mainTableHeaders: ['TIME', 'DAY', 'ACTIVITY', 'SCR', 'MAX', '🔥'], dayHeaders: ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'], maxHeaders: Array(7).fill('MAX'), taskHeaders: ['№', '🔥', '🏷️', '✏️ Task/Event/Note', '📅', '✓'], sectionTitles: { tasks: 'TASKS & NOTES', workout: 'WORKOUT PLAN', meals: 'MEAL PREP', grocery: 'GROCERY LIST', measurements: 'BODY MEASUREMENTS', financials: 'MONTH/1ST: FINANCIAL' }},
                 times_structure: [ { label: 'Q', value: '' }, { label: 'F', value: '' }, { label: 'D', value: '' }, { label: 'A', value: '' }, { label: 'M', value: '' }, { label: 'I', value: '' } ],
-                schedule_structure: [ // IDs will be added by ensureDeepIdsInSchedule
-                  { name: 'QIYAM', activities: [
-                      { name: 'DAILY: Wakeup early', days: { mon: {value:'',max:1}, tue: {value:'',max:1}, wed: {value:'',max:1}, thu: {value:'',max:1}, fri: {value:'',max:1}, sat: {value:'',max:1}, sun: {value:'',max:1} }, score:0, maxScore:7, streaks:{current:0,longest:0}},
-                      { name: 'DAILY: Qiyam/Tahajjud', days: { mon: {value:'',max:1}, tue: {value:'',max:1}, wed: {value:'',max:1}, thu: {value:'',max:1}, fri: {value:'',max:1}, sat: {value:'',max:1}, sun: {value:'',max:1} }, score:0, maxScore:7, streaks:{current:0,longest:0}},
-                      { name: 'DAILY: Nutty Pudding', days: { mon: {value:'',max:1}, tue: {value:'',max:1}, wed: {value:'',max:1}, thu: {value:'',max:1}, fri: {value:'',max:1}, sat: {value:'',max:1}, sun: {value:'',max:1} }, score:0, maxScore:7, streaks:{current:0,longest:0}}
-                  ]},
-                  { name: 'FAJR', activities: [
-                      { name: 'DAILY: Fajr prayer', days: { mon: {value:'',max:1}, tue: {value:'',max:1}, wed: {value:'',max:1}, thu: {value:'',max:1}, fri: {value:'',max:1}, sat: {value:'',max:1}, sun: {value:'',max:1} }, score:0, maxScore:7, streaks:{current:0,longest:0}},
-                      { name: 'DAILY: Quran - 1 Juz', days: { mon: {value:'',max:1}, tue: {value:'',max:1}, wed: {value:'',max:1}, thu: {value:'',max:1}, fri: {value:'',max:1}, sat: {value:'',max:1}, sun: {value:'',max:1} }, score:0, maxScore:7, streaks:{current:0,longest:0}},
-                      { name: 'DAILY: 5min Cold Shower', days: { mon: {value:'',max:1}, tue: {value:'',max:1}, wed: {value:'',max:1}, thu: {value:'',max:1}, fri: {value:'',max:1}, sat: {value:'',max:1}, sun: {value:'',max:1} }, score:0, maxScore:7, streaks:{current:0,longest:0}}
-                  ]},
+                schedule_structure: [
+                  { name: 'QIYAM', activities: [ { name: 'DAILY: Wakeup early', days: { mon: {value:'',max:1}, tue: {value:'',max:1}, wed: {value:'',max:1}, thu: {value:'',max:1}, fri: {value:'',max:1}, sat: {value:'',max:1}, sun: {value:'',max:1} }, score:0, maxScore:7, streaks:{current:0,longest:0}}, { name: 'DAILY: Qiyam/Tahajjud', days: { mon: {value:'',max:1}, tue: {value:'',max:1}, wed: {value:'',max:1}, thu: {value:'',max:1}, fri: {value:'',max:1}, sat: {value:'',max:1}, sun: {value:'',max:1} }, score:0, maxScore:7, streaks:{current:0,longest:0}}, { name: 'DAILY: Nutty Pudding', days: { mon: {value:'',max:1}, tue: {value:'',max:1}, wed: {value:'',max:1}, thu: {value:'',max:1}, fri: {value:'',max:1}, sat: {value:'',max:1}, sun: {value:'',max:1} }, score:0, maxScore:7, streaks:{current:0,longest:0}} ]},
+                  { name: 'FAJR', activities: [ { name: 'DAILY: Fajr prayer', days: { mon: {value:'',max:1}, tue: {value:'',max:1}, wed: {value:'',max:1}, thu: {value:'',max:1}, fri: {value:'',max:1}, sat: {value:'',max:1}, sun: {value:'',max:1} }, score:0, maxScore:7, streaks:{current:0,longest:0}}, { name: 'DAILY: Quran - 1 Juz', days: { mon: {value:'',max:1}, tue: {value:'',max:1}, wed: {value:'',max:1}, thu: {value:'',max:1}, fri: {value:'',max:1}, sat: {value:'',max:1}, sun: {value:'',max:1} }, score:0, maxScore:7, streaks:{current:0,longest:0}}, { name: 'DAILY: 5min Cold Shower', days: { mon: {value:'',max:1}, tue: {value:'',max:1}, wed: {value:'',max:1}, thu: {value:'',max:1}, fri: {value:'',max:1}, sat: {value:'',max:1}, sun: {value:'',max:1} }, score:0, maxScore:7, streaks:{current:0,longest:0}} ]},
                   { name: '7AM - 9AM', activities: [ { name: 'MON/THU: COMMUTE', days: { mon: {value:'',max:1}, thu: {value:'',max:1} }, score:0, maxScore:2, streaks:{current:0,longest:0}}, { name: 'TUE/WED/FRI: Reading/Study (book/course/skill)', days: { tue: {value:'',max:1}, wed: {value:'',max:1}, fri: {value:'',max:1} }, score:0, maxScore:3, streaks:{current:0,longest:0}}, { name: 'SAT: Errands, Grocery shopping, Meal prep', days: { sat: {value:'',max:3} }, score:0, maxScore:3, streaks:{current:0,longest:0}}, { name: 'SUN: House cleaning, laundry', days: { sun: {value:'',max:2} }, score:0, maxScore:2, streaks:{current:0,longest:0}} ]},
                   { name: '9AM - 5PM', activities: [ { name: 'MON - FRI: Work', days: { mon: {value:'',max:1}, tue: {value:'',max:1}, wed: {value:'',max:1}, thu: {value:'',max:1}, fri: {value:'',max:1} }, score:0, maxScore:5, streaks:{current:0,longest:0}}, { name: 'DAILY: ZeroInbox (E1, E2, E3, E4, LI, Slack)', days: { mon: {value:'',max:6}, tue: {value:'',max:6}, wed: {value:'',max:6}, thu: {value:'',max:6}, fri: {value:'',max:6} }, score:0, maxScore:30, streaks:{current:0,longest:0}}, { name: 'SAT/SUN: Nature time / Outdoor Activity / Adventure', days: { sat: {value:'',max:1}, sun: {value:'',max:1} }, score:0, maxScore:2, streaks:{current:0,longest:0}} ]},
                   { name: 'DHUHR', activities: [ { name: 'DAILY: Dhuhr prayer', days: { mon: {value:'',max:1}, tue: {value:'',max:1}, wed: {value:'',max:1}, thu: {value:'',max:1}, fri: {value:'',max:1}, sat: {value:'',max:1}, sun: {value:'',max:1} }, score:0, maxScore:7, streaks:{current:0,longest:0}}, { name: 'TUE/WED/FRI: Sun walk (30-45 minutes)', days: { tue: {value:'',max:1}, wed: {value:'',max:1}, fri: {value:'',max:1} }, score:0, maxScore:3, streaks:{current:0,longest:0}}, { name: 'FRI: £10 Sadaqa', days: { fri: {value:'',max:1} }, score:0, maxScore:1, streaks:{current:0,longest:0}} ]},
@@ -227,53 +166,16 @@ const a4PlannerDefaultTemplateSeed = [
                   { name: 'TOTAL', activities: [ { name: 'DAILY POINTS', days: { mon: {value:'0',max:0}, tue: {value:'0',max:0}, wed: {value:'0',max:0}, thu: {value:'0',max:0}, fri: {value:'0',max:0}, sat: {value:'0',max:0}, sun: {value:'0',max:0} }, score:0, maxScore:0, streaks:{current:0,longest:0}} ]}
                 ],
                 tasks_structure: { count: 20, defaultFields: { num: '', priority: '', tag: '', description: '', date: '', completed: '' }},
-                workoutPlan_structure: [ // IDs will be added by ensureDeepIdsInWorkout
-                    { name: 'TUESDAY', exercises: [
-                        { prefix: '• ', name: 'Incline Dumbbell Press', weight: '', sets: '', reps: '', defaultWeight: '30', defaultSets: '3', defaultReps: '12' },
-                        { prefix: '• ', name: 'Barbell Squats', weight: '', sets: '', reps: '', defaultWeight: '80', defaultSets: '3', defaultReps: '8' },
-                        { prefix: '• ', name: 'DB Chest-Supported Row', weight: '', sets: '', reps: '', defaultWeight: '25', defaultSets: '3', defaultReps: '12' },
-                        { prefix: '• ', name: 'Leg Curls', weight: '', sets: '', reps: '', defaultWeight: '40', defaultSets: '3', defaultReps: '15' },
-                        { prefix: '• SS: ', name: 'Incline DB Curls', weight: '', sets: '', reps: '', defaultWeight: '15', defaultSets: '3', defaultReps: '12' },
-                        { prefix: '• SS: ', name: 'Tricep Extensions', weight: '', sets: '', reps: '', defaultWeight: '20', defaultSets: '3', defaultReps: '12' }
-                    ]},
-                    { name: 'WEDNESDAY', exercises: [
-                        { prefix: '• ', name: 'Barbell Bench Press', weight: '', sets: '', reps: '', defaultWeight: '70', defaultSets: '3', defaultReps: '6' },
-                        { prefix: '• ', name: 'Romanian Deadlift', weight: '', sets: '', reps: '', defaultWeight: '90', defaultSets: '3', defaultReps: '8' },
-                        { prefix: '• ', name: 'Lat Pulldown', weight: '', sets: '', reps: '', defaultWeight: '60', defaultSets: '3', defaultReps: '12' },
-                        { prefix: '• ', name: 'Walking Lunges', weight: '', sets: '', reps: '', defaultWeight: '20', defaultSets: '3', defaultReps: '10' },
-                        { prefix: '• SS: ', name: 'Cable Lateral Raises', weight: '', sets: '', reps: '', defaultWeight: '15', defaultSets: '3', defaultReps: '15' },
-                        { prefix: '• SS: ', name: 'Reverse Crunches', weight: '', sets: '', reps: '', defaultWeight: '0', defaultSets: '3', defaultReps: '15' }
-                    ]},
-                    { name: 'FRIDAY', exercises: [
-                        { prefix: '• ', name: 'Seated DB Shoulder Press', weight: '', sets: '', reps: '', defaultWeight: '20', defaultSets: '3', defaultReps: '12' },
-                        { prefix: '• ', name: 'Dumbbell Row', weight: '', sets: '', reps: '', defaultWeight: '25', defaultSets: '3', defaultReps: '12' },
-                        { prefix: '• ', name: 'Barbell Hip Thrust', weight: '', sets: '', reps: '', defaultWeight: '100', defaultSets: '3', defaultReps: '15' },
-                        { prefix: '• ', name: 'Leg Extensions', weight: '', sets: '', reps: '', defaultWeight: '50', defaultSets: '3', defaultReps: '15' },
-                        { prefix: '• ', name: 'Seated Chest Flyes', weight: '', sets: '', reps: '', defaultWeight: '15', defaultSets: '3', defaultReps: '15' },
-                        { prefix: '• SS: ', name: 'Standing Calf Raises', weight: '', sets: '', reps: '', defaultWeight: '30', defaultSets: '3', defaultReps: '15' },
-                        { prefix: '• SS: ', name: 'Reverse Cable Flyes', weight: '', sets: '', reps: '', defaultWeight: '20', defaultSets: '3', defaultReps: '15' }
-                    ]}
+                workoutPlan_structure: [
+                    { name: 'TUESDAY', exercises: [ { prefix: '• ', name: 'Incline Dumbbell Press', weight: '', sets: '', reps: '', defaultWeight: '30', defaultSets: '3', defaultReps: '12' }, { prefix: '• ', name: 'Barbell Squats', weight: '', sets: '', reps: '', defaultWeight: '80', defaultSets: '3', defaultReps: '8' }, { prefix: '• ', name: 'DB Chest-Supported Row', weight: '', sets: '', reps: '', defaultWeight: '25', defaultSets: '3', defaultReps: '12' }, { prefix: '• ', name: 'Leg Curls', weight: '', sets: '', reps: '', defaultWeight: '40', defaultSets: '3', defaultReps: '15' }, { prefix: '• SS: ', name: 'Incline DB Curls', weight: '', sets: '', reps: '', defaultWeight: '15', defaultSets: '3', defaultReps: '12' }, { prefix: '• SS: ', name: 'Tricep Extensions', weight: '', sets: '', reps: '', defaultWeight: '20', defaultSets: '3', defaultReps: '12' } ]},
+                    { name: 'WEDNESDAY', exercises: [ { prefix: '• ', name: 'Barbell Bench Press', weight: '', sets: '', reps: '', defaultWeight: '70', defaultSets: '3', defaultReps: '6' }, { prefix: '• ', name: 'Romanian Deadlift', weight: '', sets: '', reps: '', defaultWeight: '90', defaultSets: '3', defaultReps: '8' }, { prefix: '• ', name: 'Lat Pulldown', weight: '', sets: '', reps: '', defaultWeight: '60', defaultSets: '3', defaultReps: '12' }, { prefix: '• ', name: 'Walking Lunges', weight: '', sets: '', reps: '', defaultWeight: '20', defaultSets: '3', defaultReps: '10' }, { prefix: '• SS: ', name: 'Cable Lateral Raises', weight: '', sets: '', reps: '', defaultWeight: '15', defaultSets: '3', defaultReps: '15' }, { prefix: '• SS: ', name: 'Reverse Crunches', weight: '', sets: '', reps: '', defaultWeight: '0', defaultSets: '3', defaultReps: '15' } ]},
+                    { name: 'FRIDAY', exercises: [ { prefix: '• ', name: 'Seated DB Shoulder Press', weight: '', sets: '', reps: '', defaultWeight: '20', defaultSets: '3', defaultReps: '12' }, { prefix: '• ', name: 'Dumbbell Row', weight: '', sets: '', reps: '', defaultWeight: '25', defaultSets: '3', defaultReps: '12' }, { prefix: '• ', name: 'Barbell Hip Thrust', weight: '', sets: '', reps: '', defaultWeight: '100', defaultSets: '3', defaultReps: '15' }, { prefix: '• ', name: 'Leg Extensions', weight: '', sets: '', reps: '', defaultWeight: '50', defaultSets: '3', defaultReps: '15' }, { prefix: '• ', name: 'Seated Chest Flyes', weight: '', sets: '', reps: '', defaultWeight: '15', defaultSets: '3', defaultReps: '15' }, { prefix: '• SS: ', name: 'Standing Calf Raises', weight: '', sets: '', reps: '', defaultWeight: '30', defaultSets: '3', defaultReps: '15' }, { prefix: '• SS: ', name: 'Reverse Cable Flyes', weight: '', sets: '', reps: '', defaultWeight: '20', defaultSets: '3', defaultReps: '15' } ]}
                 ],
-                meals_structure: [ // IDs will be added by ensureIdsInArray
-                    { name: 'Nutty Pudding', ingredients: 'Berries ½c, Cherries 3, Pomegranate Juice 2oz, Macadamia nuts (raw) 45g, Walnuts (raw) 5g, Cocoa 1t, Brazil Nuts ¼, Milk 50-100ml, Chia Seeds 2T, Flax (ground, refr) 1t, Lecithin 1t, Ceylon Cinnamon ½t' },
-                    { name: 'Super Veggie', ingredients: 'Broccoli 250g, Cauliflower 150g, Mushrooms 50g, Garlic 1 clove, Ginger 3g, Cumin 1T, Black Lentils 45g, Hemp Seeds 1T, Apple Cider Vinegar 1T' },
-                    { name: 'Third Meal', ingredients: 'Sweet Potato 350-400g, Protein 100-150g, Grape Tomatoes 12, Avocado ½, Radishes 4, Cilantro ¼c, Lemon 1, Jalapeño (lg) 1, Chili Powder 1t' }
-                ],
+                meals_structure: [ { name: 'Nutty Pudding', ingredients: 'Berries ½c, Cherries 3, Pomegranate Juice 2oz, Macadamia nuts (raw) 45g, Walnuts (raw) 5g, Cocoa 1t, Brazil Nuts ¼, Milk 50-100ml, Chia Seeds 2T, Flax (ground, refr) 1t, Lecithin 1t, Ceylon Cinnamon ½t' }, { name: 'Super Veggie', ingredients: 'Broccoli 250g, Cauliflower 150g, Mushrooms 50g, Garlic 1 clove, Ginger 3g, Cumin 1T, Black Lentils 45g, Hemp Seeds 1T, Apple Cider Vinegar 1T' }, { name: 'Third Meal', ingredients: 'Sweet Potato 350-400g, Protein 100-150g, Grape Tomatoes 12, Avocado ½, Radishes 4, Cilantro ¼c, Lemon 1, Jalapeño (lg) 1, Chili Powder 1t' } ],
                 groceryBudget_default: '120',
-                groceryList_structure: [ // IDs will be added by ensureIdsInArray
-                    { name: 'Produce', items: 'Broccoli 1.75kg, Cauliflower 1.05kg, Mushrooms 350g, Garlic 1 bulb, Ginger 1pc, Sweet Potato 2.8kg, Grape Tomatoes 84, Avocados (ripe) 4, Radishes 28, Cilantro 2-3 bunch' },
-                    { name: 'Fruits & Protein', items: 'Lemons 7, Jalapeños (lg) 7, Berries 3.5c, Cherries 21, Black Lentils 315g, Protein 1.05kg, Milk (fortified) 1L' }
-                ],
-                bodyMeasurements_structure: [ // IDs will be added by ensureIdsInArray
-                    { name: 'Weight', value: '', placeholder: '75kg' }, { name: 'Chest', value: '', placeholder: '42in' },
-                    { name: 'Waist', value: '', placeholder: '34in' }, { name: 'Hips', value: '', placeholder: '40in' },
-                    { name: 'Arms', value: '', placeholder: '15in' }, { name: 'Thighs', value: '', placeholder: '24in' }
-                ],
-                financials_structure: [ // IDs will be added by ensureIdsInArray
-                    { name: 'Rent', value: '', placeholder: '850', account: 'Cash' },
-                    { name: 'Allowance', value: '', placeholder: '850', account: 'Revolut' },
-                    { name: 'Savings', value: '', placeholder: '3,800', account: 'HSBCUK' }
-                ],
+                groceryList_structure: [ { name: 'Produce', items: 'Broccoli 1.75kg, Cauliflower 1.05kg, Mushrooms 350g, Garlic 1 bulb, Ginger 1pc, Sweet Potato 2.8kg, Grape Tomatoes 84, Avocados (ripe) 4, Radishes 28, Cilantro 2-3 bunch' }, { name: 'Fruits & Protein', items: 'Lemons 7, Jalapeños (lg) 7, Berries 3.5c, Cherries 21, Black Lentils 315g, Protein 1.05kg, Milk (fortified) 1L' } ],
+                bodyMeasurements_structure: [ { name: 'Weight', value: '', placeholder: '75kg' }, { name: 'Chest', value: '', placeholder: '42in' }, { name: 'Waist', value: '', placeholder: '34in' }, { name: 'Hips', value: '', placeholder: '40in' }, { name: 'Arms', value: '', placeholder: '15in' }, { name: 'Thighs', value: '', placeholder: '24in' } ],
+                financials_structure: [ { name: 'Rent', value: '', placeholder: '850', account: 'Cash' }, { name: 'Allowance', value: '', placeholder: '850', account: 'Revolut' }, { name: 'Savings', value: '', placeholder: '3,800', account: 'HSBCUK' } ],
                 city_default: "London"
             }
         ]
@@ -292,19 +194,17 @@ schemaInput.value = JSON.stringify(a4PlannerSchema, null, 2);
 const processedSeedData = a4PlannerDefaultTemplateSeed.map(seedConfig => ({
     ...seedConfig,
     data: seedConfig.data.map(template => {
-        const newTemplate = JSON.parse(JSON.stringify(template)); // Deep copy each template
+        const newTemplate = JSON.parse(JSON.stringify(template));
         newTemplate.schedule_structure = ensureDeepIdsInSchedule(newTemplate.schedule_structure || []);
         newTemplate.workoutPlan_structure = ensureDeepIdsInWorkout(newTemplate.workoutPlan_structure || []);
         newTemplate.meals_structure = ensureIdsInArray(newTemplate.meals_structure || [], 'id');
         newTemplate.groceryList_structure = ensureIdsInArray(newTemplate.groceryList_structure || [], 'id');
         newTemplate.bodyMeasurements_structure = ensureIdsInArray(newTemplate.bodyMeasurements_structure || [], 'id');
         newTemplate.financials_structure = ensureIdsInArray(newTemplate.financials_structure || [], 'id');
-        // tasks_structure is an object, not an array needing top-level item IDs here
         return newTemplate;
     })
 }));
 seedDataInput.value = JSON.stringify(processedSeedData, null, 2);
-
 
 function logMessage(message, type = 'info') {
     const p = document.createElement('p');
@@ -322,16 +222,10 @@ setupButton.addEventListener('click', async () => {
     let collectionsSchema, seedDataConfig;
 
     if (!pbUrl || !adminEmail || !adminPassword) { logMessage('PocketBase URL, Admin Email, and Admin Password are required.', 'error'); return; }
-
-    try {
-        collectionsSchema = JSON.parse(schemaInput.value);
-        if (!Array.isArray(collectionsSchema)) throw new Error('Collections Schema JSON must be an array.');
-    } catch (e) { logMessage('Error parsing Collections Schema JSON: ' + e.message, 'error'); return; }
-
-    try {
-        seedDataConfig = JSON.parse(seedDataInput.value);
-        if (!Array.isArray(seedDataConfig)) throw new Error('Seed Data JSON must be an array of seed configurations.');
-    } catch (e) { logMessage('Error parsing Seed Data JSON: ' + e.message, 'error'); return; }
+    try { collectionsSchema = JSON.parse(schemaInput.value); if (!Array.isArray(collectionsSchema)) throw new Error('Collections Schema JSON must be an array.'); }
+    catch (e) { logMessage('Error parsing Collections Schema JSON: ' + e.message, 'error'); return; }
+    try { seedDataConfig = JSON.parse(seedDataInput.value); if (!Array.isArray(seedDataConfig)) throw new Error('Seed Data JSON must be an array of seed configurations.'); }
+    catch (e) { logMessage('Error parsing Seed Data JSON: ' + e.message, 'error'); return; }
 
     const pb = new PocketBase(pbUrl);
     try {
@@ -361,9 +255,7 @@ setupButton.addEventListener('click', async () => {
                 if (!colDef.viewQuery) { logMessage(`Error: viewQuery missing for view collection ${colDef.name}. Skipping.`, 'error'); continue; }
                 payload.viewQuery = colDef.viewQuery; delete payload.fields; delete payload.indexes;
             }
-            if (colDef.type === 'auth' && colDef.authOptions) { // Basic support for authOptions
-                Object.assign(payload, colDef.authOptions);
-            }
+            if (colDef.type === 'auth' && colDef.authOptions) { Object.assign(payload, colDef.authOptions); }
             try {
                 let existingCollection = null;
                 try { existingCollection = await pb.collections.getOne(colDef.name); } catch (e) { /* Not found */ }
