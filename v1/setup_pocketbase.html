@@ -3,242 +3,87 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PocketBase Full Setup</title>
+    <title>PocketBase Minimal Setup</title>
     <script src="https://cdn.jsdelivr.net/npm/pocketbase@latest/dist/pocketbase.umd.js"></script>
     <style>
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
-            line-height: 1.6;
-            padding: 20px;
-            max-width: 900px;
-            margin: 40px auto;
-            background-color: #f9fafb;
-            color: #374151;
-        }
-        .container {
-            background-color: #fff;
-            padding: 25px 30px;
-            border-radius: 8px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-        }
-        h1 {
-            color: #1f2937;
-            text-align: center;
-            margin-bottom: 10px;
-        }
-        .subtitle {
-            text-align: center;
-            color: #6b7280;
-            margin-bottom: 25px;
-            font-size: 0.9em;
-        }
-        .info-box {
-            background-color: #eff6ff;
-            border-left: 4px solid #3b82f6;
-            padding: 12px 15px;
-            margin-bottom: 20px;
-            font-size: 0.9em;
-            color: #1e40af;
-        }
-        .info-box strong {
-            color: #1d4ed8;
-        }
-        .form-section {
-            margin-bottom: 20px;
-            padding-bottom: 20px;
-            border-bottom: 1px solid #e5e7eb;
-        }
-        .form-section:last-of-type {
-            border-bottom: none;
-            padding-bottom: 0;
-        }
-        label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: 600;
-            color: #4b5563;
-        }
-        input[type="text"],
-        input[type="password"],
-        textarea {
-            width: 100%;
-            padding: 10px 12px;
-            margin-top: 4px;
-            box-sizing: border-box;
-            border: 1px solid #d1d5db;
-            border-radius: 6px;
-            font-size: 0.95em;
-            transition: border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
-        }
-        input[type="text"]:focus,
-        input[type="password"]:focus,
-        textarea:focus {
-            border-color: #3b82f6;
-            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.25);
-            outline: none;
-        }
-        textarea {
-            min-height: 120px;
-            resize: vertical;
-        }
-        button {
-            display: block;
-            width: 100%;
-            padding: 12px 20px;
-            margin-top: 25px;
-            cursor: pointer;
-            background-color: #3b82f6;
-            color: white;
-            border: none;
-            border-radius: 6px;
-            font-size: 1em;
-            font-weight: 600;
-            transition: background-color 0.2s ease-in-out;
-        }
-        button:hover {
-            background-color: #2563eb;
-        }
-        #logContainer {
-            margin-top: 30px;
-        }
-        #logContainer h2 {
-            margin-bottom: 10px;
-            color: #1f2937;
-        }
-        pre#logOutput {
-            background-color: #1f2937; /* Darker background for log */
-            color: #d1d5db; /* Lighter text for log */
-            padding: 15px;
-            border-radius: 6px;
-            white-space: pre-wrap;
-            word-wrap: break-word;
-            max-height: 400px;
-            overflow-y: auto;
-            font-size: 0.85em;
-            border: 1px solid #374151;
-        }
-        .log-entry {
-            padding: 3px 0;
-            border-bottom: 1px dotted #4b5563;
-        }
-        .log-entry:last-child {
-            border-bottom: none;
-        }
-        .log-entry.error { color: #ef4444; font-weight: bold; }
-        .log-entry.success { color: #22c55e; }
-        .log-entry.warning { color: #f97316; }
-        .log-entry.info { color: #60a5fa; } /* Lighter blue for info on dark bg */
+        body { font-family: sans-serif; line-height: 1.5; padding: 15px; max-width: 700px; margin: 20px auto; }
+        label { display: block; margin-top: 12px; margin-bottom: 3px; font-weight: bold; }
+        input[type="text"], input[type="password"], textarea { width: 100%; padding: 8px; box-sizing: border-box; border: 1px solid #ccc; }
+        textarea { min-height: 100px; resize: vertical; }
+        button { padding: 10px 15px; margin-top: 15px; cursor: pointer; background-color: #007bff; color: white; border: none; }
+        pre { background-color: #f0f0f0; padding: 10px; border: 1px solid #ddd; white-space: pre-wrap; word-wrap: break-word; max-height: 300px; overflow-y: auto; font-size: 0.9em;}
+        .log-entry.error { color: red; }
+        .log-entry.success { color: green; }
+        .log-entry.warning { color: orange; }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>PocketBase Full Setup</h1>
-        <p class="subtitle">(Collections & Seed Data)</p>
+    <h1>PocketBase Minimal Setup</h1>
+    <p>Creates/updates collections and seeds 'planner_templates'.</p>
 
-        <div class="info-box">
-            <p><strong>Important:</strong> This script will attempt to create or update collections and seed initial template data.
-            If collections with the same names exist, it will try to update them (rules, options, non-system fields).
-            For a completely clean setup, you might want to delete existing 'planners' and 'planner_templates' collections from the PocketBase Admin UI first.
-            </p>
-        </div>
-
-        <div class="form-section">
-            <label for="pbUrl">PocketBase URL:</label>
-            <input type="text" id="pbUrl" value="http://127.0.0.1:8090">
-
-            <label for="adminEmail">Admin Email:</label>
-            <input type="text" id="adminEmail" placeholder="your_admin_email@example.com">
-
-            <label for="adminPassword">Admin Password:</label>
-            <input type="password" id="adminPassword">
-        </div>
-
-        <div class="form-section">
-            <label for="schemaJson">Collections Schema JSON (pb_schema.json content):</label>
-            <textarea id="schemaJson" rows="10"></textarea>
-        </div>
-
-        <div class="form-section">
-            <label for="seedDataJson">Seed Data for 'planner_templates' (JSON array with template objects):</label>
-            <textarea id="seedDataJson" rows="15"></textarea>
-        </div>
-
-        <button id="setupButton">Run Full Setup</button>
-
-        <div id="logContainer">
-            <h2>Log Output:</h2>
-            <pre id="logOutput"></pre>
-        </div>
+    <div>
+        <label for="pbUrl">PocketBase URL:</label>
+        <input type="text" id="pbUrl" value="http://127.0.0.1:8090">
     </div>
+    <div>
+        <label for="adminEmail">Admin Email:</label>
+        <input type="text" id="adminEmail" placeholder="your_admin_email@example.com">
+    </div>
+    <div>
+        <label for="adminPassword">Admin Password:</label>
+        <input type="password" id="adminPassword">
+    </div>
+    <div>
+        <label for="schemaJson">Collections Schema JSON:</label>
+        <textarea id="schemaJson" rows="8"></textarea>
+    </div>
+     <div>
+        <label for="seedDataJson">Seed Data for 'planner_templates':</label>
+        <textarea id="seedDataJson" rows="12"></textarea>
+    </div>
+
+    <button id="setupButton">Run Setup</button>
+
+    <h2>Log:</h2>
+    <pre id="logOutput"></pre>
 
 <script>
 let uniqueIdCounter = 0;
 const generateId = (prefix = 'id') => `${prefix}_${Date.now()}_${uniqueIdCounter++}_${Math.random().toString(36).substr(2, 5)}`;
-
-const ensureIdsInArray = (items = [], idField = 'id') => items.map(item => {
-    const newItem = { ...item };
-    if (!newItem[idField]) {
-        newItem[idField] = generateId(idField.replace('_id',''));
-    }
-    return newItem;
-});
-
-const ensureDeepIdsInSchedule = (schedule = []) => schedule.map(section => {
-    const newSection = { ...section };
-    if (!newSection.id) newSection.id = generateId('sec');
-    newSection.activities = ensureIdsInArray(newSection.activities || [], 'id');
-    return newSection;
-});
-
-const ensureDeepIdsInWorkout = (workoutPlan = []) => workoutPlan.map(day => {
-    const newDay = { ...day };
-    if (!newDay.id) newDay.id = generateId('wday');
-    newDay.exercises = ensureIdsInArray(newDay.exercises || [], 'id');
-    return newDay;
-});
+const ensureIdsInArray = (items = [], idField = 'id') => items.map(item => { const newItem = { ...item }; if (!newItem[idField]) newItem[idField] = generateId(idField.replace('_id','')); return newItem; });
+const ensureDeepIdsInSchedule = (schedule = []) => schedule.map(section => { const newSection = { ...section }; if (!newSection.id) newSection.id = generateId('sec'); newSection.activities = ensureIdsInArray(newSection.activities || [], 'id'); return newSection; });
+const ensureDeepIdsInWorkout = (workoutPlan = []) => workoutPlan.map(day => { const newDay = { ...day }; if (!newDay.id) newDay.id = generateId('wday'); newDay.exercises = ensureIdsInArray(newDay.exercises || [], 'id'); return newDay; });
 
 const defaultSchema = [
-  {
-    "name": "planners", "type": "base", "system": false,
-    "listRule": null, "viewRule": null, "createRule": "", "updateRule": "", "deleteRule": "", "options": {},
+  { "name": "planners", "type": "base", "system": false, "listRule": null, "viewRule": null, "createRule": "", "updateRule": "", "deleteRule": "", "options": {},
     "fields": [
       {"name": "week_id", "type": "text", "required": true, "unique": true, "presentable": true, "options": {}},
-      {"name": "dateRange", "type": "text", "required": false, "options": {}},
-      {"name": "city", "type": "text", "required": false, "options": {}},
-      {"name": "plannerTitle", "type": "text", "required": false, "presentable": true, "options": {}},
-      {"name": "uiConfig", "type": "json", "required": false, "options": {"maxSize": 5242880}},
-      {"name": "times", "type": "json", "required": false, "options": {"maxSize": 5242880}},
-      {"name": "schedule", "type": "json", "required": false, "options": {"maxSize": 5242880}},
-      {"name": "tasks", "type": "json", "required": false, "options": {"maxSize": 5242880}},
-      {"name": "workoutPlan", "type": "json", "required": false, "options": {"maxSize": 5242880}},
-      {"name": "meals", "type": "json", "required": false, "options": {"maxSize": 5242880}},
-      {"name": "groceryBudget", "type": "text", "required": false, "options": {}},
-      {"name": "groceryList", "type": "json", "required": false, "options": {"maxSize": 5242880}},
-      {"name": "bodyMeasurements", "type": "json", "required": false, "options": {"maxSize": 5242880}},
-      {"name": "financials", "type": "json", "required": false, "options": {"maxSize": 5242880}},
-      {"name": "template_name_used", "type": "text", "required": false, "options": {}}
+      {"name": "dateRange", "type": "text", "options": {}}, {"name": "city", "type": "text", "options": {}},
+      {"name": "plannerTitle", "type": "text", "presentable": true, "options": {}},
+      {"name": "uiConfig", "type": "json", "options": {"maxSize": 5242880}}, {"name": "times", "type": "json", "options": {"maxSize": 5242880}},
+      {"name": "schedule", "type": "json", "options": {"maxSize": 5242880}}, {"name": "tasks", "type": "json", "options": {"maxSize": 5242880}},
+      {"name": "workoutPlan", "type": "json", "options": {"maxSize": 5242880}}, {"name": "meals", "type": "json", "options": {"maxSize": 5242880}},
+      {"name": "groceryBudget", "type": "text", "options": {}}, {"name": "groceryList", "type": "json", "options": {"maxSize": 5242880}},
+      {"name": "bodyMeasurements", "type": "json", "options": {"maxSize": 5242880}}, {"name": "financials", "type": "json", "options": {"maxSize": 5242880}},
+      {"name": "template_name_used", "type": "text", "options": {}}
     ]
   },
-  {
-    "name": "planner_templates", "type": "base", "system": false,
-    "listRule": null, "viewRule": null, "createRule": "", "updateRule": "", "deleteRule": "", "options": {},
+  { "name": "planner_templates", "type": "base", "system": false, "listRule": null, "viewRule": null, "createRule": "", "updateRule": "", "deleteRule": "", "options": {},
     "fields": [
       {"name": "template_name", "type": "text", "required": true, "unique": true, "presentable": true, "options": {"pattern": "^[a-zA-Z0-9_\\-]+$"}},
-      {"name": "description", "type": "text", "required": false, "options": {}},
-      {"name": "is_default", "type": "bool", "required": false, "options": {}},
-      {"name": "version", "type": "number", "required": false, "options": {"min":1}},
-      {"name": "plannerTitle_default", "type": "text", "required": false, "options": {}},
+      {"name": "description", "type": "text", "options": {}}, {"name": "is_default", "type": "bool", "options": {}},
+      {"name": "version", "type": "number", "options": {"min":1}}, {"name": "plannerTitle_default", "type": "text", "options": {}},
       {"name": "uiConfig_structure", "type": "json", "required": true, "options": {"maxSize": 5242880}},
       {"name": "times_structure", "type": "json", "required": true, "options": {"maxSize": 5242880}},
       {"name": "schedule_structure", "type": "json", "required": true, "options": {"maxSize": 5242880}},
       {"name": "tasks_structure", "type": "json", "required": true, "options": {"maxSize": 5242880}},
       {"name": "workoutPlan_structure", "type": "json", "required": true, "options": {"maxSize": 5242880}},
       {"name": "meals_structure", "type": "json", "required": true, "options": {"maxSize": 5242880}},
-      {"name": "groceryBudget_default", "type": "text", "required": false, "options": {}},
+      {"name": "groceryBudget_default", "type": "text", "options": {}},
       {"name": "groceryList_structure", "type": "json", "required": true, "options": {"maxSize": 5242880}},
       {"name": "bodyMeasurements_structure", "type": "json", "required": true, "options": {"maxSize": 5242880}},
       {"name": "financials_structure", "type": "json", "required": true, "options": {"maxSize": 5242880}},
-      {"name": "city_default", "type": "text", "required": false, "options": {}}
+      {"name": "city_default", "type": "text", "options": {}}
     ]
   }
 ];
@@ -312,7 +157,7 @@ const defaultTemplateSeedData = [
               { name: 'DAILY: Expense Tracker <25', days: { mon: {value:'',max:0}, tue: {value:'',max:0}, wed: {value:'',max:0}, thu: {value:'',max:0}, fri: {value:'',max:0}, sat: {value:'',max:0}, sun: {value:'',max:0} }, score:0, maxScore:0, streaks:{current:0,longest:0}}
           ]},
           { name: 'TOTAL', activities: [
-              { name: 'DAILY POINTS', days: { mon: {value:'0',max:0}, tue: {value:'0',max:0}, wed: {value:'0',max:0}, thu: {value:'',max:0}, fri: {value:'0',max:0}, sat: {value:'0',max:0}, sun: {value:'0',max:0} }, score:0, maxScore:0, streaks:{current:0,longest:0}}
+              { name: 'DAILY POINTS', days: { mon: {value:'0',max:0}, tue: {value:'0',max:0}, wed: {value:'0',max:0}, thu: {value:'0',max:0}, fri: {value:'0',max:0}, sat: {value:'0',max:0}, sun: {value:'0',max:0} }, score:0, maxScore:0, streaks:{current:0,longest:0}}
           ]}
         ],
         tasks_structure: { count: 20, defaultFields: { num: '', priority: '', tag: '', description: '', date: '', completed: '' }},
@@ -354,14 +199,14 @@ const defaultTemplateSeedData = [
             { name: 'Fruits & Protein', items: 'Lemons 7, Jalapeños (lg) 7, Berries 3.5c, Cherries 21, Black Lentils 315g, Protein 1.05kg, Milk (fortified) 1L' }
         ],
         bodyMeasurements_structure: [
-            { name: 'Weight', placeholder: '75kg' }, { name: 'Chest', placeholder: '42in' },
-            { name: 'Waist', placeholder: '34in' }, { name: 'Hips', placeholder: '40in' },
-            { name: 'Arms', placeholder: '15in' }, { name: 'Thighs', placeholder: '24in' }
+            { name: 'Weight', value: '', placeholder: '75kg' }, { name: 'Chest', value: '', placeholder: '42in' },
+            { name: 'Waist', value: '', placeholder: '34in' }, { name: 'Hips', value: '', placeholder: '40in' },
+            { name: 'Arms', value: '', placeholder: '15in' }, { name: 'Thighs', value: '', placeholder: '24in' }
         ],
         financials_structure: [
-            { name: 'Rent', placeholder: '850', account: 'Cash' },
-            { name: 'Allowance', placeholder: '850', account: 'Revolut' },
-            { name: 'Savings', placeholder: '3,800', account: 'HSBCUK' }
+            { name: 'Rent', value: '', placeholder: '850', account: 'Cash' },
+            { name: 'Allowance', value: '', placeholder: '850', account: 'Revolut' },
+            { name: 'Savings', value: '', placeholder: '3,800', account: 'HSBCUK' }
         ],
         city_default: "London"
     }
@@ -376,11 +221,10 @@ const setupButton = document.getElementById('setupButton');
 const logOutput = document.getElementById('logOutput');
 
 schemaInput.value = JSON.stringify(defaultSchema, null, 2);
-
 const processedSeedData = defaultTemplateSeedData.map(template => {
-    const newTemplate = JSON.parse(JSON.stringify(template)); // Deep copy
-    newTemplate.schedule_structure = ensureDeepIdsInSchedule(newTemplate.schedule_structure);
-    newTemplate.workoutPlan_structure = ensureDeepIdsInWorkout(newTemplate.workoutPlan_structure);
+    const newTemplate = JSON.parse(JSON.stringify(template));
+    newTemplate.schedule_structure = ensureDeepIdsInSchedule(newTemplate.schedule_structure || []);
+    newTemplate.workoutPlan_structure = ensureDeepIdsInWorkout(newTemplate.workoutPlan_structure || []);
     newTemplate.meals_structure = ensureIdsInArray(newTemplate.meals_structure || [], 'id');
     newTemplate.groceryList_structure = ensureIdsInArray(newTemplate.groceryList_structure || [], 'id');
     newTemplate.bodyMeasurements_structure = ensureIdsInArray(newTemplate.bodyMeasurements_structure || [], 'id');
@@ -389,10 +233,9 @@ const processedSeedData = defaultTemplateSeedData.map(template => {
 });
 seedDataInput.value = JSON.stringify(processedSeedData, null, 2);
 
-
 function logMessage(message, type = 'info') {
     const p = document.createElement('p');
-    p.className = `log-entry ${type}`; // Use class for styling log entries
+    p.className = `log-entry ${type}`;
     p.textContent = message;
     logOutput.appendChild(p);
     logOutput.scrollTop = logOutput.scrollHeight;
@@ -405,109 +248,47 @@ setupButton.addEventListener('click', async () => {
     const adminPassword = adminPasswordInput.value;
     let schemaToCreate, seedDataForTemplates;
 
-    if (!pbUrl || !adminEmail || !adminPassword) {
-        logMessage('PocketBase URL, Admin Email, and Admin Password are required.', 'error');
-        return;
-    }
-
-    try {
-        schemaToCreate = JSON.parse(schemaInput.value);
-        if (!Array.isArray(schemaToCreate)) throw new Error('Schema JSON must be an array.');
-    } catch (e) { logMessage('Error parsing Schema JSON: ' + e.message, 'error'); return; }
-
-    try {
-        seedDataForTemplates = JSON.parse(seedDataInput.value);
-        if (!Array.isArray(seedDataForTemplates)) throw new Error('Seed Data JSON must be an array of template objects.');
-    } catch (e) { logMessage('Error parsing Seed Data JSON: ' + e.message, 'error'); return; }
+    if (!pbUrl || !adminEmail || !adminPassword) { logMessage('PocketBase URL, Admin Email, and Admin Password are required.', 'error'); return; }
+    try { schemaToCreate = JSON.parse(schemaInput.value); if (!Array.isArray(schemaToCreate)) throw new Error('Schema JSON must be an array.'); }
+    catch (e) { logMessage('Error parsing Schema JSON: ' + e.message, 'error'); return; }
+    try { seedDataForTemplates = JSON.parse(seedDataInput.value); if (!Array.isArray(seedDataForTemplates)) throw new Error('Seed Data JSON must be an array.'); }
+    catch (e) { logMessage('Error parsing Seed Data JSON: ' + e.message, 'error'); return; }
 
     const pb = new PocketBase(pbUrl);
-
     try {
-        logMessage(`Attempting to authenticate admin ${adminEmail}...`);
+        logMessage(`Authenticating admin ${adminEmail}...`);
         await pb.admins.authWithPassword(adminEmail, adminPassword);
-        logMessage('Admin authentication successful.', 'success');
+        logMessage('Admin auth successful.', 'success');
 
-        logMessage('\n--- Starting Collection Creation/Update ---', 'info');
-        for (const collectionDef of schemaToCreate) {
-            logMessage(`Processing collection: ${collectionDef.name}`);
-            const collectionPayload = {
-                name: collectionDef.name, type: collectionDef.type || 'base',
-                system: collectionDef.system || false,
-                listRule: collectionDef.listRule !== undefined ? collectionDef.listRule : null,
-                viewRule: collectionDef.viewRule !== undefined ? collectionDef.viewRule : null,
-                createRule: collectionDef.createRule !== undefined ? collectionDef.createRule : "",
-                updateRule: collectionDef.updateRule !== undefined ? collectionDef.updateRule : "",
-                deleteRule: collectionDef.deleteRule !== undefined ? collectionDef.deleteRule : "",
-                options: collectionDef.options || {}, fields: [], indexes: []
-            };
-
-            if (collectionDef.fields && Array.isArray(collectionDef.fields)) {
-                collectionPayload.fields = collectionDef.fields.map(f => ({ name: f.name, type: f.type, required: f.required || false, options: f.options || {} }));
-                collectionDef.fields.forEach(f => { if (f.unique) collectionPayload.indexes.push(`CREATE UNIQUE INDEX idx_unique_${collectionDef.name.replace(/\W/g, '_')}_${f.name.replace(/\W/g, '_')} ON {{${collectionDef.name}}} (${f.name})`); });
-                if(collectionPayload.indexes.length === 0) delete collectionPayload.indexes;
-            }
-
-            if (collectionDef.type === 'view') {
-                if (!collectionDef.viewQuery) { logMessage(`Error: viewQuery required for ${collectionDef.name}. Skipping.`, 'error'); continue; }
-                collectionPayload.viewQuery = collectionDef.viewQuery; delete collectionPayload.fields; delete collectionPayload.indexes;
-            }
+        logMessage('\n--- Collections ---', 'info');
+        for (const colDef of schemaToCreate) {
+            logMessage(`Processing: ${colDef.name}`);
+            const payload = { name: colDef.name, type: colDef.type||'base', system: colDef.system||false, listRule:colDef.listRule, viewRule:colDef.viewRule, createRule:colDef.createRule||"", updateRule:colDef.updateRule||"", deleteRule:colDef.deleteRule||"", options:colDef.options||{}, fields:[], indexes:[]};
+            if(colDef.fields&&Array.isArray(colDef.fields)){ payload.fields=colDef.fields.map(f=>({name:f.name,type:f.type,required:f.required||false,options:f.options||{}})); colDef.fields.forEach(f=>{if(f.unique)payload.indexes.push(`CREATE UNIQUE INDEX idx_uniq_${colDef.name.replace(/\W/g,'_')}_${f.name.replace(/\W/g,'_')} ON {{${colDef.name}}} (${f.name})`);}); if(payload.indexes.length===0)delete payload.indexes;}
+            if(colDef.type==='view'){ if(!colDef.viewQuery){logMessage(`Error: viewQuery missing for ${colDef.name}. Skip.`, 'error');continue;} payload.viewQuery=colDef.viewQuery;delete payload.fields;delete payload.indexes;}
             try {
-                let existingCollection = null;
-                try { existingCollection = await pb.collections.getOne(collectionDef.name); } catch (e) { /* Not found, will create */ }
+                let exCol=null; try{exCol=await pb.collections.getOne(colDef.name);}catch(e){}
+                if(exCol){ logMessage(`Exists: ${colDef.name}. Updating.`, 'warning'); const upP={...payload}; delete upP.name;delete upP.type;delete upP.indexes; if(upP.fields)upP.fields=upP.fields.filter(f=>!f.system); const upd=await pb.collections.update(exCol.id,upP); logMessage(`Updated: ${upd.name}.`, 'success');
+                } else { const cr=await pb.collections.create(payload); logMessage(`Created: ${cr.name} (ID: ${cr.id}).`, 'success'); }
+            } catch (e) { logMessage(`Error for ${colDef.name}: ${e.message}.`, 'error'); if(e.data&&e.data.data)logMessage(JSON.stringify(e.data.data,null,2),'error'); }
+        }
+        logMessage('--- Collections Done ---', 'info');
 
-                if (existingCollection) {
-                    logMessage(`Collection "${collectionDef.name}" exists. Attempting to update (rules, options, non-system fields).`, 'warning');
-                    const updatePayload = { ...collectionPayload };
-                    delete updatePayload.name; delete updatePayload.type; delete updatePayload.indexes;
-                    if (updatePayload.fields) { updatePayload.fields = updatePayload.fields.filter(f => !f.system); }
-                    const updated = await pb.collections.update(existingCollection.id, updatePayload);
-                    logMessage(`Collection "${updated.name}" updated.`, 'success');
-                } else {
-                    const created = await pb.collections.create(collectionPayload);
-                    logMessage(`Collection "${created.name}" (ID: ${created.id}) created.`, 'success');
-                }
-            } catch (e) {
-                logMessage(`Error processing collection "${collectionDef.name}": ${e.message}.`, 'error');
-                if (e.data && e.data.data) logMessage(JSON.stringify(e.data.data, null, 2), 'error');
+        logMessage('\n--- Seeding planner_templates ---', 'info');
+        const tplColName='planner_templates';
+        for(const tplDoc of seedDataForTemplates){
+            if(!tplDoc.template_name){logMessage('Skip seed: no template_name.','warning');continue;}
+            logMessage(`Seed: ${tplDoc.template_name}`);
+            try { await pb.collection(tplColName).getFirstListItem(`template_name="${tplDoc.template_name}"`); logMessage(`Exists: ${tplDoc.template_name}. Skip.`, 'warning');
+            } catch(e) {
+                if(e.status===404){ try{ await pb.collection(tplColName).create(tplDoc); logMessage(`Seeded: ${tplDoc.template_name}.`, 'success'); } catch(crE){ logMessage(`Error seed ${tplDoc.template_name}: ${crE.message}`,'error'); if(crE.data&&crE.data.data)logMessage(JSON.stringify(crE.data.data,null,2),'error');}}
+                else {logMessage(`Error check ${tplDoc.template_name}: ${e.message}`,'error');}
             }
         }
-        logMessage('--- Collection Creation/Update Finished ---', 'info');
-
-        logMessage('\n--- Starting Data Seeding for planner_templates ---', 'info');
-        const templatesCollectionName = 'planner_templates';
-        for (const templateDoc of seedDataForTemplates) {
-            if (!templateDoc.template_name) {
-                logMessage('Skipping seed item without template_name.', 'warning');
-                continue;
-            }
-            logMessage(`Processing seed for template: ${templateDoc.template_name}`);
-            try {
-                await pb.collection(templatesCollectionName).getFirstListItem(`template_name="${templateDoc.template_name}"`);
-                logMessage(`Template "${templateDoc.template_name}" already exists. Skipping creation.`, 'warning');
-            } catch (e) {
-                if (e.status === 404) {
-                    try {
-                        await pb.collection(templatesCollectionName).create(templateDoc);
-                        logMessage(`Template "${templateDoc.template_name}" seeded successfully.`, 'success');
-                    } catch (createError) {
-                        logMessage(`Error seeding template "${templateDoc.template_name}": ${createError.message}`, 'error');
-                        if (createError.data && createError.data.data) logMessage(JSON.stringify(createError.data.data, null, 2), 'error');
-                    }
-                } else {
-                    logMessage(`Error checking for existing template "${templateDoc.template_name}": ${e.message}`, 'error');
-                }
-            }
-        }
-        logMessage('--- Data Seeding Finished ---', 'info');
-        logMessage('\nFull setup process finished.', 'info');
-
-    } catch (e) {
-        logMessage('A major error occurred: ' + e.toString(), 'error');
-        if (e.data && e.data.data) logMessage(JSON.stringify(e.data.data, null, 2), 'error');
-    } finally {
-        pb.authStore.clear();
-        logMessage('Admin session cleared.', 'info');
-    }
+        logMessage('--- Seeding Done ---', 'info');
+        logMessage('\nSetup finished.', 'info');
+    } catch (e) { logMessage('Major error: '+e.toString(),'error'); if(e.data&&e.data.data)logMessage(JSON.stringify(e.data.data,null,2),'error');
+    } finally { pb.authStore.clear(); logMessage('Admin session cleared.', 'info'); }
 });
 </script>
 </body>
