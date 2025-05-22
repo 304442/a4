@@ -3,173 +3,486 @@ function plannerApp() {
   pb.autoCancellation(false);
   let isInitializing = true;
   let lastSavedState = null;
+  let uniqueIdCounter = 0;
+  const generateId = () => `id_${Date.now()}_${uniqueIdCounter++}`;
 
-  const defaultUiConfig = {
-    plannerTitle: 'A4 Planner',
-    mainTableHeaders: ['SECTION', 'ACT', 'ACTIVITY NAME', '', '', '', '', '', '', '', '', '', '', '', '', '', '', 'SCORE', 'MAX', 'STRK'],
+  const ensureIds = (items, idField = 'id') => items.map(item => ({ ...item, [idField]: item[idField] || generateId() }));
+  const ensureDeepIds = (schedule) => schedule.map(section => ({
+    ...section,
+    id: section.id || generateId(),
+    activities: ensureIds(section.activities)
+  }));
+
+  const getDefaultUiConfig = () => ({
+    mainTableHeaders: ['TIME', 'DAY', 'ACTIVITY', 'SCR', 'MAX', '🔥'],
     dayHeaders: ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'],
-    maxHeaders: ['M', 'M', 'M', 'M', 'M', 'M', 'M'],
-    sectionTitles: { tasks: 'TASKS & REMINDERS', workout: 'WORKOUT PLAN', meals: 'MEALS', grocery: 'GROCERY LIST', measurements: 'BODY MEASUREMENTS', financials: 'FINANCIALS' },
-    taskHeaders: ['#', 'P', 'T', 'DESCRIPTION', 'DATE', 'DONE']
-  };
-  const uid = () => Math.random().toString(36).substring(2, 9);
-  const defaultSchedule = [ { id:uid(), name: 'QIYAM', activities: [ { id:uid(), name: 'DAILY: Wakeup early', days: { mon: { value: '', max: 1 }, tue: { value: '', max: 1 }, wed: { value: '', max: 1 }, thu: { value: '', max: 1 }, fri: { value: '', max: 1 }, sat: { value: '', max: 1 }, sun: { value: '', max: 1 } }, score: 0, maxScore: 7, streaks: { current: 0, longest: 0 } }, { id:uid(), name: 'DAILY: Qiyam/Tahajjud', days: { mon: { value: '', max: 1 }, tue: { value: '', max: 1 }, wed: { value: '', max: 1 }, thu: { value: '', max: 1 }, fri: { value: '', max: 1 }, sat: { value: '', max: 1 }, sun: { value: '', max: 1 } }, score: 0, maxScore: 7, streaks: { current: 0, longest: 0 } }, { id:uid(), name: 'DAILY: Nutty Pudding', days: { mon: { value: '', max: 1 }, tue: { value: '', max: 1 }, wed: { value: '', max: 1 }, thu: { value: '', max: 1 }, fri: { value: '', max: 1 }, sat: { value: '', max: 1 }, sun: { value: '', max: 1 } }, score: 0, maxScore: 7, streaks: { current: 0, longest: 0 } } ] }, { id:uid(), name: 'FAJR', activities: [ { id:uid(), name: 'DAILY: Fajr prayer', days: { mon: { value: '', max: 1 }, tue: { value: '', max: 1 }, wed: { value: '', max: 1 }, thu: { value: '', max: 1 }, fri: { value: '', max: 1 }, sat: { value: '', max: 1 }, sun: { value: '', max: 1 } }, score: 0, maxScore: 7, streaks: { current: 0, longest: 0 } }, { id:uid(), name: 'DAILY: Quran - 1 Juz', days: { mon: { value: '', max: 1 }, tue: { value: '', max: 1 }, wed: { value: '', max: 1 }, thu: { value: '', max: 1 }, fri: { value: '', max: 1 }, sat: { value: '', max: 1 }, sun: { value: '', max: 1 } }, score: 0, maxScore: 7, streaks: { current: 0, longest: 0 } }, { id:uid(), name: 'DAILY: 5min Cold Shower', days: { mon: { value: '', max: 1 }, tue: { value: '', max: 1 }, wed: { value: '', max: 1 }, thu: { value: '', max: 1 }, fri: { value: '', max: 1 }, sat: { value: '', max: 1 }, sun: { value: '', max: 1 } }, score: 0, maxScore: 7, streaks: { current: 0, longest: 0 } } ] }, { id:uid(), name: 'TOTAL', activities: [ { id:uid(), name: 'DAILY POINTS', days: { mon: { value: '0', max: 0 }, tue: { value: '0', max: 0 }, wed: { value: '0', max: 0 }, thu: { value: '0', max: 0 }, fri: { value: '0', max: 0 }, sat: { value: '0', max: 0 }, sun: { value: '0', max: 0 } }, score: 0, maxScore: 0, streaks: { current: 0, longest: 0 } } ] } ]; // Add all other default sections and activities with unique IDs
-  const defaultTasks = Array(20).fill(null).map((_,i) => ({ id: `task${i}-${uid()}`, num: '', priority: '', tag: '', description: '', date: '', completed: '' }));
-  const defaultWorkoutPlan = [ { id:uid(), name: 'TUESDAY', exercises: [ { id:uid(), prefix: '• ', name: 'Incline Dumbbell Press', weight: '', sets: '', reps: '', defaultWeight: '30', defaultSets: '3', defaultReps: '12' }, { id:uid(), prefix: '• ', name: 'Barbell Squats', weight: '', sets: '', reps: '', defaultWeight: '80', defaultSets: '3', defaultReps: '8' } ] }, { id:uid(), name: 'WEDNESDAY', exercises: [ { id:uid(), prefix: '• ', name: 'Barbell Bench Press', weight: '', sets: '', reps: '', defaultWeight: '70', defaultSets: '3', defaultReps: '6' } ] }, { id:uid(), name: 'FRIDAY', exercises: [ { id:uid(), prefix: '• ', name: 'Seated DB Shoulder Press', weight: '', sets: '', reps: '', defaultWeight: '20', defaultSets: '3', defaultReps: '12' } ] } ];
-  const defaultMeals = [ { id:uid(), name: 'Nutty Pudding', ingredients: 'Berries ½c, Cherries 3, Pomegranate Juice 2oz, Macadamia nuts (raw) 45g, Walnuts (raw) 5g, Cocoa 1t, Brazil Nuts ¼, Milk 50-100ml, Chia Seeds 2T, Flax (ground, refr) 1t, Lecithin 1t, Ceylon Cinnamon ½t' }, { id:uid(), name: 'Super Veggie', ingredients: 'Broccoli 250g, Cauliflower 150g, Mushrooms 50g, Garlic 1 clove, Ginger 3g, Cumin 1T, Black Lentils 45g, Hemp Seeds 1T, Apple Cider Vinegar 1T' }, { id:uid(), name: 'Third Meal', ingredients: 'Sweet Potato 350-400g, Protein 100-150g, Grape Tomatoes 12, Avocado ½, Radishes 4, Cilantro ¼c, Lemon 1, Jalapeño (lg) 1, Chili Powder 1t' } ];
-  const defaultGroceryList = [ { id:uid(), name: 'Produce', items: 'Broccoli 1.75kg, Cauliflower 1.05kg, Mushrooms 350g, Garlic 1 bulb, Ginger 1pc, Sweet Potato 2.8kg, Grape Tomatoes 84, Avocados (ripe) 4, Radishes 28, Cilantro 2-3 bunch' }, { id:uid(), name: 'Fruits & Protein', items: 'Lemons 7, Jalapeños (lg) 7, Berries 3.5c, Cherries 21, Black Lentils 315g, Protein 1.05kg, Milk (fortified) 1L' } ];
-  const defaultBodyMeasurements = [ { id:uid(), name: 'Weight', value: '', placeholder: '75kg' }, { id:uid(), name: 'Chest', value: '', placeholder: '42in' }, { id:uid(), name: 'Waist', value: '', placeholder: '34in' }, { id:uid(), name: 'Hips', value: '', placeholder: '40in' }, { id:uid(), name: 'Arms', value: '', placeholder: '15in' }, { id:uid(), name: 'Thighs', value: '', placeholder: '24in' } ];
-  const defaultFinancials = [ { id:uid(), name: 'Rent', value: '', placeholder: '850', account: 'Cash' }, { id:uid(), name: 'Allowance', value: '', placeholder: '850', account: 'Revolut' }, { id:uid(), name: 'Savings', value: '', placeholder: '3,800', account: 'HSBCUK' } ];
-  const defaultTimes = [ { id:uid(), label: 'Q', value: '' }, { id:uid(), label: 'F', value: '' }, { id:uid(), label: 'D', value: '' }, { id:uid(), label: 'A', value: '' }, { id:uid(), label: 'M', value: '' }, { id:uid(), label: 'I', value: '' } ];
+    maxHeaders: Array(7).fill('MAX'),
+    taskHeaders: ['№', '🔥', '🏷️', '✏️ Task/Event/Note', '📅', '✓'],
+    sectionTitles: { tasks: 'TASKS & NOTES', workout: 'WORKOUT PLAN', meals: 'MEAL PREP', grocery: 'GROCERY LIST', measurements: 'BODY MEASUREMENTS', financials: 'MONTH/1ST: FINANCIAL' }
+  });
+
+  const initialSchedule = [
+      { id: generateId(), name: 'QIYAM', activities: ensureIds([
+          { name: 'DAILY: Wakeup early', days: { mon: {value:'',max:1}, tue: {value:'',max:1}, wed: {value:'',max:1}, thu: {value:'',max:1}, fri: {value:'',max:1}, sat: {value:'',max:1}, sun: {value:'',max:1} }, score:0, maxScore:7, streaks:{current:0,longest:0}},
+          { name: 'DAILY: Qiyam/Tahajjud', days: { mon: {value:'',max:1}, tue: {value:'',max:1}, wed: {value:'',max:1}, thu: {value:'',max:1}, fri: {value:'',max:1}, sat: {value:'',max:1}, sun: {value:'',max:1} }, score:0, maxScore:7, streaks:{current:0,longest:0}},
+          { name: 'DAILY: Nutty Pudding', days: { mon: {value:'',max:1}, tue: {value:'',max:1}, wed: {value:'',max:1}, thu: {value:'',max:1}, fri: {value:'',max:1}, sat: {value:'',max:1}, sun: {value:'',max:1} }, score:0, maxScore:7, streaks:{current:0,longest:0}}
+      ])},
+      { id: generateId(), name: 'FAJR', activities: ensureIds([
+          { name: 'DAILY: Fajr prayer', days: { mon: {value:'',max:1}, tue: {value:'',max:1}, wed: {value:'',max:1}, thu: {value:'',max:1}, fri: {value:'',max:1}, sat: {value:'',max:1}, sun: {value:'',max:1} }, score:0, maxScore:7, streaks:{current:0,longest:0}},
+          { name: 'DAILY: Quran - 1 Juz', days: { mon: {value:'',max:1}, tue: {value:'',max:1}, wed: {value:'',max:1}, thu: {value:'',max:1}, fri: {value:'',max:1}, sat: {value:'',max:1}, sun: {value:'',max:1} }, score:0, maxScore:7, streaks:{current:0,longest:0}},
+          { name: 'DAILY: 5min Cold Shower', days: { mon: {value:'',max:1}, tue: {value:'',max:1}, wed: {value:'',max:1}, thu: {value:'',max:1}, fri: {value:'',max:1}, sat: {value:'',max:1}, sun: {value:'',max:1} }, score:0, maxScore:7, streaks:{current:0,longest:0}}
+      ])},
+      { id: generateId(), name: '7AM - 9AM', activities: ensureIds([
+          { name: 'MON/THU: COMMUTE', days: { mon: {value:'',max:1}, thu: {value:'',max:1} }, score:0, maxScore:2, streaks:{current:0,longest:0}},
+          { name: 'TUE/WED/FRI: Reading/Study (book/course/skill)', days: { tue: {value:'',max:1}, wed: {value:'',max:1}, fri: {value:'',max:1} }, score:0, maxScore:3, streaks:{current:0,longest:0}},
+          { name: 'SAT: Errands, Grocery shopping, Meal prep', days: { sat: {value:'',max:3} }, score:0, maxScore:3, streaks:{current:0,longest:0}},
+          { name: 'SUN: House cleaning, laundry', days: { sun: {value:'',max:2} }, score:0, maxScore:2, streaks:{current:0,longest:0}}
+      ])},
+      { id: generateId(), name: '9AM - 5PM', activities: ensureIds([
+          { name: 'MON - FRI: Work', days: { mon: {value:'',max:1}, tue: {value:'',max:1}, wed: {value:'',max:1}, thu: {value:'',max:1}, fri: {value:'',max:1} }, score:0, maxScore:5, streaks:{current:0,longest:0}},
+          { name: 'DAILY: ZeroInbox (E1, E2, E3, E4, LI, Slack)', days: { mon: {value:'',max:6}, tue: {value:'',max:6}, wed: {value:'',max:6}, thu: {value:'',max:6}, fri: {value:'',max:6} }, score:0, maxScore:30, streaks:{current:0,longest:0}},
+          { name: 'SAT/SUN: Nature time / Outdoor Activity / Adventure', days: { sat: {value:'',max:1}, sun: {value:'',max:1} }, score:0, maxScore:2, streaks:{current:0,longest:0}}
+      ])},
+      { id: generateId(), name: 'DHUHR', activities: ensureIds([
+          { name: 'DAILY: Dhuhr prayer', days: { mon: {value:'',max:1}, tue: {value:'',max:1}, wed: {value:'',max:1}, thu: {value:'',max:1}, fri: {value:'',max:1}, sat: {value:'',max:1}, sun: {value:'',max:1} }, score:0, maxScore:7, streaks:{current:0,longest:0}},
+          { name: 'TUE/WED/FRI: Sun walk (30-45 minutes)', days: { tue: {value:'',max:1}, wed: {value:'',max:1}, fri: {value:'',max:1} }, score:0, maxScore:3, streaks:{current:0,longest:0}},
+          { name: 'FRI: £10 Sadaqa', days: { fri: {value:'',max:1} }, score:0, maxScore:1, streaks:{current:0,longest:0}}
+      ])},
+      { id: generateId(), name: 'ASR', activities: ensureIds([
+          { name: 'DAILY: Asr prayer', days: { mon: {value:'',max:1}, tue: {value:'',max:1}, wed: {value:'',max:1}, thu: {value:'',max:1}, fri: {value:'',max:1}, sat: {value:'',max:1}, sun: {value:'',max:1} }, score:0, maxScore:7, streaks:{current:0,longest:0}}
+      ])},
+      { id: generateId(), name: '5PM - 6:30PM', activities: ensureIds([
+          { name: 'MON/THU: COMMUTE', days: { mon: {value:'',max:1}, thu: {value:'',max:1} }, score:0, maxScore:2, streaks:{current:0,longest:0}},
+          { name: 'TUE/WED/FRI: Workout', days: { tue: {value:'',max:1}, wed: {value:'',max:1}, fri: {value:'',max:1} }, score:0, maxScore:3, streaks:{current:0,longest:0}},
+          { name: 'TUE/WED/FRI: Third Meal', days: { tue: {value:'',max:1}, wed: {value:'',max:1}, fri: {value:'',max:1} }, score:0, maxScore:3, streaks:{current:0,longest:0}}
+      ])},
+      { id: generateId(), name: '6:30PM - ISHA', activities: ensureIds([
+          { name: 'MON/TUE/WED/THU: Personal', days: { mon: {value:'',max:1}, tue: {value:'',max:1}, wed: {value:'',max:1}, thu: {value:'',max:1} }, score:0, maxScore:4, streaks:{current:0,longest:0}},
+          { name: 'DAILY: Family/Friends/Date calls(M, WA, Phone)', days: { mon: {value:'',max:3}, tue: {value:'',max:3}, wed: {value:'',max:3}, thu: {value:'',max:3} }, score:0, maxScore:12, streaks:{current:0,longest:0}},
+          { name: 'FRI/SAT/SUN: Family/Friends/Date visits/outings/activities', days: { fri: {value:'',max:3}, sat: {value:'',max:3}, sun: {value:'',max:3} }, score:0, maxScore:9, streaks:{current:0,longest:0}}
+      ])},
+      { id: generateId(), name: 'MAGHRIB', activities: ensureIds([
+          { name: 'DAILY: Maghrib prayer', days: { mon: {value:'',max:1}, tue: {value:'',max:1}, wed: {value:'',max:1}, thu: {value:'',max:1}, fri: {value:'',max:1}, sat: {value:'',max:1}, sun: {value:'',max:1} }, score:0, maxScore:7, streaks:{current:0,longest:0}},
+          { name: 'DAILY: Super Veggie', days: { mon: {value:'',max:1}, tue: {value:'',max:1}, wed: {value:'',max:1}, thu: {value:'',max:1}, fri: {value:'',max:1}, sat: {value:'',max:1}, sun: {value:'',max:1} }, score:0, maxScore:7, streaks:{current:0,longest:0}}
+      ])},
+      { id: generateId(), name: 'ISHA', activities: ensureIds([
+          { name: 'DAILY: Isha prayer', days: { mon: {value:'',max:1}, tue: {value:'',max:1}, wed: {value:'',max:1}, thu: {value:'',max:1}, fri: {value:'',max:1}, sat: {value:'',max:1}, sun: {value:'',max:1} }, score:0, maxScore:7, streaks:{current:0,longest:0}},
+          { name: 'DAILY: Sleep early', days: { mon: {value:'',max:1}, tue: {value:'',max:1}, wed: {value:'',max:1}, thu: {value:'',max:1}, fri: {value:'',max:1}, sat: {value:'',max:1}, sun: {value:'',max:1} }, score:0, maxScore:7, streaks:{current:0,longest:0}}
+      ])},
+      { id: generateId(), name: 'ALLDAY', activities: ensureIds([
+          { name: 'DAILY: No Doomscrolling; (FB, YTB, LKDN, & IG)', days: { mon: {value:'',max:4}, tue: {value:'',max:4}, wed: {value:'',max:4}, thu: {value:'',max:4}, fri: {value:'',max:4}, sat: {value:'',max:4}, sun: {value:'',max:4} }, score:0, maxScore:28, streaks:{current:0,longest:0}},
+          { name: 'DAILY: No Fap; (P, & M)', days: { mon: {value:'',max:2}, tue: {value:'',max:2}, wed: {value:'',max:2}, thu: {value:'',max:2}, fri: {value:'',max:2}, sat: {value:'',max:2}, sun: {value:'',max:2} }, score:0, maxScore:14, streaks:{current:0,longest:0}},
+          { name: 'DAILY: No Processed; (Sugar, RefinedFlour, SeedOils, Soda, FastFood)', days: { mon: {value:'',max:5}, tue: {value:'',max:5}, wed: {value:'',max:5}, thu: {value:'',max:5}, fri: {value:'',max:5}, sat: {value:'',max:5}, sun: {value:'',max:5} }, score:0, maxScore:35, streaks:{current:0,longest:0}},
+          { name: 'MON/THU: Fasting', days: { mon: {value:'',max:1}, thu: {value:'',max:1} }, score:0, maxScore:2, streaks:{current:0,longest:0}},
+          { name: 'DAILY: Expense Tracker <25', days: { mon: {value:'',max:0}, tue: {value:'',max:0}, wed: {value:'',max:0}, thu: {value:'',max:0}, fri: {value:'',max:0}, sat: {value:'',max:0}, sun: {value:'',max:0} }, score:0, maxScore:0, streaks:{current:0,longest:0}}
+      ])},
+      { id: generateId(), name: 'TOTAL', activities: ensureIds([
+          { name: 'DAILY POINTS', days: { mon: {value:'0',max:0}, tue: {value:'0',max:0}, wed: {value:'0',max:0}, thu: {value:'0',max:0}, fri: {value:'0',max:0}, sat: {value:'0',max:0}, sun: {value:'0',max:0} }, score:0, maxScore:0, streaks:{current:0,longest:0}}
+      ])}
+  ];
+  const initialWorkoutPlan = [
+      { id: generateId(), name: 'TUESDAY', exercises: ensureIds([
+          { prefix: '• ', name: 'Incline Dumbbell Press', weight: '', sets: '', reps: '', defaultWeight: '30', defaultSets: '3', defaultReps: '12' },
+          { prefix: '• ', name: 'Barbell Squats', weight: '', sets: '', reps: '', defaultWeight: '80', defaultSets: '3', defaultReps: '8' },
+          { prefix: '• ', name: 'DB Chest-Supported Row', weight: '', sets: '', reps: '', defaultWeight: '25', defaultSets: '3', defaultReps: '12' },
+          { prefix: '• ', name: 'Leg Curls', weight: '', sets: '', reps: '', defaultWeight: '40', defaultSets: '3', defaultReps: '15' },
+          { prefix: '• SS: ', name: 'Incline DB Curls', weight: '', sets: '', reps: '', defaultWeight: '15', defaultSets: '3', defaultReps: '12' },
+          { prefix: '• SS: ', name: 'Tricep Extensions', weight: '', sets: '', reps: '', defaultWeight: '20', defaultSets: '3', defaultReps: '12' }
+      ])},
+      { id: generateId(), name: 'WEDNESDAY', exercises: ensureIds([
+          { prefix: '• ', name: 'Barbell Bench Press', weight: '', sets: '', reps: '', defaultWeight: '70', defaultSets: '3', defaultReps: '6' },
+          { prefix: '• ', name: 'Romanian Deadlift', weight: '', sets: '', reps: '', defaultWeight: '90', defaultSets: '3', defaultReps: '8' },
+          { prefix: '• ', name: 'Lat Pulldown', weight: '', sets: '', reps: '', defaultWeight: '60', defaultSets: '3', defaultReps: '12' },
+          { prefix: '• ', name: 'Walking Lunges', weight: '', sets: '', reps: '', defaultWeight: '20', defaultSets: '3', defaultReps: '10' },
+          { prefix: '• SS: ', name: 'Cable Lateral Raises', weight: '', sets: '', reps: '', defaultWeight: '15', defaultSets: '3', defaultReps: '15' },
+          { prefix: '• SS: ', name: 'Reverse Crunches', weight: '', sets: '', reps: '', defaultWeight: '0', defaultSets: '3', defaultReps: '15' }
+      ])},
+      { id: generateId(), name: 'FRIDAY', exercises: ensureIds([
+          { prefix: '• ', name: 'Seated DB Shoulder Press', weight: '', sets: '', reps: '', defaultWeight: '20', defaultSets: '3', defaultReps: '12' },
+          { prefix: '• ', name: 'Dumbbell Row', weight: '', sets: '', reps: '', defaultWeight: '25', defaultSets: '3', defaultReps: '12' },
+          { prefix: '• ', name: 'Barbell Hip Thrust', weight: '', sets: '', reps: '', defaultWeight: '100', defaultSets: '3', defaultReps: '15' },
+          { prefix: '• ', name: 'Leg Extensions', weight: '', sets: '', reps: '', defaultWeight: '50', defaultSets: '3', defaultReps: '15' },
+          { prefix: '• ', name: 'Seated Chest Flyes', weight: '', sets: '', reps: '', defaultWeight: '15', defaultSets: '3', defaultReps: '15' },
+          { prefix: '• SS: ', name: 'Standing Calf Raises', weight: '', sets: '', reps: '', defaultWeight: '30', defaultSets: '3', defaultReps: '15' },
+          { prefix: '• SS: ', name: 'Reverse Cable Flyes', weight: '', sets: '', reps: '', defaultWeight: '20', defaultSets: '3', defaultReps: '15' }
+      ])}
+  ];
+  const initialMeals = ensureIds([
+      { name: 'Nutty Pudding', ingredients: 'Berries ½c, Cherries 3, Pomegranate Juice 2oz, Macadamia nuts (raw) 45g, Walnuts (raw) 5g, Cocoa 1t, Brazil Nuts ¼, Milk 50-100ml, Chia Seeds 2T, Flax (ground, refr) 1t, Lecithin 1t, Ceylon Cinnamon ½t' },
+      { name: 'Super Veggie', ingredients: 'Broccoli 250g, Cauliflower 150g, Mushrooms 50g, Garlic 1 clove, Ginger 3g, Cumin 1T, Black Lentils 45g, Hemp Seeds 1T, Apple Cider Vinegar 1T' },
+      { name: 'Third Meal', ingredients: 'Sweet Potato 350-400g, Protein 100-150g, Grape Tomatoes 12, Avocado ½, Radishes 4, Cilantro ¼c, Lemon 1, Jalapeño (lg) 1, Chili Powder 1t' }
+  ]);
+  const initialGroceryList = ensureIds([
+      { name: 'Produce', items: 'Broccoli 1.75kg, Cauliflower 1.05kg, Mushrooms 350g, Garlic 1 bulb, Ginger 1pc, Sweet Potato 2.8kg, Grape Tomatoes 84, Avocados (ripe) 4, Radishes 28, Cilantro 2-3 bunch' },
+      { name: 'Fruits & Protein', items: 'Lemons 7, Jalapeños (lg) 7, Berries 3.5c, Cherries 21, Black Lentils 315g, Protein 1.05kg, Milk (fortified) 1L' }
+  ]);
+  const initialBodyMeasurements = ensureIds([
+      { name: 'Weight', value: '', placeholder: '75kg' }, { name: 'Chest', value: '', placeholder: '42in' },
+      { name: 'Waist', value: '', placeholder: '34in' }, { name: 'Hips', value: '', placeholder: '40in' },
+      { name: 'Arms', value: '', placeholder: '15in' }, { name: 'Thighs', value: '', placeholder: '24in' }
+  ]);
+  const initialFinancials = ensureIds([
+      { name: 'Rent', value: '', placeholder: '850', account: 'Cash' },
+      { name: 'Allowance', value: '', placeholder: '850', account: 'Revolut' },
+      { name: 'Savings', value: '', placeholder: '3,800', account: 'HSBCUK' }
+  ]);
+
 
   return {
-    plannerTitle: defaultUiConfig.plannerTitle,
-    uiConfig: JSON.parse(JSON.stringify(defaultUiConfig)),
     currentWeek: '', dateRange: '', city: 'London', saveStatus: 'saved', saveTimeout: null,
-    showNotification: false, notificationMessage: '', notificationTimeout: null, isOnline: navigator.onLine, pendingSync: [],
-    showCitySelector: false, showWeekSelector: false, dropdownPosition: { top: 0, left: 0 }, currentDay: (new Date()).getDay(),
-    newActivityName: '', contextMenu: { show: false, top: 0, left: 0, type: null, data: null }, hasUnsavedChanges: false,
-    editingTarget: null, editValue: '',
-    times: JSON.parse(JSON.stringify(defaultTimes)),
+    showNotification: false, notificationMessage: '', notificationTimeout: null, isOnline: navigator.onLine,
+    pendingSync: [], showCitySelector: false, showWeekSelector: false, dropdownPosition: { top: 0, left: 0 },
+    currentDay: (new Date()).getDay(), plannerTitle: 'Weekly Planner', uiConfig: getDefaultUiConfig(),
+    times: [ { label: 'Q', value: '' }, { label: 'F', value: '' }, { label: 'D', value: '' }, { label: 'A', value: '' }, { label: 'M', value: '' }, { label: 'I', value: '' } ],
     cityOptions: [ { name: 'London', lat: 51.5074, lon: -0.1278 }, { name: 'Cairo', lat: 30.0444, lon: 31.2357 }, { name: 'Cape Town', lat: -33.9249, lon: 18.4241 }, { name: 'Amsterdam', lat: 52.3676, lon: 4.9041 }, { name: 'Current Location', lat: null, lon: null } ],
     savedWeeks: [],
-    schedule: JSON.parse(JSON.stringify(defaultSchedule)),
-    tasks: JSON.parse(JSON.stringify(defaultTasks)),
-    workoutPlan: JSON.parse(JSON.stringify(defaultWorkoutPlan)),
-    meals: JSON.parse(JSON.stringify(defaultMeals)),
+    schedule: JSON.parse(JSON.stringify(initialSchedule)), // Deep copy with IDs
+    tasks: Array(20).fill().map(() => ({ id: generateId(), num: '', priority: '', tag: '', description: '', date: '', completed: '' })),
+    workoutPlan: JSON.parse(JSON.stringify(initialWorkoutPlan)),
+    meals: JSON.parse(JSON.stringify(initialMeals)),
     groceryBudget: '',
-    groceryList: JSON.parse(JSON.stringify(defaultGroceryList)),
-    bodyMeasurements: JSON.parse(JSON.stringify(defaultBodyMeasurements)),
-    financials: JSON.parse(JSON.stringify(defaultFinancials)),
+    groceryList: JSON.parse(JSON.stringify(initialGroceryList)),
+    bodyMeasurements: JSON.parse(JSON.stringify(initialBodyMeasurements)),
+    financials: JSON.parse(JSON.stringify(initialFinancials)),
 
     async init() {
-      this.currentDay = (new Date()).getDay();
+      window.addEventListener('online', () => { this.isOnline = true; this.syncPendingData(); });
+      window.addEventListener('offline', () => this.isOnline = false);
+      document.addEventListener('click', e => { if (!e.target.closest('.dropdown,.clickable')) this.showCitySelector = this.showWeekSelector = false; });
+      this.pendingSync = JSON.parse(localStorage.getItem('planner_pending_sync') || '[]');
+      this.currentWeek = this.getCurrentIsoWeek();
+      this.dateRange = this.getWeekDateRange(this.parseISOWeek(this.currentWeek));
+      this.schedule = ensureDeepIds(this.schedule); // Ensure IDs on initial load if somehow missing
+      await this.loadWeek(this.currentWeek, true);
+      setInterval(() => { if (!isInitializing && this.hasSignificantChanges()) this.saveData(); }, 30000);
+      if (this.isOnline) this.syncPendingData();
+      isInitializing = false;
+    },
+
+    editInline(event, type, index, defaultValue = '') {
+      const element = event.currentTarget;
+      const originalText = element.innerText;
+      const isTextarea = ['mealIngredients', 'groceryCategoryItems'].includes(type);
+      const input = document.createElement(isTextarea ? 'textarea' : 'input');
+      input.type = 'text'; input.value = defaultValue;
+      input.className = isTextarea ? 'inline-edit-textarea' : 'inline-edit-input';
+      if (isTextarea) input.rows = 3;
+      element.innerHTML = ''; element.appendChild(input); input.focus(); input.select();
+
+      const save = () => {
+        const newValue = input.value;
+        let sIdxMapped = -1, activity, parts;
+        if (type === 'sectionName' || (typeof index === 'object' && index !== null && typeof index.sIdx === 'number')) {
+            sIdxMapped = this.schedule.length - 1 - (typeof index === 'object' ? index.sIdx : index);
+        }
+        
+        const scheduleActivity = (idx) => this.schedule[sIdxMapped]?.activities[idx.aIdx];
+
+        switch (type) {
+          case 'plannerTitle': this.plannerTitle = newValue; break;
+          case 'timeLabel': if (this.times[index]) this.times[index].label = newValue; break;
+          case 'sectionName': if (sIdxMapped !== -1 && this.schedule[sIdxMapped]) this.schedule[sIdxMapped].name = newValue; break;
+          case 'activityPrefix':
+            activity = scheduleActivity(index);
+            if (activity) { parts = activity.name.split(':'); activity.name = newValue + (parts.length > 1 ? ':' + parts.slice(1).join(':').trimStart() : ''); }
+            break;
+          case 'activityName':
+            activity = scheduleActivity(index);
+            if (activity) { parts = activity.name.split(':'); activity.name = (parts.length > 1 ? parts[0].trim() + ': ' : '') + newValue; }
+            break;
+          case 'maxValue':
+            activity = scheduleActivity(index);
+            if (activity?.days[index.day]) activity.days[index.day].max = parseInt(newValue) || 0;
+            break;
+          case 'maxScore':
+            activity = scheduleActivity(index);
+            if (activity) activity.maxScore = parseInt(newValue) || 0;
+            break;
+          case 'sectionTitle': if (this.uiConfig.sectionTitles[index]) this.uiConfig.sectionTitles[index] = newValue; break;
+          case 'mainTableHeader': if (this.uiConfig.mainTableHeaders[index] !== undefined) this.uiConfig.mainTableHeaders[index] = newValue; break;
+          case 'dayHeader': if (this.uiConfig.dayHeaders[index] !== undefined) this.uiConfig.dayHeaders[index] = newValue; break;
+          case 'maxHeader': if (this.uiConfig.maxHeaders[index] !== undefined) this.uiConfig.maxHeaders[index] = newValue; break;
+          case 'taskHeader': if (this.uiConfig.taskHeaders[index] !== undefined) this.uiConfig.taskHeaders[index] = newValue; break;
+          case 'workoutDayName': if (this.workoutPlan[index]) this.workoutPlan[index].name = newValue; break;
+          case 'exercisePrefix': if (this.workoutPlan[index.dayIdx]?.exercises[index.exIdx]) this.workoutPlan[index.dayIdx].exercises[index.exIdx].prefix = newValue; break;
+          case 'exerciseName': if (this.workoutPlan[index.dayIdx]?.exercises[index.exIdx]) this.workoutPlan[index.dayIdx].exercises[index.exIdx].name = newValue; break;
+          case 'mealName': if (this.meals[index]) this.meals[index].name = newValue; break;
+          case 'mealIngredients': if (this.meals[index]) this.meals[index].ingredients = newValue; break;
+          case 'groceryCategoryName': if (this.groceryList[index]) this.groceryList[index].name = newValue; break;
+          case 'groceryCategoryItems': if (this.groceryList[index]) this.groceryList[index].items = newValue; break;
+          case 'measurementName': if (this.bodyMeasurements[index]) this.bodyMeasurements[index].name = newValue; break;
+          case 'financialName': if (this.financials[index]) this.financials[index].name = newValue; break;
+          case 'financialAccount': if (this.financials[index]) this.financials[index].account = newValue; break;
+        }
+        if (input.parentNode === element) element.removeChild(input);
+        element.innerText = newValue || originalText; this.saveData();
+      };
+      const handleKey = (e) => {
+        if (e.key === 'Enter' && !isTextarea) { e.preventDefault(); cleanupAndSave(); }
+        else if (e.key === 'Escape') { cleanupAndRestore(); }
+      };
+      const cleanupAndSave = () => { input.removeEventListener('blur', cleanupAndSave); input.removeEventListener('keydown', handleKey); save(); };
+      const cleanupAndRestore = () => {
+        input.removeEventListener('blur', cleanupAndSave); input.removeEventListener('keydown', handleKey);
+        if (input.parentNode === element) element.removeChild(input);
+        element.innerText = originalText;
+      };
+      input.addEventListener('blur', cleanupAndSave); input.addEventListener('keydown', handleKey);
+    },
+
+    toggleTaskCompletion(task) { task.completed = task.completed === '✓' ? '☐' : '✓'; this.saveData(); },
+    showErrorMessage(message) {
+      this.notificationMessage = message; this.showNotification = true; clearTimeout(this.notificationTimeout);
+      this.notificationTimeout = setTimeout(() => this.showNotification = false, 5000);
+    },
+    validateValue(value, isNumber = false, min = null, max = null) {
+      const sValue = String(value || ''); if (sValue.trim() === '') return '';
+      if (isNumber) {
+        const num = parseFloat(sValue); if (isNaN(num)) return '';
+        if (min !== null && num < min) return min.toString(); if (max !== null && num > max) return max.toString(); return num.toString();
+      } return sValue;
+    },
+    getCurrentIsoWeek() {
+      const now = new Date(), d = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
+      d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7));
+      const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+      return `${d.getUTCFullYear()}-W${Math.ceil((((d - yearStart) / 864e5) + 1) / 7).toString().padStart(2, '0')}`;
+    },
+    parseISOWeek(isoWeekStr) {
+      if (!/^\d{4}-W(0[1-9]|[1-4]\d|5[0-3])$/.test(isoWeekStr)) return new Date();
+      const [year, weekPart] = isoWeekStr.split('-'), week = parseInt(weekPart.substring(1));
+      const d = new Date(Date.UTC(parseInt(year), 0, 1 + (week - 1) * 7));
+      d.setUTCDate(d.getUTCDate() - (d.getUTCDay() || 7) + 1); return d;
+    },
+    getWeekDateRange(date) {
+      const start = new Date(date), end = new Date(start); end.setUTCDate(start.getUTCDate() + 6);
+      return `${this.formatDate(start)}-${this.formatDate(end)}`;
+    },
+    formatDate: (d) => `${(d.getUTCMonth() + 1).toString().padStart(2, '0')}/${d.getUTCDate().toString().padStart(2, '0')}`,
+    formatShortDate(index) { const d = new Date(); d.setDate(d.getDate() + index); return `${d.getMonth() + 1}/${d.getDate()}`; },
+    toggleDropdown(type, event) {
+      const showProp = `show${type.charAt(0).toUpperCase() + type.slice(1)}Selector`;
+      const otherShowProp = type === 'city' ? 'showWeekSelector' : 'showCitySelector';
+      this[otherShowProp] = false;
+      const rect = event.target.getBoundingClientRect();
+      this.dropdownPosition = { top: rect.bottom + window.scrollY, left: rect.left + window.scrollX };
+      this[showProp] = !this[showProp];
+      if (type === 'week' && this[showProp]) this.fetchSavedWeeks();
+    },
+    toggleCitySelector(event) { this.toggleDropdown('city', event); },
+    toggleWeekSelector(event) { this.toggleDropdown('week', event); },
+
+    async loadWeek(isoWeek, isInitLoad = false) {
+      if (!/^\d{4}-W(0[1-9]|[1-4]\d|5[0-3])$/.test(isoWeek)) { this.showErrorMessage("Invalid week format"); return; }
+      this.showWeekSelector = false; this.currentWeek = isoWeek; this.dateRange = this.getWeekDateRange(this.parseISOWeek(isoWeek));
+      let record = null;
+      if (this.isOnline) {
+        try { record = await pb.collection('planners').getFirstListItem(`week_id="${isoWeek}"`); }
+        catch (e) { if (e.status !== 404) console.error("PB load error:", e); }
+      }
+      if (!record) { const local = localStorage.getItem(`planner_${isoWeek}`); if (local) try {record = JSON.parse(local);} catch(e){console.error("Local parse error",e); record={};} }
+      this.populateFields(record || {});
+      this.calculateScores();
+      if (isInitLoad && (!this.times[0].value || !this.times[1].value)) await this.getPrayerTimes();
+      if (isInitLoad) isInitializing = false; // Moved here to ensure it's set after all initial loading logic
+      lastSavedState = JSON.stringify(this.getCurrentDataState()); // Set lastSavedState *after* populating
+    },
+    populateFields(data) {
+      this.plannerTitle = data.plannerTitle || 'Weekly Planner';
+      const defConf = getDefaultUiConfig();
+      this.uiConfig = { ...defConf, ...(data.uiConfig || {}), sectionTitles: { ...defConf.sectionTitles, ...(data.uiConfig?.sectionTitles || {}) } };
+      this.times.forEach((t, i) => { t.value = data.times?.[i]?.value || ''; t.label = data.times?.[i]?.label || t.label; });
+      
+      const defaultScheduleCopy = JSON.parse(JSON.stringify(initialSchedule));
+      this.schedule = ensureDeepIds(data.schedule || defaultScheduleCopy).map((s, sIdx) => ({
+        ...s,
+        name: s.name || defaultScheduleCopy[sIdx]?.name,
+        activities: ensureIds(s.activities || defaultScheduleCopy[sIdx]?.activities || []).map((a, aIdx) => ({
+          ...a,
+          name: a.name || defaultScheduleCopy[sIdx]?.activities[aIdx]?.name,
+          maxScore: typeof a.maxScore === 'number' ? a.maxScore : (defaultScheduleCopy[sIdx]?.activities[aIdx]?.maxScore || 0),
+          streaks: { current:0, longest:0, ...(a.streaks || defaultScheduleCopy[sIdx]?.activities[aIdx]?.streaks) },
+          days: Object.fromEntries(Object.entries(a.days || defaultScheduleCopy[sIdx]?.activities[aIdx]?.days || {}).map(([dayKey, dayData]) => [
+            dayKey, {
+              value: this.validateValue(dayData?.value, true, 0, (dayData?.max < 10 ? 9 : 99)),
+              max: typeof dayData?.max === 'number' ? dayData.max : 1
+            }
+          ]))
+        }))
+      }));
+
+      this.tasks = (data.tasks || Array(20).fill({})).map((t, i) => ({
+        id: t.id || this.tasks[i]?.id || generateId(),
+        num: this.validateValue(t.num), priority: this.validateValue(t.priority), tag: this.validateValue(t.tag),
+        description: this.validateValue(t.description), date: this.validateValue(t.date), completed: this.validateValue(t.completed)
+      }));
+      
+      const defaultWorkoutCopy = JSON.parse(JSON.stringify(initialWorkoutPlan));
+      this.workoutPlan = (data.workoutPlan || defaultWorkoutCopy).map((d, dIdx) => ({
+        ...d, id: d.id || defaultWorkoutCopy[dIdx]?.id || generateId(), name: d.name || defaultWorkoutCopy[dIdx]?.name,
+        exercises: ensureIds(d.exercises || defaultWorkoutCopy[dIdx]?.exercises || []).map((ex, exIdx) => ({
+          ...ex, name: ex.name || defaultWorkoutCopy[dIdx]?.exercises[exIdx]?.name, prefix: ex.prefix || defaultWorkoutCopy[dIdx]?.exercises[exIdx]?.prefix,
+          weight: this.validateValue(ex.weight, true,0,999), sets: this.validateValue(ex.sets,true,0,99), reps: this.validateValue(ex.reps,true,0,99),
+          defaultWeight: ex.defaultWeight || defaultWorkoutCopy[dIdx]?.exercises[exIdx]?.defaultWeight, defaultSets: ex.defaultSets || defaultWorkoutCopy[dIdx]?.exercises[exIdx]?.defaultSets, defaultReps: ex.defaultReps || defaultWorkoutCopy[dIdx]?.exercises[exIdx]?.defaultReps
+        }))
+      }));
+
+      const defaultMealsCopy = JSON.parse(JSON.stringify(initialMeals));
+      this.meals = (data.meals || defaultMealsCopy).map((m, i) => ({ ...m, id: m.id || defaultMealsCopy[i]?.id || generateId(), name: m.name || defaultMealsCopy[i]?.name, ingredients: m.ingredients || defaultMealsCopy[i]?.ingredients }));
+      this.groceryBudget = this.validateValue(data.groceryBudget);
+      const defaultGroceryCopy = JSON.parse(JSON.stringify(initialGroceryList));
+      this.groceryList = (data.groceryList || defaultGroceryCopy).map((g, i) => ({ ...g, id: g.id || defaultGroceryCopy[i]?.id || generateId(), name: g.name || defaultGroceryCopy[i]?.name, items: g.items || defaultGroceryCopy[i]?.items }));
+      const defaultMeasurementsCopy = JSON.parse(JSON.stringify(initialBodyMeasurements));
+      this.bodyMeasurements = (data.bodyMeasurements || defaultMeasurementsCopy).map((bm, i) => ({ ...bm, id: bm.id || defaultMeasurementsCopy[i]?.id || generateId(), name: bm.name || defaultMeasurementsCopy[i]?.name, value: this.validateValue(bm.value), placeholder: bm.placeholder || defaultMeasurementsCopy[i]?.placeholder }));
+      const defaultFinancialsCopy = JSON.parse(JSON.stringify(initialFinancials));
+      this.financials = (data.financials || defaultFinancialsCopy).map((f, i) => ({ ...f, id: f.id || defaultFinancialsCopy[i]?.id || generateId(), name: f.name || defaultFinancialsCopy[i]?.name, value: this.validateValue(f.value), account: f.account || defaultFinancialsCopy[i]?.account, placeholder: f.placeholder || defaultFinancialsCopy[i]?.placeholder }));
+      if (data.city) this.city = data.city;
+    },
+    getCurrentDataState() {
+      return { plannerTitle: this.plannerTitle, uiConfig: this.uiConfig, times: this.times, schedule: this.schedule, tasks: this.tasks, workoutPlan: this.workoutPlan, meals: this.meals, groceryBudget: this.groceryBudget, groceryList: this.groceryList, bodyMeasurements: this.bodyMeasurements, financials: this.financials, city: this.city, dateRange: this.dateRange, week_id: this.currentWeek };
+    },
+    validateTextInput(event) { event.target.value = this.validateValue(event.target.value); this.saveData(); },
+    validateNumberInput(event) {
+      const input = event.target, min = parseFloat(input.min), max = parseFloat(input.max);
+      input.value = this.validateValue(input.value, true, isNaN(min)?null:min, isNaN(max)?null:max);
+      this.calculateScores(); this.saveData(); // saveData is now called here, no need for @change in HTML
+    },
+    calculateScores() {
+      const dailyTotals = { mon:0,tue:0,wed:0,thu:0,fri:0,sat:0,sun:0 }, dayKeys = Object.keys(dailyTotals);
+      this.schedule.forEach(section => {
+        if (section.name === 'TOTAL') return;
+        section.activities.forEach(act => {
+          let actScore = 0;
+          Object.entries(act.days || {}).forEach(([day, data]) => {
+            if (!data) return; const val = parseInt(data.value) || 0;
+            if (val > 0 && (data.max || 0) > 0) { dailyTotals[day] = (dailyTotals[day] || 0) + val; actScore += val; }
+            data.value = val === 0 ? '' : val.toString();
+          });
+          act.score = actScore;
+          act.streaks = act.streaks || {current:0,longest:0}; const todayIdx = this.currentDay === 0 ? 6 : this.currentDay - 1; let currentStreak = 0;
+          for (let i=0; i<7; i++) { const dayToCheckIdx = (todayIdx - i + 7)%7, dayKey = dayKeys[dayToCheckIdx];
+            if (act.days[dayKey] && parseInt(act.days[dayKey].value) > 0 && (act.days[dayKey].max || 0) > 0) currentStreak++; else break;
+          } act.streaks.current = currentStreak; act.streaks.longest = Math.max(act.streaks.longest || 0, currentStreak);
+        });
+      });
+      const totalSec = this.schedule.find(s => s.name === 'TOTAL');
+      if (totalSec?.activities?.[0]) {
+        const totalAct = totalSec.activities[0]; let grandTotalScore = 0, grandTotalMax = 0;
+        Object.entries(dailyTotals).forEach(([day, total]) => { if (totalAct.days[day]) totalAct.days[day].value = total.toString(); grandTotalScore += total; });
+        totalAct.score = grandTotalScore;
+        this.schedule.forEach(s => { if (s.name !== 'TOTAL') s.activities.forEach(act => grandTotalMax += (act.maxScore || 0)); });
+        totalAct.maxScore = grandTotalMax;
+      }
+    },
+    saveData() {
+      if (isInitializing) return; clearTimeout(this.saveTimeout); this.saveStatus = 'saving';
+      this.saveTimeout = setTimeout(async () => {
+        try {
+          this.calculateScores(); const data = this.getCurrentDataState();
+          localStorage.setItem(`planner_${this.currentWeek}`, JSON.stringify(data));
+          if (this.isOnline) {
+            await this.saveToPocketbase(this.currentWeek, data);
+            this.pendingSync = this.pendingSync.filter(item => item.weekId !== this.currentWeek || item.operation === 'delete');
+          } else this.addToPendingSync(this.currentWeek, data);
+          localStorage.setItem('planner_pending_sync', JSON.stringify(this.pendingSync));
+          lastSavedState = JSON.stringify(data); this.saveStatus = 'saved';
+        } catch (e) { this.saveStatus = 'error'; this.showErrorMessage("Save error: " + e.message); setTimeout(() => this.saveStatus = 'saved', 3000); }
+      }, 500);
+    },
+    hasSignificantChanges() {
+      if (!lastSavedState) return true;
+      const current = { ...this.getCurrentDataState() }; delete current.dateRange; delete current.week_id;
+      const last = JSON.parse(lastSavedState); delete last.dateRange; delete last.week_id;
+      return JSON.stringify(current) !== JSON.stringify(last);
+    },
+    addToPendingSync(weekId, data, operation = 'save') {
+      this.pendingSync = this.pendingSync.filter(item => !(item.weekId === weekId && item.operation === operation));
+      this.pendingSync.push({ weekId, data: data ? JSON.parse(JSON.stringify(data)) : null, operation, timestamp: new Date().toISOString() });
+      localStorage.setItem('planner_pending_sync', JSON.stringify(this.pendingSync));
+    },
+    async syncPendingData() {
+      if (!this.isOnline || this.pendingSync.length === 0) return;
+      const itemsToSync = [...this.pendingSync]; this.pendingSync = []; // Optimistically clear
+      for (const item of itemsToSync) {
+        try {
+          if (item.operation === 'delete') await this.deleteFromPocketbase(item.weekId);
+          else await this.saveToPocketbase(item.weekId, item.data);
+          const currentPending = JSON.parse(localStorage.getItem('planner_pending_sync') || '[]');
+          localStorage.setItem('planner_pending_sync', JSON.stringify(currentPending.filter(i => i.timestamp !== item.timestamp)));
+        } catch (e) { this.pendingSync.push(item); } // Re-add if failed
+      }
+      if (this.pendingSync.length > 0) localStorage.setItem('planner_pending_sync', JSON.stringify(this.pendingSync)); // Save if any re-added
+    },
+    async saveToPocketbase(weekId, data) {
+      const existing = await pb.collection('planners').getFirstListItem(`week_id="${weekId}"`).catch(e => { if(e.status === 404) return null; throw e;});
+      if (existing) await pb.collection('planners').update(existing.id, data); else await pb.collection('planners').create(data);
+    },
+    async deleteFromPocketbase(weekId) {
+      const existing = await pb.collection('planners').getFirstListItem(`week_id="${weekId}"`).catch(e => { if(e.status === 404) return null; throw e;});
+      if (existing) await pb.collection('planners').delete(existing.id);
+    },
+    async fetchSavedWeeks() {
+      const weeks = new Map(), currentIso = this.getCurrentIsoWeek();
+      const add = (iso, dr, src, isCur) => {
+        const ex = weeks.get(iso), newDr = dr || this.getWeekDateRange(this.parseISOWeek(iso));
+        if (!ex || (src === 'pocketbase' && ex.source !== 'pocketbase') || (src === 'local' && ex.source === 'current')) weeks.set(iso, { iso_week: iso, dateRange: newDr, source: src, isCurrent: isCur });
+        else if (ex && !ex.dateRange && newDr) ex.dateRange = newDr;
+      };
+      add(currentIso, this.getWeekDateRange(this.parseISOWeek(currentIso)), 'current', true);
+      if (this.isOnline) { try { (await pb.collection('planners').getFullList({ sort: '-week_id', fields: 'week_id,dateRange' })).forEach(it => add(it.week_id, it.dateRange, 'pocketbase', it.week_id === currentIso)); } catch (e) { console.error("PB fetch weeks error:", e); } }
+      for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k.startsWith('planner_') && !k.includes('pending_sync')) { const iso = k.replace('planner_', ''); try { const d = JSON.parse(localStorage.getItem(k)); add(iso, d.dateRange, 'local', iso === currentIso); } catch (e) {} } }
+      this.savedWeeks = Array.from(weeks.values()).sort((a,b) => (a.isCurrent && !b.isCurrent) ? -1 : ((!a.isCurrent && b.isCurrent) ? 1 : b.iso_week.localeCompare(a.iso_week)));
+    },
+    confirmLoadWeek(isoWeek) { (this.hasSignificantChanges() && isoWeek !== this.currentWeek && !confirm("Unsaved changes. Load anyway?")) ? null : this.loadWeek(isoWeek); },
+    confirmDeleteWeek(isoWeek) { if (confirm(`Delete schedule for ${isoWeek}?`)) this.deleteWeek(isoWeek); },
+    async deleteWeek(isoWeek) {
+      localStorage.removeItem(`planner_${isoWeek}`);
+      if (this.isOnline) try { await this.deleteFromPocketbase(isoWeek); } catch (e) { this.addToPendingSync(isoWeek, null, 'delete'); }
+      else this.addToPendingSync(isoWeek, null, 'delete');
+      this.savedWeeks = this.savedWeeks.filter(w => w.iso_week !== isoWeek);
+      if (this.currentWeek === isoWeek) { this.currentWeek = this.getCurrentIsoWeek(); await this.loadWeek(this.currentWeek); }
+    },
+    async selectCity(cityOpt) {
+      this.city = cityOpt.name; this.showCitySelector = false;
       try {
-        window.addEventListener('online', () => { this.isOnline = true; this.syncPendingData(); });
-        window.addEventListener('offline', () => this.isOnline = false);
-        document.addEventListener('click', e => {
-          if (!e.target.closest('.dropdown') && !e.target.closest('.clickable')) this.showCitySelector = this.showWeekSelector = false;
-          if (!e.target.closest('.context-menu') && this.contextMenu.show) this.hideContextMenu();
-          // Auto-commit edit if clicking outside an active edit area
-          if (this.editingTarget && !e.target.closest(`[data-edit-input-id="${this.editingTarget.inputId}"]`) && !e.target.closest(`[x-on\\:dblclick^="startEdit('${this.editingTarget.type}'"]`)) {
-             this.commitEdit();
-          }
-        });
-        this.pendingSync = JSON.parse(localStorage.getItem('planner_pending_sync') || '[]');
-        this.currentWeek = this.getCurrentIsoWeek();
-        this.dateRange = this.getWeekDateRange(this.parseISOWeek(this.currentWeek));
-        this.schedule.forEach(s => s.activities.forEach(a => { if (!a.streaks) a.streaks = { current: 0, longest: 0 }; if(!a.id) a.id = uid(); }));
-        this.tasks.forEach(t => { if(!t.id) t.id = uid(); }); // Ensure IDs on load
-        // ... ensure IDs for other array items similarly if loaded from old storage
-        await this.loadWeek(this.currentWeek, true);
-        setInterval(() => { if (!isInitializing && this.hasUnsavedChanges && this.saveStatus !== 'saving' && !this.editingTarget) this.saveData(); }, 30000);
-        if (this.isOnline) this.syncPendingData();
-      } catch (error) { console.error("Init Error:", error); this.showErrorMessage("Failed to initialize."); }
-      finally { if(isInitializing && this.currentWeek) isInitializing = false; }
+        if (cityOpt.lat === null) await this.getPrayerTimes(); else await this.fetchPrayerTimes(cityOpt.lat, cityOpt.lon);
+        this.saveData();
+      } catch (e) { this.showErrorMessage("Failed to load prayer times."); }
     },
-    isEditing(type, ...ids) {
-        if (!this.editingTarget || this.editingTarget.type !== type) return false;
-        if (ids.length === 0 && !this.editingTarget.ids) return true;
-        if (!this.editingTarget.ids || ids.length !== this.editingTarget.ids.length) return false;
-        return ids.every((id, index) => String(id) === String(this.editingTarget.ids[index]));
+    async getPrayerTimes() {
+      try {
+        const pos = await new Promise((res, rej) => navigator.geolocation.getCurrentPosition(res, rej, {timeout:5000,maximumAge:60000}));
+        const { latitude, longitude } = pos.coords;
+        try {
+          const geoRes = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=10&accept-language=en`);
+          const geoData = await geoRes.json(); this.city = geoData.address?.city || geoData.address?.town || geoData.address?.village || geoData.address?.county || "Current Location";
+        } catch (e) { this.city = "Current Location"; console.warn("Geocoding error", e)}
+        await this.fetchPrayerTimes(latitude, longitude);
+      } catch (e) { this.showErrorMessage("Could not get location. Using London default."); this.city = "London"; await this.fetchPrayerTimes(51.5074, -0.1278); }
     },
-    startEdit(type, initialValue, inputIdToFocus, ...ids) {
-        if (this.editingTarget) this.commitEdit();
-        this.editingTarget = { type, ids, originalValue: initialValue, inputId: inputIdToFocus };
-        this.editValue = String(initialValue);
-        this.$nextTick(() => { // Focus the specific input after Alpine renders it
-            const inputEl = document.getElementById(inputIdToFocus);
-            if (inputEl) {
-                inputEl.focus();
-                inputEl.select();
-            }
-        });
+    async fetchPrayerTimes(lat, lon) {
+      const t = new Date(), dStr = `${t.getFullYear()}_${t.getMonth()+1}_${t.getDate()}`, cacheKey = `prayer_times_${dStr}_${lat.toFixed(2)}_${lon.toFixed(2)}`;
+      const cached = localStorage.getItem(cacheKey); if (cached) { try {this.setPrayerTimes(JSON.parse(cached)); return;} catch(e){localStorage.removeItem(cacheKey);}}
+      try {
+        const res = await fetch(`https://api.aladhan.com/v1/calendar/${t.getFullYear()}/${t.getMonth()+1}?latitude=${lat}&longitude=${lon}&method=2`);
+        if (!res.ok) throw new Error(`API error: ${res.statusText} (${res.status})`); const apiData = await res.json();
+        if (apiData.code === 200 && apiData.data?.[t.getDate()-1]?.timings) { localStorage.setItem(cacheKey, JSON.stringify(apiData.data[t.getDate()-1].timings)); this.setPrayerTimes(apiData.data[t.getDate()-1].timings); }
+        else throw new Error("Invalid prayer time data from API");
+      } catch (e) { this.showErrorMessage("Failed to fetch prayer times: "+e.message); this.setPrayerTimes({ Fajr:"05:30",Dhuhr:"12:30",Asr:"15:45",Maghrib:"18:30",Isha:"20:00" }); }
     },
-    commitEdit() {
-        if (!this.editingTarget) return;
-        const { type, ids, originalValue } = this.editingTarget;
-        const currentEditVal = String(this.editValue); // Current value in input
-        const trimmedEditValue = currentEditVal.trim();
-        const originalTrimmed = String(originalValue).trim();
-
-        if (trimmedEditValue !== originalTrimmed) {
-            this.hasUnsavedChanges = true;
-            let sRealIdx, aIdx, dayKey, item;
-            const gASI = (rSIdx) => this.schedule.length - 1 - rSIdx;
-
-            switch (type) {
-                case 'plannerTitle': this.plannerTitle = trimmedEditValue; break;
-                case 'timeLabel': item = this.times.find(t => t.id === ids[0]); if(item) item.label = trimmedEditValue; break;
-                case 'mainTableHeader': if (ids[0] < this.uiConfig.mainTableHeaders.length) this.uiConfig.mainTableHeaders[ids[0]] = trimmedEditValue; break;
-                case 'dayHeader': if (ids[0] < this.uiConfig.dayHeaders.length) this.uiConfig.dayHeaders[ids[0]] = trimmedEditValue; break;
-                case 'maxHeader': if (ids[0] < this.uiConfig.maxHeaders.length) this.uiConfig.maxHeaders[ids[0]] = trimmedEditValue; break;
-                case 'sectionTitle': if (this.uiConfig.sectionTitles[ids[0]]) this.uiConfig.sectionTitles[ids[0]] = trimmedEditValue; break;
-                case 'taskHeader': if (ids[0] < this.uiConfig.taskHeaders.length) this.uiConfig.taskHeaders[ids[0]] = trimmedEditValue; break;
-                case 'sectionName': sRealIdx = gASI(ids[0]); if(this.schedule[sRealIdx]) this.schedule[sRealIdx].name = trimmedEditValue; break;
-                case 'activityPrefix': sRealIdx = gASI(ids[0]); item = this.schedule[sRealIdx]?.activities?.[ids[1]]; if(item) item.name = `${trimmedEditValue}:${item.name.split(':').pop().trim()}`; break;
-                case 'activityName': sRealIdx = gASI(ids[0]); item = this.schedule[sRealIdx]?.activities?.[ids[1]]; if(item) { const pfx = item.name.includes(':') ? item.name.split(':')[0].trim() : ''; item.name = pfx ? `${pfx}: ${trimmedEditValue}` : trimmedEditValue; } break;
-                case 'maxValue': sRealIdx = gASI(ids[0]); dayKey = ids[2]; item = this.schedule[sRealIdx]?.activities?.[ids[1]]?.days?.[dayKey]; if(item) item.max = parseInt(currentEditVal) || 0; break;
-                case 'maxScore': sRealIdx = gASI(ids[0]); item = this.schedule[sRealIdx]?.activities?.[ids[1]]; if(item) item.maxScore = parseInt(currentEditVal) || 0; break;
-                case 'workoutDayName': item = this.workoutPlan.find(wp => wp.id === ids[0]); if(item) item.name = trimmedEditValue; break;
-                case 'exercisePrefix': item = this.workoutPlan.find(wp => wp.id === ids[0])?.exercises.find(ex => ex.id === ids[1]); if(item) item.prefix = trimmedEditValue; break;
-                case 'exerciseName': item = this.workoutPlan.find(wp => wp.id === ids[0])?.exercises.find(ex => ex.id === ids[1]); if(item) item.name = trimmedEditValue; break;
-                case 'mealName': item = this.meals.find(m => m.id === ids[0]); if(item) item.name = trimmedEditValue; break;
-                case 'mealIngredients': item = this.meals.find(m => m.id === ids[0]); if(item) item.ingredients = currentEditVal; break;
-                case 'groceryCategoryName': item = this.groceryList.find(gl => gl.id === ids[0]); if(item) item.name = trimmedEditValue; break;
-                case 'groceryCategoryItems': item = this.groceryList.find(gl => gl.id === ids[0]); if(item) item.items = currentEditVal; break;
-                case 'measurementName': item = this.bodyMeasurements.find(bm => bm.id === ids[0]); if(item) item.name = trimmedEditValue; break;
-                case 'financialName': item = this.financials.find(f => f.id === ids[0]); if(item) item.name = trimmedEditValue; break;
-                case 'financialAccount': item = this.financials.find(f => f.id === ids[0]); if(item) item.account = trimmedEditValue; break;
-                default: console.warn('Unhandled type in commitEdit:', type); this.hasUnsavedChanges = false;
-            }
-        }
-        const targetElementId = this.editingTarget?.inputId.replace('-input', ''); // Heuristic to find original span/div
-        this.editingTarget = null; this.editValue = '';
-        if (targetElementId) { // Try to restore focus to the display element
-            this.$nextTick(() => {
-                const displayEl = document.getElementById(targetElementId);
-                if (displayEl) try { displayEl.focus({ preventScroll: true }); } catch(e){}
-            });
-        }
+    setPrayerTimes(timings) {
+      const qiyam = this.calculateQiyamTime(timings.Fajr), prayerMap = { Q:qiyam, F:timings.Fajr, D:timings.Dhuhr, A:timings.Asr, M:timings.Maghrib, I:timings.Isha };
+      let changed = false; this.times.forEach(ts => { const newTime = this.formatTime(prayerMap[ts.label]); if(ts.value !== newTime){ts.value=newTime; changed=true;} });
+      if (changed && !isInitializing) this.saveData();
     },
-    cancelEdit() { this.editingTarget = null; this.editValue = ''; /* Focus restoration could also go here if needed */ },
-    showContextMenu(e,t,d){e.preventDefault();this.contextMenu={show:true,top:e.pageY,left:e.pageX,type:t,data:d}},
-    hideContextMenu(){this.contextMenu.show=false},
-    editContextItem(){const{type:t,data:d}=this.contextMenu;let i,nN,sRI;const gASI=(sIdx)=>this.schedule.length-1-sIdx;switch(t){case'activity':const{sIdx,aIdx}=d;sRI=gASI(sIdx);i=this.schedule[sRI]?.activities?.[aIdx];if(!i){this.showErrorMessage('Activity not found.');break}nN=prompt('Edit activity name:',i.name);if(nN&&nN.trim())i.name=nN.trim();break;case'task':this.showErrorMessage('Tasks can be edited directly.');break;case'workoutDay':i=this.workoutPlan.find(wp=>wp.id===d.id);nN=prompt('Edit workout day name:',i?.name);if(i&&nN&&nN.trim())i.name=nN.trim();break;case'exercise':const{dayId,exId}=d;i=this.workoutPlan.find(wp=>wp.id===dayId)?.exercises.find(ex=>ex.id===exId);if(!i)break;nN=prompt('Edit exercise name:',i.name);if(i&&nN&&nN.trim())i.name=nN.trim();break;case'meal':i=this.meals.find(m=>m.id===d.id);nN=prompt('Edit meal name:',i?.name);if(i&&nN&&nN.trim())i.name=nN.trim();break;default: /* other cases */ break;}if(nN!==undefined){this.hasUnsavedChanges=true;this.saveData()}this.hideContextMenu()},
-    deleteContextItem(){const{type:t,data:d}=this.contextMenu;if(!confirm('Are you sure?')){this.hideContextMenu();return}const gASI=(sIdx)=>this.schedule.length-1-sIdx;switch(t){case'activity':const{sIdx,aIdx}=d;const sRI=gASI(sIdx);if(this.schedule[sRI]?.activities)this.schedule[sRI].activities.splice(aIdx,1);break;case'task':this.tasks=this.tasks.filter(tsk=>tsk.id!==d.id);this.tasks.push({...JSON.parse(JSON.stringify(defaultTasks[0])),id:uid()});break;case'workoutDay':this.workoutPlan=this.workoutPlan.filter(wp=>wp.id!==d.id);break;case'exercise':const{dayId,exId}=d;const wp=this.workoutPlan.find(w=>w.id===dayId);if(wp)wp.exercises=wp.exercises.filter(ex=>ex.id!==exId);break;case'meal':this.meals=this.meals.filter(m=>m.id!==d.id);break;default:/* other cases */break;}this.calculateScores();this.hasUnsavedChanges=true;this.saveData();this.hideContextMenu()},
-    addContextItem(){const{type:t,data:d}=this.contextMenu;let iT=t,iI=d;const gASI=(sIdx)=>this.schedule.length-1-sIdx;if(t==='activity'&&typeof d==='object'&&d.hasOwnProperty('sIdx')){iI={sActualIdx:gASI(d.sIdx)};if(!this.schedule[iI.sActualIdx]){this.showErrorMessage('Invalid section.');this.hideContextMenu();return}}else if(t==='exercise'&&typeof d==='object'&&d.hasOwnProperty('dayId')){iI={dayId:d.dayId}}this.addItem(iT,iI);this.hideContextMenu()},
-    addItem(type,data=null){let nN,s;switch(type){case'activity':s=this.schedule[data.sActualIdx];if(!s){this.showErrorMessage('Invalid section.');return}nN=prompt(`New activity for "${s.name}":`);if(nN&&nN.trim())this.addActivity(data.sActualIdx,nN.trim());break;case'task':this.tasks.unshift({...JSON.parse(JSON.stringify(defaultTasks[0])),id:uid()});break;case'workoutDay':nN=prompt('New workout day:');if(nN&&nN.trim())this.workoutPlan.push({id:uid(),name:nN.trim(),exercises:[]});break;case'exercise':s=this.workoutPlan.find(wp=>wp.id===data.dayId);if(!s){this.showErrorMessage('Invalid day.');return}nN=prompt(`New exercise for "${s.name}":`);if(nN&&nN.trim())s.exercises.push({id:uid(),prefix:'• ',name:nN.trim(),weight:'',sets:'',reps:'',defaultWeight:'20',defaultSets:'3',defaultReps:'12'});break;case'meal':nN=prompt('New meal:');if(nN&&nN.trim())this.meals.push({id:uid(),name:nN.trim(),ingredients:''});break; default: /* other cases */ break}if(type!=='activity'){this.hasUnsavedChanges=true;this.saveData()}},
-    addActivity(sAI,aN){if(!aN.trim()||!this.schedule[sAI])return;const nA={id:uid(),name:aN,days:{mon:{value:'',max:1},tue:{value:'',max:1},wed:{value:'',max:1},thu:{value:'',max:1},fri:{value:'',max:1},sat:{value:'',max:1},sun:{value:'',max:1}},score:0,maxScore:7,streaks:{current:0,longest:0}};this.schedule[sAI].activities.push(nA);this.hasUnsavedChanges=true;this.saveData()},
-    showErrorMessage(m){this.notificationMessage=m;this.showNotification=true;clearTimeout(this.notificationTimeout);this.notificationTimeout=setTimeout(()=>this.showNotification=false,5000)},
-    validateValue(v,iN=false,min=null,max=null){if(v==null||v===undefined||String(v).trim()==='')return '';if(iN){const nV=parseFloat(v);if(isNaN(nV))return '';if(min!==null&&nV<min)return min.toString();if(max!==null&&nV>max)return max.toString();return nV.toString()}return String(v)},
-    getCurrentIsoWeek(){const n=new Date(),d=new Date(n);d.setHours(0,0,0,0);d.setDate(d.getDate()+4-(d.getDay()||7));const yS=new Date(d.getFullYear(),0,1);const wN=Math.ceil((((d-yS)/864e5)+1)/7);return`${d.getFullYear()}-W${wN.toString().padStart(2,'0')}`},
-    parseISOWeek(iS){if(!/^\d{4}-W(0[1-9]|[1-4][0-9]|5[0-3])$/.test(iS))return new Date();const[y,wP]=iS.split('-');const w=parseInt(wP.substring(1));const d=new Date(Date.UTC(parseInt(y),0,4));d.setUTCDate(d.getUTCDate()+(w-1)*7-(d.getUTCDay()||7)+1);return d},
-    getWeekDateRange(d){const s=new Date(d),e=new Date(s);e.setDate(s.getDate()+6);return`${this.formatDate(s)}-${this.formatDate(e)}`},
-    formatDate(d){return`${(d.getMonth()+1).toString().padStart(2,'0')}/${d.getDate().toString().padStart(2,'0')}`},
-    formatShortDate(i){const n=new Date();n.setDate(n.getDate()+i);return`${(n.getMonth()+1)}/${n.getDate()}`},
-    toggleCitySelector(e){if(!e||!e.target){this.showCitySelector=!this.showCitySelector;this.showWeekSelector=false;return}this.showWeekSelector=false;const r=e.target.getBoundingClientRect();this.dropdownPosition={top:r.bottom+window.scrollY,left:r.left+window.scrollX};this.showCitySelector=!this.showCitySelector},
-    toggleWeekSelector(e){if(!e||!e.target){this.showCitySelector=false;this.showWeekSelector=!this.showWeekSelector;if(this.showWeekSelector)this.fetchSavedWeeks();return}this.showCitySelector=false;const r=e.target.getBoundingClientRect();this.dropdownPosition={top:r.bottom+window.scrollY,left:r.left+window.scrollX};this.showWeekSelector=!this.showWeekSelector;if(this.showWeekSelector)this.fetchSavedWeeks()},
-    async loadWeek(iW,isInit=false){if(!/^\d{4}-W(0[1-9]|[1-4][0-9]|5[0-3])$/.test(iW)){this.showErrorMessage("Invalid week format");return}if(!isInit&&this.hasUnsavedChanges&&iW!==this.currentWeek){if(!confirm("Unsaved changes. Load anyway?"))return}this.showWeekSelector=false;this.currentWeek=iW;this.dateRange=this.getWeekDateRange(this.parseISOWeek(iW));let d=null;if(this.isOnline){try{const rs=await pb.collection('planners').getList(1,1,{filter:`week_id="${iW}"`});if(rs.items.length>0)d=rs.items[0]}catch(e){console.error("PB load err:",e)}}if(!d){try{const lD=localStorage.getItem(`planner_${iW}`);if(lD)d=JSON.parse(lD)}catch(e){console.error("LS load err:",e)}}this.populateFields(d||{});this.calculateScores();if(isInit&&(!this.times[0].value||!this.times[1].value)){try{await this.getPrayerTimes()}catch(e){console.error("Err prayer times:",e)}}this.hasUnsavedChanges=false;if(isInit)isInitializing=false},
-    populateFields(data){this.plannerTitle=data.plannerTitle||defaultUiConfig.plannerTitle;this.uiConfig={...JSON.parse(JSON.stringify(defaultUiConfig)),...(data.uiConfig||{}),sectionTitles:{...defaultUiConfig.sectionTitles,...(data.uiConfig?.sectionTitles||{})},taskHeaders:data.uiConfig?.taskHeaders||[...defaultUiConfig.taskHeaders],mainTableHeaders:data.uiConfig?.mainTableHeaders||[...defaultUiConfig.mainTableHeaders],dayHeaders:data.uiConfig?.dayHeaders||[...defaultUiConfig.dayHeaders],maxHeaders:data.uiConfig?.maxHeaders||[...defaultUiConfig.maxHeaders]};const mA=(dA,lA,pfx)=>((lA?JSON.parse(JSON.stringify(lA)):JSON.parse(JSON.stringify(dA))).map((it,ix)=>({...it,id:it.id||`${pfx}-${ix}-${uid()}`})));this.times=mA(defaultTimes,data.times,'tm').map((t,i)=>({...defaultTimes[i],...t,value:this.validateValue(t.value)}));this.schedule=mA(defaultSchedule,data.schedule,'sc').map(s=>({...s,activities:mA(s.activities||[],null,`ac-${s.id}`).map(a=>({...a,streaks:a.streaks||{current:0,longest:0}}))}));this.tasks=mA(defaultTasks,data.tasks,'tk');this.workoutPlan=mA(defaultWorkoutPlan,data.workoutPlan,'wp').map(wp=>({...wp,exercises:mA(wp.exercises||[],null,`ex-${wp.id}`)}));this.meals=mA(defaultMeals,data.meals,'ml');this.groceryList=mA(defaultGroceryList,data.groceryList,'gl');this.bodyMeasurements=mA(defaultBodyMeasurements,data.bodyMeasurements,'bm');this.financials=mA(defaultFinancials,data.financials,'fn');this.groceryBudget=this.validateValue(data.groceryBudget||'');this.city=data.city||'London';this.schedule.forEach(s=>s.activities.forEach(a=>{Object.keys(a.days).forEach(dK=>{if(a.days[dK])a.days[dK].value=this.validateValue(a.days[dK].value,true,0,(a.days[dK].max!==undefined&&a.days[dK].max<10)?9:((a.days[dK].max!==undefined&&a.days[dK].max>99)?99:(a.days[dK].max||99)))})}));this.tasks.forEach(t=>Object.keys(t).forEach(k=>{if(t.hasOwnProperty(k))t[k]=this.validateValue(t[k])}));lastSavedState=JSON.stringify(this.getCurrentStateForComparison())},
-    validateTextInput(e){e.target.value=this.validateValue(e.target.value);this.hasUnsavedChanges=true},
-    validateNumberInput(e){const i=e.target;const m=i.hasAttribute('min')?parseFloat(i.min):0;const x=i.hasAttribute('max')?parseFloat(i.max):99;i.value=this.validateValue(i.value,true,m,x);this.calculateScores();this.hasUnsavedChanges=true},
-    calculateScores(){const dT={mon:0,tue:0,wed:0,thu:0,fri:0,sat:0,sun:0};const dK=['mon','tue','wed','thu','fri','sat','sun'];this.schedule.forEach(s=>{if(s.name==='TOTAL')return;s.activities.forEach(a=>{let aS=0;dK.forEach(d=>{const dD=a.days[d];if(dD){const v=parseInt(dD.value)||0;if(v>0&&(dD.max||0)>0){dT[d]+=v;aS+=v}dD.value=v===0?'':v.toString()}});a.score=aS;if(!a.streaks)a.streaks={current:0,longest:0};const tJD=this.currentDay;const tADI=tJD===0?6:tJD-1;let cS=0;for(let i=0;i<7;i++){const dITC=(tADI-i+7)%7;const dKTC=dK[dITC];if(a.days[dKTC]&&parseInt(a.days[dKTC].value)>0&&(a.days[dKTC].max||0)>0){cS++}else{break}}a.streaks.current=cS;a.streaks.longest=Math.max(a.streaks.longest||0,cS)})});const tS=this.schedule.find(s=>s.name==='TOTAL');if(tS?.activities?.[0]){const tA=tS.activities[0];dK.forEach(d=>{if(tA.days[d])tA.days[d].value=(dT[d]||0).toString()});tA.score=Object.values(dT).reduce((sm,v)=>sm+(v||0),0)}},
-    getCurrentStateForComparison(){return{plannerTitle:this.plannerTitle,uiConfig:this.uiConfig,times:this.times,schedule:this.schedule,tasks:this.tasks,workoutPlan:this.workoutPlan,groceryBudget:this.groceryBudget,groceryList:this.groceryList,bodyMeasurements:this.bodyMeasurements,financials:this.financials,city:this.city}},
-    saveData(){if(isInitializing||this.saveStatus==='saving')return;clearTimeout(this.saveTimeout);this.saveStatus='saving';this.saveTimeout=setTimeout(async()=>{try{this.calculateScores();const pDTS={...this.getCurrentStateForComparison(),week_id:this.currentWeek,dateRange:this.dateRange};localStorage.setItem(`planner_${this.currentWeek}`,JSON.stringify(pDTS));if(this.isOnline){try{await this.saveToPocketbase(this.currentWeek,pDTS);this.pendingSync=this.pendingSync.filter(i=>i.weekId!==this.currentWeek||i.operation==='delete');localStorage.setItem('planner_pending_sync',JSON.stringify(this.pendingSync))}catch(e){this.addToPendingSync(this.currentWeek,pDTS)}}else{this.addToPendingSync(this.currentWeek,pDTS)}lastSavedState=JSON.stringify(this.getCurrentStateForComparison());this.saveStatus='saved';this.hasUnsavedChanges=false}catch(e){console.error("Err saveData:",e);this.saveStatus='error';this.showErrorMessage("Error saving data");setTimeout(()=>{if(this.saveStatus==='error')this.saveStatus='saved'},3000)}},500)},
-    addToPendingSync(wId,data){this.pendingSync=this.pendingSync.filter(i=>i.weekId!==wId||i.operation==='delete');this.pendingSync.push({weekId:wId,data,operation:'save',timestamp:new Date().toISOString()});localStorage.setItem('planner_pending_sync',JSON.stringify(this.pendingSync))},
-    async syncPendingData(){if(!this.isOnline||this.pendingSync.length===0)return;const iTS=[...this.pendingSync];this.pendingSync=[];localStorage.setItem('planner_pending_sync',JSON.stringify(this.pendingSync));for(const i of iTS){try{if(i.operation==='delete')await this.deleteFromPocketbase(i.weekId);else await this.saveToPocketbase(i.weekId,i.data)}catch(e){this.pendingSync.push(i);localStorage.setItem('planner_pending_sync',JSON.stringify(this.pendingSync));console.error("Sync err:",i.weekId,e)}}},
-    async saveToPocketbase(wId,data){const r=await pb.collection('planners').getList(1,1,{filter:`week_id="${wId}"`});if(r.items.length>0)await pb.collection('planners').update(r.items[0].id,data);else await pb.collection('planners').create(data);return true},
-    async deleteFromPocketbase(wId){try{const r=await pb.collection('planners').getList(1,1,{filter:`week_id="${wId}"`});if(r.items.length>0)await pb.collection('planners').delete(r.items[0].id);return true}catch(e){console.error("PB delete err:",e);throw e}},
-    async fetchSavedWeeks(){const w=[];const cIW=this.getCurrentIsoWeek();w.push({iso_week:cIW,dateRange:this.getWeekDateRange(this.parseISOWeek(cIW)),isCurrent:true});if(this.isOnline){try{const r=await pb.collection('planners').getList(1,100,{sort:'-week_id'});r.items.forEach(i=>{if(i.week_id===cIW)return;w.push({iso_week:i.week_id,dateRange:i.dateRange||this.getWeekDateRange(this.parseISOWeek(i.week_id)),isCurrent:false})})}catch(e){console.error("Err fetch PB weeks:",e)}}for(let l=0;l<localStorage.length;l++){const k=localStorage.key(l);if(k.startsWith('planner_')&&!k.includes('pending_sync')){const iW=k.replace('planner_','');if(w.some(wk=>wk.iso_week===iW))continue;try{const d=JSON.parse(localStorage.getItem(k));w.push({iso_week:iW,dateRange:d.dateRange||this.getWeekDateRange(this.parseISOWeek(iW)),isCurrent:iW===cIW})}catch(e){}}}this.savedWeeks=w.sort((a,b)=>(a.isCurrent?-1:b.isCurrent?1:b.iso_week.localeCompare(a.iso_week)))},
-    confirmLoadWeek(iW){this.loadWeek(iW)},
-    confirmDeleteWeek(iW){if(confirm(`Delete schedule for ${iW}?`))this.deleteWeek(iW)},
-    async deleteWeek(iW){localStorage.removeItem(`planner_${iW}`);if(this.isOnline){try{await this.deleteFromPocketbase(iW)}catch(e){this.pendingSync.push({weekId:iW,operation:'delete',timestamp:new Date().toISOString()});localStorage.setItem('planner_pending_sync',JSON.stringify(this.pendingSync))}}else{this.pendingSync=this.pendingSync.filter(i=>i.weekId!==iW||i.operation==='delete');this.pendingSync.push({weekId:iW,operation:'delete',timestamp:new Date().toISOString()});localStorage.setItem('planner_pending_sync',JSON.stringify(this.pendingSync))}this.savedWeeks=this.savedWeeks.filter(w=>w.iso_week!==iW);if(this.currentWeek===iW){const cIW=this.getCurrentIsoWeek();this.loadWeek(cIW)}},
-    async selectCity(cO){this.city=cO.name;this.showCitySelector=false;try{if(cO.lat===null&&cO.lon===null)await this.getPrayerTimes();else await this.fetchPrayerTimes(cO.lat,cO.lon);this.hasUnsavedChanges=true;this.saveData()}catch(e){console.error("City sel err:",e);this.showErrorMessage("Failed to load prayer times.")}},
-    async getPrayerTimes(){try{const p=await new Promise((rs,rj)=>navigator.geolocation.getCurrentPosition(rs,rj,{timeout:5000,maximumAge:60000}));const{latitude:lt,longitude:ln}=p.coords;try{const r=await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lt}&lon=${ln}&zoom=10`);if(r.ok){const d=await r.json();if(d.address)this.city=d.address.city||d.address.town||d.address.village||d.address.county||"Current Location"}}catch(e){this.city="Current Location"}await this.fetchPrayerTimes(lt,ln)}catch(e){console.warn("Geo err:",e);this.showErrorMessage("Could not get your location. Using London as default.");this.city="London";await this.fetchPrayerTimes(51.5074,-0.1278)}},
-    async fetchPrayerTimes(lt,ln){const t=new Date(),d=t.getDate(),m=t.getMonth()+1,y=t.getFullYear();try{const k=`prayer_times_${y}_${m}_${d}_${lt.toFixed(2)}_${ln.toFixed(2)}`,cD=localStorage.getItem(k);if(cD){this.setPrayerTimes(JSON.parse(cD));return}const r=await fetch(`https://api.aladhan.com/v1/calendar/${y}/${m}?latitude=${lt}&longitude=${ln}&method=2`);if(!r.ok)throw new Error(`API ${r.status}`);const dT=await r.json();if(dT.code===200&&dT.data&&dT.data[d-1]){const tms=dT.data[d-1].timings;localStorage.setItem(k,JSON.stringify(tms));this.setPrayerTimes(tms)}else throw new Error("Invalid prayer data")}catch(e){console.error("Prayer fetch err:",e);this.setPrayerTimes({Fajr:"05:30",Dhuhr:"12:30",Asr:"15:45",Maghrib:"18:30",Isha:"20:00"})}},
-    setPrayerTimes(tms){if(!this.times[0].value||!this.times[1].value||isInitializing){this.times[0].value=this.calculateQiyamTime(tms.Fajr);this.times[1].value=this.formatTime(tms.Fajr);this.times[2].value=this.formatTime(tms.Dhuhr);this.times[3].value=this.formatTime(tms.Asr);this.times[4].value=this.formatTime(tms.Maghrib);this.times[5].value=this.formatTime(tms.Isha);if(!isInitializing){this.hasUnsavedChanges=true;this.saveData()}}},
-    formatTime(ts){if(!ts)return"";const t=ts.split(" ")[0],[h,min]=t.split(":");let hr=parseInt(h);if(isNaN(hr))return"";const ap=hr>=12?"PM":"AM";hr=hr%12;hr=hr?hr:12;return`${hr}:${min}${ap}`},
-    calculateQiyamTime(f){if(!f)return"";const p=f.split(" ")[0].split(":");if(p.length<2)return"";const fH=parseInt(p[0]),fM=parseInt(p[1]);if(isNaN(fH)||isNaN(fM))return"";let qH=fH-1;if(qH<0)qH+=24;const ap=qH>=12?"PM":"AM",hr=qH%12||12;return`${hr}:${fM.toString().padStart(2,'0')}${ap}`},
-    toggleTaskCompletion(t){t.completed=t.completed==='✓'?'':'✓';this.hasUnsavedChanges=true;this.saveData()},
+    formatTime(timeStr) {
+      if (!timeStr || typeof timeStr !== 'string') return ""; const t = timeStr.split(" ")[0], [hS, mS] = t.split(":"); if (!hS||!mS) return "";
+      let h=parseInt(hS), m=parseInt(mS); if(isNaN(h)||isNaN(m)) return ""; return `${h%12||12}:${m.toString().padStart(2,'0')}${h>=12?"PM":"AM"}`;
+    },
+    calculateQiyamTime(fajrTime) {
+      if (!fajrTime || typeof fajrTime !== 'string') return ""; const fP = fajrTime.split(" ")[0].split(":"); if (fP.length<2) return "";
+      let fH = parseInt(fP[0]), fM = parseInt(fP[1]); if(isNaN(fH)||isNaN(fM)) return "";
+      let qD = new Date(); qD.setHours(fH, fM, 0, 0); qD.setHours(qD.getHours() - 1); return `${qD.getHours()}:${fM.toString().padStart(2,'0')}`;
+    }
   };
 }
