@@ -1,5 +1,3 @@
-// File: script.js
-
 // --- Utility Functions ---
 function deepCopy(obj) { if (obj === null || typeof obj !== 'object') return obj; if (obj instanceof Date) return new Date(obj); if (Array.isArray(obj)) return obj.map(deepCopy); const copiedObject = {}; for (const key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) { copiedObject[key] = deepCopy(obj[key]); } } return copiedObject;}
 function generateId(prefix = 'id_') { return prefix + Date.now().toString(36) + Math.random().toString(36).substr(2, 5); }
@@ -12,15 +10,14 @@ function plannerApp() {
 
   let isInitializing = true;
   let lastSavedState = null;
-  let appDefaultsFromDB = null; // Holds data fetched from app_config
+  let appDefaultsFromDB = null; // Renamed for clarity that it's from DB
 
   const DefaultDataManager = { 
     configKey: "default_v1", data: null, error: null,
     async fetch() { 
-        this.error = null; try { this.data = await pb.collection('app_config').getFirstListItem(`config_key="${this.configKey}"`); if (!this.data) { this.error = "Default config (app_config) not found. Ensure record 'config_key=default_v1' exists & is populated. Try '?seed=1' if seeder is configured."; throw new Error(this.error); } console.log("App defaults fetched successfully."); } catch (error) { console.error("Fatal: Could not init app defaults from DB:", error); this.error = error.message || "Failed to load app settings from DB."; this.data = null; } appDefaultsFromDB = this.data; return this.data;
+        this.error = null; try { this.data = await pb.collection('app_config').getFirstListItem(`config_key="${this.configKey}"`); if (!this.data) { this.error = "Default config (app_config) not found in DB. Ensure record 'config_key=default_v1' exists & is populated. Use ?seed=1 to attempt seeding."; throw new Error(this.error); } console.log("App defaults fetched successfully."); } catch (error) { console.error("Fatal Error: Could not initialize app defaults from PocketBase:", error); this.error = error.message || "Failed to load app settings from PocketBase."; this.data = null; } appDefaultsFromDB = this.data; return this.data;
     },
-    // Getters now use appDefaultsFromDB directly for clarity within Alpine component.
-    // These could be removed if Alpine component directly uses appDefaultsFromDB for initial setup.
+    // Getters removed as component will use appDefaultsFromDB directly for initial population or fallback logic
   };
   
   const DateTimeUtilsInternal = { 
@@ -37,27 +34,28 @@ function plannerApp() {
     meals: [], groceryBudget: '', groceryBudgetPlaceholder: '£0', groceryList: [], 
     bodyMeasurements: [], financials: [], savedWeeks: [], 
     saveDataTimeout: null, notificationTimeout: null,
-    DateTimeUtils: DateTimeUtilsInternal, // Expose for template use
+    DateTimeUtils: DateTimeUtilsInternal, 
+    appDefaultsState: null, // Holds the raw fetched app_config object
 
     async init() {
       isInitializing = true; console.log("App init starting...");
-      appDefaultsFromDB = await DefaultDataManager.fetch(); 
+      this.appDefaultsState = await DefaultDataManager.fetch(); 
       
-      if (!appDefaultsFromDB || DefaultDataManager.error) { 
-        this.showErrorMessage(`CRITICAL: ${DefaultDataManager.error || "App defaults are null."}. Planner using minimal fallbacks. Ensure PocketBase 'app_config' is populated. For setup, try '?seed=1' with db_seed.js included.`); 
+      if (DefaultDataManager.error || !this.appDefaultsState) { 
+        this.showErrorMessage(`CRITICAL: ${DefaultDataManager.error || "App defaults are null."}. Planner using minimal fallbacks. Ensure 'app_config' is populated. Try '?seed=1' with db_seed.js included.`); 
         this.applyMinimalFallbacks();
       } else { 
-        this.plannerTitle = appDefaultsFromDB.planner_title_default || "Weekly Planner";
-        this.uiConfig = deepCopy(appDefaultsFromDB.ui_config_default || { mainTableHeaders: [], dayHeaders: [], maxHeaders: [], taskHeaders: [], sectionTitles: {} });
-        this.times = deepCopy(appDefaultsFromDB.times_default || []);
-        this.schedule = (deepCopy(appDefaultsFromDB.schedule_default || [])).map(s=>({...s,id:s.id||generateId('sec_'),activities:(s.activities||[]).map(a=>({...a,id:a.id||generateId('act_'),streaks:a.streaks||{ mon:0,tue:0,wed:0,thu:0,fri:0,sat:0,sun:0,current:0,longest:0 }}))}));
-        this.tasks = Array(appDefaultsFromDB.tasks_default_count || 20).fill(null).map((_,i)=>({id:generateId('task_'),num:'',priority:'',tag:'',description:'',date:'',completed:''}));
-        this.workoutPlan = (deepCopy(appDefaultsFromDB.workout_plan_default || [])).map(d=>({...d,id:d.id||generateId('wpd_'),exercises:(d.exercises||[]).map(e=>({...e,id:e.id||generateId('ex_')}))}));
-        this.meals = (deepCopy(appDefaultsFromDB.meals_default || [])).map(m=>({...m,id:m.id||generateId('meal_')}));
-        this.groceryList = (deepCopy(appDefaultsFromDB.grocery_list_default || [])).map(g=>({...g,id:g.id||generateId('gcat_')}));
-        this.groceryBudgetPlaceholder = appDefaultsFromDB.grocery_budget_default_placeholder || '£0';
-        this.bodyMeasurements = (deepCopy(appDefaultsFromDB.body_measurements_default || [])).map(b=>({...b,id:b.id||generateId('bm_')}));
-        this.financials = (deepCopy(appDefaultsFromDB.financials_default || [])).map(f=>({...f,id:f.id||generateId('fin_')}));
+        this.plannerTitle = this.appDefaultsState.planner_title_default || "Weekly Planner";
+        this.uiConfig = deepCopy(this.appDefaultsState.ui_config_default || { mainTableHeaders: [], dayHeaders: [], maxHeaders: [], taskHeaders: [], sectionTitles: {} });
+        this.times = deepCopy(this.appDefaultsState.times_default || []);
+        this.schedule = (deepCopy(this.appDefaultsState.schedule_default || [])).map(s=>({...s,id:s.id||generateId('sec_'),activities:(s.activities||[]).map(a=>({...a,id:a.id||generateId('act_'),streaks:a.streaks||{ mon:0,tue:0,wed:0,thu:0,fri:0,sat:0,sun:0,current:0,longest:0 }}))}));
+        this.tasks = Array(this.appDefaultsState.tasks_default_count || 20).fill(null).map((_,i)=>({id:generateId('task_'),num:'',priority:'',tag:'',description:'',date:'',completed:''}));
+        this.workoutPlan = (deepCopy(this.appDefaultsState.workout_plan_default || [])).map(d=>({...d,id:d.id||generateId('wpd_'),exercises:(d.exercises||[]).map(e=>({...e,id:e.id||generateId('ex_')}))}));
+        this.meals = (deepCopy(this.appDefaultsState.meals_default || [])).map(m=>({...m,id:m.id||generateId('meal_')}));
+        this.groceryList = (deepCopy(this.appDefaultsState.grocery_list_default || [])).map(g=>({...g,id:g.id||generateId('gcat_')}));
+        this.groceryBudgetPlaceholder = this.appDefaultsState.grocery_budget_default_placeholder || '£0';
+        this.bodyMeasurements = (deepCopy(this.appDefaultsState.body_measurements_default || [])).map(b=>({...b,id:b.id||generateId('bm_')}));
+        this.financials = (deepCopy(this.appDefaultsState.financials_default || [])).map(f=>({...f,id:f.id||generateId('fin_')}));
       }
       
       window.addEventListener('online', () => { this.isOnline = true; this.syncPendingData(); });
@@ -67,7 +65,7 @@ function plannerApp() {
       this.currentWeek = DateTimeUtilsInternal.getCurrentIsoWeek();
       this.dateRange = DateTimeUtilsInternal.getWeekDateRange(DateTimeUtilsInternal.parseISOWeek(this.currentWeek));
       await this.loadWeek(this.currentWeek, true); 
-      if (appDefaultsFromDB && !DefaultDataManager.error) { setInterval(() => { if (!isInitializing && this.hasSignificantChanges()) this.saveData(); }, 30000); }
+      if (this.appDefaultsState && !DefaultDataManager.error) { setInterval(() => { if (!isInitializing && this.hasSignificantChanges()) this.saveData(); }, 30000); }
       if (this.isOnline) this.syncPendingData();
       console.log("App init finished.");
     },
@@ -81,20 +79,20 @@ function plannerApp() {
         this.groceryBudgetPlaceholder = '£ERR'; this.bodyMeasurements = []; this.financials = [];
     },
     
-    applyDefaultsFromFetchedConfig() { // Called when loading a new week with no saved data
-      if (!appDefaultsFromDB || DefaultDataManager.error) { this.applyMinimalFallbacks(); return; }
-      this.plannerTitle = appDefaultsFromDB.planner_title_default || "Weekly Planner";
-      this.uiConfig = deepCopy(appDefaultsFromDB.ui_config_default || {});
-      this.times = deepCopy(appDefaultsFromDB.times_default || []);
-      this.schedule = (deepCopy(appDefaultsFromDB.schedule_default || [])).map(s=>({...s,id:s.id||generateId('sec_'),activities:(s.activities||[]).map(a=>({...a,id:a.id||generateId('act_'),streaks:a.streaks||{ mon:0,tue:0,wed:0,thu:0,fri:0,sat:0,sun:0,current:0,longest:0 }}))}));
-      this.tasks = Array(appDefaultsFromDB.tasks_default_count || 20).fill(null).map((_,i)=>({id:generateId('task_'),num:'',priority:'',tag:'',description:'',date:'',completed:''}));
-      this.workoutPlan = (deepCopy(appDefaultsFromDB.workout_plan_default || [])).map(d=>({...d,id:d.id||generateId('wpd_'),exercises:(d.exercises||[]).map(e=>({...e,id:e.id||generateId('ex_')}))}));
-      this.meals = (deepCopy(appDefaultsFromDB.meals_default || [])).map(m=>({...m,id:m.id||generateId('meal_')}));
-      this.groceryList = (deepCopy(appDefaultsFromDB.grocery_list_default || [])).map(g=>({...g,id:g.id||generateId('gcat_')}));
+    applyDefaultsFromFetchedConfig() { 
+      if (!this.appDefaultsState || DefaultDataManager.error) { this.applyMinimalFallbacks(); return; }
+      this.plannerTitle = this.appDefaultsState.planner_title_default || "Weekly Planner";
+      this.uiConfig = deepCopy(this.appDefaultsState.ui_config_default || {});
+      this.times = deepCopy(this.appDefaultsState.times_default || []);
+      this.schedule = (deepCopy(this.appDefaultsState.schedule_default || [])).map(s=>({...s,id:s.id||generateId('sec_'),activities:(s.activities||[]).map(a=>({...a,id:a.id||generateId('act_'),streaks:a.streaks||{ mon:0,tue:0,wed:0,thu:0,fri:0,sat:0,sun:0,current:0,longest:0 }}))}));
+      this.tasks = Array(this.appDefaultsState.tasks_default_count || 20).fill(null).map((_,i)=>({id:generateId('task_'),num:'',priority:'',tag:'',description:'',date:'',completed:''}));
+      this.workoutPlan = (deepCopy(this.appDefaultsState.workout_plan_default || [])).map(d=>({...d,id:d.id||generateId('wpd_'),exercises:(d.exercises||[]).map(e=>({...e,id:e.id||generateId('ex_')}))}));
+      this.meals = (deepCopy(this.appDefaultsState.meals_default || [])).map(m=>({...m,id:m.id||generateId('meal_')}));
+      this.groceryList = (deepCopy(this.appDefaultsState.grocery_list_default || [])).map(g=>({...g,id:g.id||generateId('gcat_')}));
       this.groceryBudget = ''; 
-      this.groceryBudgetPlaceholder = appDefaultsFromDB.grocery_budget_default_placeholder || '£0';
-      this.bodyMeasurements = (deepCopy(appDefaultsFromDB.body_measurements_default || [])).map(b=>({...b,id:b.id||generateId('bm_')}));
-      this.financials = (deepCopy(appDefaultsFromDB.financials_default || [])).map(f=>({...f,id:f.id||generateId('fin_')}));
+      this.groceryBudgetPlaceholder = this.appDefaultsState.grocery_budget_default_placeholder || '£0';
+      this.bodyMeasurements = (deepCopy(this.appDefaultsState.body_measurements_default || [])).map(b=>({...b,id:b.id||generateId('bm_')}));
+      this.financials = (deepCopy(this.appDefaultsState.financials_default || [])).map(f=>({...f,id:f.id||generateId('fin_')}));
     },
 
     populateFieldsFromSaved(savedData) {
@@ -106,85 +104,61 @@ function plannerApp() {
         
         const defaultSchedule = getReactiveDef("schedule_default", []);
         this.schedule = defaultSchedule.map(defSection => {
-            const savedSection = (savedData.schedule_data || []).find(ss => ss.name === defSection.name && ss.id === defSection.id) || (savedData.schedule_data || []).find(ss => ss.name === defSection.name); // Match by id then name
+            const savedSection = (savedData.schedule_data || []).find(ss => ss.name === defSection.name && ss.id === defSection.id) || (savedData.schedule_data || []).find(ss => ss.name === defSection.name);
             const currentSection = savedSection || defSection;
-            return {
-                ...currentSection, id: currentSection.id || generateId('sec_'),
-                activities: (defSection.activities || []).map(defActivity => {
+            return {...currentSection, id: currentSection.id || generateId('sec_'), activities: (defSection.activities || []).map(defActivity => {
                     const savedActivity = (currentSection.activities || []).find(sa => sa.name === defActivity.name && sa.id === defActivity.id) || (currentSection.activities || []).find(sa => sa.name === defActivity.name);
                     const currentActivity = savedActivity || defActivity;
                     return {...currentActivity, id: currentActivity.id || generateId('act_'), streaks: currentActivity.streaks || {mon:0,tue:0,wed:0,thu:0,fri:0,sat:0,sun:0,current:0,longest:0}};
-                })
-            };
+                })};
         });
 
         const defaultTaskCount = getReactiveDef("tasks_default_count", 20);
         const taskTargetLength = Math.max(defaultTaskCount, savedData.tasks_data?.length || 0);
         this.tasks = Array(taskTargetLength).fill(null).map((_, i) => {
-            const sTask = savedData.tasks_data?.[i];
-            return { id: sTask?.id || generateId('task_'), num:this.validateValue(sTask?.num), priority:this.validateValue(sT?.priority), tag:this.validateValue(sTask?.tag), description:this.validateValue(sTask?.description), date:this.validateValue(sTask?.date), completed:this.validateValue(sTask?.completed)};
+            const sTask = savedData.tasks_data?.[i]; // sTask is defined here
+            const defaultTaskValues = (this.appDefaultsState?.tasks_default?.[i] || {}); 
+            return { 
+                id: sTask?.id || generateId('task_'), 
+                num:this.validateValue(sTask?.num || defaultTaskValues.num), 
+                priority:this.validateValue(sTask?.priority || defaultTaskValues.priority), // CORRECTED: sTask
+                tag:this.validateValue(sTask?.tag || defaultTaskValues.tag),             // CORRECTED: sTask
+                description:this.validateValue(sTask?.description || defaultTaskValues.description), 
+                date:this.validateValue(sTask?.date || defaultTaskValues.date), 
+                completed:this.validateValue(sTask?.completed || defaultTaskValues.completed)
+            };
         });
         
         const defaultWP = getReactiveDef("workout_plan_default", []);
-        this.workoutPlan = defaultWP.map(defDay => {
-            const savedDay = (savedData.workout_plan_data || []).find(sd => sd.name === defDay.name && sd.id === defDay.id) || (savedData.workout_plan_data || []).find(sd => sd.name === defDay.name);
-            const currentDayData = savedDay || defDay;
-            return {...currentDayData, id: currentDayData.id || generateId('wpd_'), exercises: (defDay.exercises || []).map(defEx => {
-                const savedEx = (currentDayData.exercises || []).find(se => se.name === defEx.name && se.id === defEx.id) || (currentDayData.exercises || []).find(se => se.name === defEx.name);
-                return {...defEx, ...(savedEx || {}), id: savedEx?.id || defEx.id || generateId('ex_')};
-            })};
-        });
-
+        this.workoutPlan = defaultWP.map((defDay, dIdx) => { const savedDay = (savedData.workout_plan_data || []).find(sd => sd.name === defDay.name && sd.id === defDay.id) || (savedData.workout_plan_data || []).find(sd => sd.name === defDay.name); const currentDayData = savedDay || defDay; return {...currentDayData, id: currentDayData.id || generateId('wpd_'), exercises: (defDay.exercises || []).map((defEx, eIdx) => { const savedEx = (currentDayData.exercises || []).find(se => se.name === defEx.name && se.id === defEx.id) || (currentDayData.exercises || []).find(se => se.name === defEx.name); const currentEx = savedEx || defEx; return {...currentEx, id: currentEx.id || generateId('ex_')}; })}; });
         const defaultMeals = getReactiveDef("meals_default", []);
-        this.meals = defaultMeals.map(defMeal => { const savedMeal = (savedData.meals_data || []).find(sm => sm.name === defMeal.name && sm.id === defMeal.id) || (savedData.meals_data || []).find(sm => sm.name === defMeal.name); return {...defMeal, ...(savedMeal || {}), id: savedMeal?.id || defMeal.id || generateId('meal_')}; });
-        
+        this.meals = defaultMeals.map((defMeal, mIdx) => { const savedMeal = (savedData.meals_data || []).find(sm => sm.name === defMeal.name && sm.id === defMeal.id) || (savedData.meals_data || []).find(sm => sm.name === defMeal.name); const currentMeal = savedMeal || defMeal; return {...currentMeal, id: currentMeal.id || generateId('meal_')}; });
         this.groceryBudget = this.validateValue(savedData.grocery_budget || '');
         this.groceryBudgetPlaceholder = getReactiveDef("grocery_budget_default_placeholder", "£0");
-
         const defaultGL = getReactiveDef("grocery_list_default", []);
-        this.groceryList = defaultGL.map(defCat => { const savedCat = (savedData.grocery_list_data || []).find(sg => sg.name === defCat.name && sg.id === defCat.id) || (savedData.grocery_list_data || []).find(sg => sg.name === defCat.name); return {...defCat, ...(savedCat || {}), id: savedCat?.id || defCat.id || generateId('gcat_')}; });
-        
+        this.groceryList = defaultGL.map((defCat, gIdx) => { const savedCat = (savedData.grocery_list_data || []).find(sg => sg.name === defCat.name && sg.id === defCat.id) || (savedData.grocery_list_data || []).find(sg => sg.name === defCat.name); const currentCat = savedCat || defCat; return {...currentCat, id: currentCat.id || generateId('gcat_')}; });
         const defaultBM = getReactiveDef("body_measurements_default", []);
-        this.bodyMeasurements = defaultBM.map(defBm => { const savedBm = (savedData.body_measurements_data || []).find(sbm => sbm.name === defBm.name && sbm.id === defBm.id) || (savedData.body_measurements_data || []).find(sbm => sbm.name === defBm.name); return {...defBm, ...(savedBm || {}), id: savedBm?.id || defBm.id || generateId('bm_'), placeholder: savedBm?.placeholder || defBm.placeholder}; });
-
+        this.bodyMeasurements = defaultBM.map((defBm,bIdx) => { const savedBm = (savedData.body_measurements_data || []).find(sbm => sbm.name === defBm.name && sbm.id === defBm.id) || (savedData.body_measurements_data || []).find(sbm => sbm.name === defBm.name); const currentBm = savedBm || defBm; return {...currentBm, id: currentBm.id || generateId('bm_'), placeholder: currentBm.placeholder }; });
         const defaultFin = getReactiveDef("financials_default", []);
-        this.financials = defaultFin.map(defF => { const savedF = (savedData.financials_data || []).find(sf => sf.name === defF.name && sf.id === defF.id) || (savedData.financials_data || []).find(sf => sf.name === defF.name); return {...defF, ...(savedF || {}), id: savedF?.id || defF.id || generateId('fin_'), placeholder: savedF?.placeholder || defF.placeholder, account: savedF?.account || defF.account}; });
-        
+        this.financials = defaultFin.map((defF, fIdx) => { const savedF = (savedData.financials_data || []).find(sf => sf.name === defF.name && sf.id === defF.id) || (savedData.financials_data || []).find(sf => sf.name === defF.name); const currentF = savedF || defF; return {...currentF, id: currentF.id || generateId('fin_'), placeholder: currentF.placeholder, account: currentF.account}; });
         lastSavedState=JSON.stringify(this.getCurrentDataStateForPersistence());
     },
-
     async loadWeek(isoWeek,isInitLoad=false){
         if(!this.appDefaultsState && isInitLoad){ 
-            await DefaultDataManager.fetch(); 
-            this.appDefaultsState = DefaultDataManager.data; // Ensure this is set
+            await DefaultDataManager.fetch(); this.appDefaultsState = DefaultDataManager.data; 
             if(DefaultDataManager.error){this.showErrorMessage(`CRITICAL: ${DefaultDataManager.error}. Cannot load week.`);if(isInitLoad)isInitializing=false;this.applyMinimalFallbacks();return;} 
-            // Apply defaults right after fetching if it's an init load and appDefaults was just fetched
-            this.plannerTitle = this.appDefaultsState.planner_title_default || "Weekly Planner";
-            this.uiConfig = deepCopy(this.appDefaultsState.ui_config_default || {});
-            this.times = deepCopy(this.appDefaultsState.times_default || []);
-            this.schedule = (deepCopy(this.appDefaultsState.schedule_default || [])).map(s=>({...s,id:s.id||generateId('sec_'),activities:(s.activities||[]).map(a=>({...a,id:a.id||generateId('act_'),streaks:a.streaks||{mon:0,tue:0,wed:0,thu:0,fri:0,sat:0,sun:0,current:0,longest:0}}))}));
-            this.tasks = Array(this.appDefaultsState.tasks_default_count || 20).fill(null).map((_,i)=>({id:generateId('task_'),num:'',priority:'',tag:'',description:'',date:'',completed:''}));
-            this.workoutPlan = (deepCopy(this.appDefaultsState.workout_plan_default || [])).map(d=>({...d,id:d.id||generateId('wpd_'),exercises:(d.exercises||[]).map(e=>({...e,id:e.id||generateId('ex_')}))}));
-            this.meals = (deepCopy(this.appDefaultsState.meals_default || [])).map(m=>({...m,id:m.id||generateId('meal_')}));
-            this.groceryList = (deepCopy(this.appDefaultsState.grocery_list_default || [])).map(g=>({...g,id:g.id||generateId('gcat_')}));
-            this.groceryBudgetPlaceholder = this.appDefaultsState.grocery_budget_default_placeholder || '£0';
-            this.bodyMeasurements = (deepCopy(this.appDefaultsState.body_measurements_default || [])).map(b=>({...b,id:b.id||generateId('bm_')}));
-            this.financials = (deepCopy(this.appDefaultsState.financials_default || [])).map(f=>({...f,id:f.id||generateId('fin_')}));
+            this.plannerTitle = this.appDefaultsState.planner_title_default || "Weekly Planner"; this.uiConfig = deepCopy(this.appDefaultsState.ui_config_default || {}); this.times = deepCopy(this.appDefaultsState.times_default || []); this.schedule = (deepCopy(this.appDefaultsState.schedule_default || [])).map(s=>({...s,id:s.id||generateId('sec_'),activities:(s.activities||[]).map(a=>({...a,id:a.id||generateId('act_'),streaks:a.streaks||{mon:0,tue:0,wed:0,thu:0,fri:0,sat:0,sun:0,current:0,longest:0}}))})); this.tasks = Array(this.appDefaultsState.tasks_default_count || 20).fill(null).map((_,i)=>({id:generateId('task_'),num:'',priority:'',tag:'',description:'',date:'',completed:''})); this.workoutPlan = (deepCopy(this.appDefaultsState.workout_plan_default || [])).map(d=>({...d,id:d.id||generateId('wpd_'),exercises:(d.exercises||[]).map(e=>({...e,id:e.id||generateId('ex_')}))})); this.meals = (deepCopy(this.appDefaultsState.meals_default || [])).map(m=>({...m,id:m.id||generateId('meal_')})); this.groceryList = (deepCopy(this.appDefaultsState.grocery_list_default || [])).map(g=>({...g,id:g.id||generateId('gcat_')})); this.groceryBudgetPlaceholder = this.appDefaultsState.grocery_budget_default_placeholder || '£0'; this.bodyMeasurements = (deepCopy(this.appDefaultsState.body_measurements_default || [])).map(b=>({...b,id:b.id||generateId('bm_')})); this.financials = (deepCopy(this.appDefaultsState.financials_default || [])).map(f=>({...f,id:f.id||generateId('fin_')}));
         }
-        if(!this.appDefaultsState && !DefaultDataManager.error){this.showErrorMessage("Critical error: App defaults not yet available. Week load aborted.");if(isInitLoad)isInitializing=false;return;}
+        if(!this.appDefaultsState && !DefaultDataManager.error){this.showErrorMessage("Critical error: App defaults not available. Week load aborted.");if(isInitLoad)isInitializing=false;return;}
         if(!/^\d{4}-W(0[1-9]|[1-4][0-9]|5[0-3])$/.test(isoWeek)){this.showErrorMessage("Invalid week format");if(isInitLoad)isInitializing=false;return;}
-        this.showWeekSelector=false;this.currentWeek=isoWeek;this.dateRange=DateTimeUtilsInternal.getWeekDateRange(DateTimeUtilsInternal.parseISOWeek(isoWeek));let rec=null;
+        this.showWeekSelector=false;this.currentWeek=isoWeek;this.dateRange=this.DateTimeUtils.getWeekDateRange(this.DateTimeUtils.parseISOWeek(isoWeek));let rec=null;
         if(this.isOnline){try{rec=await pb.collection('planners').getFirstListItem(`week_id="${isoWeek}"`);}catch(e){if(e.status!==404)console.error("PB load error:",e);}}
         if(!rec){const ld=localStorage.getItem(`planner_${isoWeek}`);if(ld)try{rec=JSON.parse(ld);}catch(e){console.error(`Local parse error ${isoWeek}:`,e);rec=null;}}
-        
-        if(rec){this.populateFieldsFromSaved(rec);}else{this.applyDefaultsFromFetchedConfig();} // This ensures full default structure from app_config
-        
+        if(rec){this.populateFieldsFromSaved(rec);}else{this.applyDefaultsFromFetchedConfig();}
         this.calculateScores();if(this.times.every(t=>!t.value)){await this.fetchAndSetPrayerTimes();}
         if(isInitLoad){isInitializing=false;console.log("Initial load process finished.");}
     },
     
-    // The rest of the methods are the same as the previous "no add/delete, no city selector" version.
-    // ... (getCurrentDataStateForPersistence, saveData, hasSignificantChanges, sync logic, PB save/delete, editInline, toggleTaskCompletion, showErrorMessage, validation methods, calculateScores, prayer time methods, week navigation)
     getCurrentDataStateForPersistence(){return{week_id:this.currentWeek,date_range:this.dateRange,planner_title:this.plannerTitle,ui_config:this.uiConfig,times_display:this.times,schedule_data:this.schedule,tasks_data:this.tasks,workout_plan_data:this.workoutPlan,meals_data:this.meals,grocery_budget:this.groceryBudget,grocery_list_data:this.groceryList,body_measurements_data:this.bodyMeasurements,financials_data:this.financials};},
     saveData(){if(isInitializing)return;if(this.saveDataTimeout)clearTimeout(this.saveDataTimeout);this.saveStatus='saving';this.saveDataTimeout=setTimeout(async()=>{try{this.calculateScores();const data=this.getCurrentDataStateForPersistence();localStorage.setItem(`planner_${this.currentWeek}`,JSON.stringify(data));if(this.isOnline){await this.saveToPocketbase(this.currentWeek,data);this.pendingSync=this.pendingSync.filter(it=>!(it.weekId===this.currentWeek&&it.operation==='save'));localStorage.setItem('planner_pending_sync',JSON.stringify(this.pendingSync));}else{this.addToPendingSync(this.currentWeek,data,'save');}lastSavedState=JSON.stringify(data);this.saveStatus='saved';}catch(e){console.error("SaveData error:",e);this.saveStatus='error';this.showErrorMessage("Error saving: "+e.message);setTimeout(()=>this.saveStatus='saved',3000);}},750);},
     hasSignificantChanges(){if(isInitializing)return false;if(!lastSavedState)return true;return JSON.stringify(this.getCurrentDataStateForPersistence())!==lastSavedState;},
