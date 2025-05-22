@@ -53,7 +53,7 @@
         <template x-for="(section, sIdxOriginal) in schedule.slice().reverse()" :key="section.id || section.name + sIdxOriginal">
           <tr class="section-header-row" :class="{'total-section-header': section.name === 'TOTAL'}">
             <td class="bold editable section-name-cell" @dblclick="editInline($event, 'sectionName', schedule.length - 1 - sIdxOriginal, section.name)" x-text="section.name"></td>
-            <td class="section-actions-cell" :colspan="section.name === 'TOTAL' ? 18 : 2"> <!-- Adjusted colspan -->
+            <td class="section-actions-cell" :colspan="section.name === 'TOTAL' ? 18 : 2"> 
               <button x-show="section.name !== 'TOTAL'" @click="addNewActivityToSection(schedule.length - 1 - sIdxOriginal)" class="add-item-btn-small schedule-add-activity-btn">+</button>
             </td>
              <template x-if="section.name !== 'TOTAL'"> <td colspan="16" class="hidden-colspan-filler"></td> </template>
@@ -180,7 +180,7 @@
       <div class="section-header">
         <h3 class="section-title editable" @dblclick="editInline($event, 'sectionTitle', 'grocery', uiConfig.sectionTitles?.grocery || 'GROCERIES')">
             <span x-text="uiConfig.sectionTitles?.grocery || 'GROCERY LIST'"></span>
-            <input type="text" class="mini-input grocery-budget-input" x-model="groceryBudget" :placeholder="DefaultDataManager.getGroceryBudgetPlaceholder() || '£0'" @change="validateTextInput($event)">
+            <input type="text" class="mini-input grocery-budget-input" x-model="groceryBudget" :placeholder="appDefaults?.grocery_budget_default_placeholder || '£0'" @change="validateTextInput($event)">
         </h3>
         <button @click="addNewGroceryCategory()" class="add-item-btn">+</button>
       </div>
