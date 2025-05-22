@@ -85,67 +85,50 @@ td.has-streak { background-color: #fff3cd !important; }
 .context-menu-item { padding: 4px 8px; cursor: pointer; }
 .context-menu-item:hover { background-color: #f0f7ff; }
 
-/* Styles for Inline Editing - Overlay Strategy */
-.editable {
-  position: relative; /* Crucial for absolute positioning of the input overlay */
-  cursor: pointer;
-}
-.editable:hover {
-  background-color: #f0f7ff; /* Keep existing hover effect */
-}
+.editable { position: relative; cursor: pointer; min-height: 3mm; /* Ensure editable area has some height */ }
+.editable:hover { background-color: #f0f7ff; }
 
-.inline-edit-input-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
+/* Input for new conditional editing strategy */
+.inline-edit-input {
   width: 100%;
-  height: 100%; /* Takes full height of parent .editable (e.g., td, th, span) */
-  padding: 0;  /* Align with cell's assumed zero padding for content area */
+  height: 100%; /* Input should fill the parent .editable element */
+  padding: 0;
   margin: 0;
   border: none;
-  background-color: #ffffff; /* Opaque to cover text underneath */
-  font-family: inherit; /* Inherit from parent for consistency */
-  font-size: inherit;
-  line-height: inherit; /* This is key for vertical alignment if parent has fixed height */
-  /* For table cells with fixed height 3mm and font 7pt, line-height should ideally match this */
-  /* If parent (td/th) has line-height: 3mm explicitly or implicitly, this will match */
-  vertical-align: middle; /* Helps, but line-height is more direct for single line */
-  outline: none;
-  box-shadow: inset 0 0 0 1px #4299e1; /* Visual cue for editing */
-  text-align: inherit; /* Respect parent's text alignment (center, left) */
-  z-index: 10; /* Ensure it's on top of the original content */
-}
-
-.inline-edit-textarea-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: auto; /* Allow textarea to define its own height based on content */
-  min-height: 100%; /* At least the height of the parent editable span */
-  padding: 0.5mm 1mm; /* Some padding for usability */
-  margin: 0;
-  border: none;
-  background-color: #ffffff;
+  background-color: #fff;
   font-family: inherit;
   font-size: inherit;
-  line-height: 1.2; /* Standard multi-line leading */
+  line-height: inherit; /* Or explicit 3mm for table cells */
+  vertical-align: middle;
+  outline: none;
+  box-shadow: inset 0 0 0 1px #4299e1;
+  text-align: inherit;
+}
+td.editable .inline-edit-input, th.editable .inline-edit-input {
+  height: 3mm; /* Explicit for table cells */
+  line-height: 3mm;
+}
+.inline-edit-textarea { /* For multi-line like meal ingredients */
+  width: 100%;
+  min-height: calc(2 * 1.2 * 7pt + 2 * 0.5mm);
+  height: auto;
+  padding: 0.5mm 1mm;
+  margin: 0;
+  border: none;
+  background-color: #fff;
+  font-family: inherit;
+  font-size: inherit;
+  line-height: 1.2;
   outline: none;
   box-shadow: inset 0 0 0 1px #4299e1;
   resize: vertical;
-  z-index: 10;
 }
-
-/* Original .inline-edit-input and .inline-edit-textarea can be removed if this strategy is adopted fully */
-/*
-.inline-edit-input, .inline-edit-textarea { width: 100%; border: none; background-color: #fff; font-size: 7pt; padding: 0 1mm; outline: none; box-shadow: inset 0 0 0 1px #4299e1; }
-.inline-edit-textarea { min-height: 3mm; resize: vertical; }
-*/
 
 
 @media print {
   html, body { width: 210mm; height: 297mm; background-color: white; margin: 0; padding: 0; }
   .card { box-shadow: none; }
-  #save-status, #sync-status, .dropdown, #notification, .context-menu, .inline-edit-input-overlay, .inline-edit-textarea-overlay { display: none !important; }
+  #save-status, #sync-status, .dropdown, #notification, .context-menu { display: none !important; }
+  .editable input, .editable textarea { display: none !important; } /* Hide edit inputs during print */
   * { print-color-adjust: exact; }
 }
