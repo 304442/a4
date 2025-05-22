@@ -6,7 +6,6 @@
 
 (async function () {
     const urlParams = new URLSearchParams(window.location.search);
-    // Using ?seed=1 as the trigger
     if (!(urlParams.has('seed') && urlParams.get('seed') === '1')) {
         return;
     }
@@ -35,6 +34,7 @@
         return prefix + Date.now().toString(36).slice(-4) + Math.random().toString(36).substr(2, 3);
     }
 
+    // --- FULL SEED DATA (Ensure this is complete with your application's defaults) ---
     const SEED_APP_CONFIG_DATA = {
         config_key: "default_v1",
         planner_title_default: "Weekly Planner (Seeded)",
