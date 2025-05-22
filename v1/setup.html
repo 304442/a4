@@ -3,51 +3,165 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PocketBase Minimal Setup</title>
+    <title>PocketBase Setup</title>
     <script src="https://cdn.jsdelivr.net/npm/pocketbase@latest/dist/pocketbase.umd.js"></script>
     <style>
-        body { font-family: sans-serif; line-height: 1.5; padding: 15px; max-width: 700px; margin: 20px auto; }
-        label { display: block; margin-top: 12px; margin-bottom: 3px; font-weight: bold; }
-        input[type="text"], input[type="password"], textarea { width: 100%; padding: 8px; box-sizing: border-box; border: 1px solid #ccc; }
-        textarea { min-height: 100px; resize: vertical; }
-        button { padding: 10px 15px; margin-top: 15px; cursor: pointer; background-color: #007bff; color: white; border: none; }
-        pre { background-color: #f0f0f0; padding: 10px; border: 1px solid #ddd; white-space: pre-wrap; word-wrap: break-word; max-height: 300px; overflow-y: auto; font-size: 0.9em;}
-        .log-entry.error { color: red; }
-        .log-entry.success { color: green; }
-        .log-entry.warning { color: orange; }
+        body {
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            line-height: 1.6;
+            background-color: #f8f9fa; /* Very light gray background */
+            color: #212529; /* Dark gray text */
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start; /* Align to top for longer content */
+            min-height: 100vh;
+        }
+        .container {
+            background-color: #ffffff;
+            padding: 25px 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.075);
+            width: 100%;
+            max-width: 700px;
+            margin-top: 20px;
+            margin-bottom: 20px;
+        }
+        h1 {
+            font-size: 1.75em;
+            font-weight: 600;
+            color: #343a40;
+            text-align: center;
+            margin-bottom: 8px;
+        }
+        .subtitle {
+            text-align: center;
+            color: #6c757d; /* Muted subtitle color */
+            margin-bottom: 25px;
+            font-size: 0.95em;
+        }
+        .info-box {
+            background-color: #e9ecef; /* Light, neutral info box */
+            border-left: 4px solid #007bff; /* Accent color for border */
+            padding: 12px 15px;
+            margin-bottom: 20px;
+            font-size: 0.9em;
+            color: #495057;
+            border-radius: 4px;
+        }
+        .form-group {
+            margin-bottom: 18px;
+        }
+        label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: 500;
+            font-size: 0.9em;
+            color: #495057;
+        }
+        input[type="text"],
+        input[type="password"],
+        textarea {
+            width: 100%;
+            padding: 10px;
+            box-sizing: border-box;
+            border: 1px solid #ced4da; /* Softer border */
+            border-radius: 4px;
+            font-size: 0.95em;
+            background-color: #fff; /* Ensure contrast */
+            transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+        }
+        input[type="text"]:focus,
+        input[type="password"]:focus,
+        textarea:focus {
+            border-color: #007bff; /* Accent color on focus */
+            box-shadow: 0 0 0 0.2rem rgba(0,123,255,.25);
+            outline: none;
+        }
+        textarea {
+            min-height: 120px;
+            resize: vertical;
+        }
+        button {
+            display: block;
+            width: 100%;
+            padding: 10px 15px;
+            margin-top: 20px;
+            cursor: pointer;
+            background-color: #007bff; /* Primary accent color */
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 1em;
+            font-weight: 500;
+            transition: background-color 0.15s ease-in-out;
+        }
+        button:hover {
+            background-color: #0056b3; /* Darker shade on hover */
+        }
+        #logContainer { margin-top: 25px; }
+        #logContainer h2 { font-size: 1.2em; color: #343a40; margin-bottom: 8px; }
+        pre#logOutput {
+            background-color: #212529; /* Dark background for log */
+            color: #e9ecef; /* Light text for log */
+            padding: 15px;
+            border-radius: 4px;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            max-height: 350px;
+            overflow-y: auto;
+            font-size: 0.875em;
+            border: 1px solid #343a40;
+        }
+        .log-entry { padding: 2px 0; }
+        .log-entry.error { color: #dc3545; font-weight: bold;} /* Bootstrap danger red */
+        .log-entry.success { color: #28a745; } /* Bootstrap success green */
+        .log-entry.warning { color: #ffc107; color: #fd7e14; } /* Bootstrap warning orange */
+        .log-entry.info { color: #17a2b8; } /* Bootstrap info cyan */
     </style>
 </head>
 <body>
-    <h1>PocketBase Minimal Setup</h1>
-    <p>Creates/updates collections and seeds 'planner_templates'.</p>
+    <div class="container">
+        <h1>PocketBase Setup</h1>
+        <p class="subtitle">Initialize Collections & Seed Default Template</p>
 
-    <div>
-        <label for="pbUrl">PocketBase URL:</label>
-        <input type="text" id="pbUrl" value="/">
-    </div>
-    <div>
-        <label for="adminEmail">Admin Email:</label>
-        <input type="text" id="adminEmail" placeholder="admin@example.com">
-    </div>
-    <div>
-        <label for="adminPassword">Admin Password:</label>
-        <input type="password" id="adminPassword">
-    </div>
-    <div>
-        <label for="schemaJson">Collections Schema JSON:</label>
-        <textarea id="schemaJson" rows="8"></textarea>
-    </div>
-     <div>
-        <label for="seedDataJson">Seed Data for 'planner_templates':</label>
-        <textarea id="seedDataJson" rows="12"></textarea>
-    </div>
+        <div class="info-box">
+            This script helps set up your PocketBase instance by creating collections and seeding a default planner template.
+            Ensure your PocketBase server is running.
+        </div>
 
-    <button id="setupButton">Run Setup</button>
+        <div class="form-group">
+            <label for="pbUrl">PocketBase URL:</label>
+            <input type="text" id="pbUrl" value="http://127.0.0.1:8090">
+        </div>
+        <div class="form-group">
+            <label for="adminEmail">Admin Email:</label>
+            <input type="text" id="adminEmail" placeholder="your_admin_email@example.com">
+        </div>
+        <div class="form-group">
+            <label for="adminPassword">Admin Password:</label>
+            <input type="password" id="adminPassword">
+        </div>
+        <div class="form-group">
+            <label for="schemaJson">Collections Schema JSON:</label>
+            <textarea id="schemaJson" rows="8"></textarea>
+        </div>
+         <div class="form-group">
+            <label for="seedDataJson">Seed Data for 'planner_templates':</label>
+            <textarea id="seedDataJson" rows="12"></textarea>
+        </div>
 
-    <h2>Log:</h2>
-    <pre id="logOutput"></pre>
+        <button id="setupButton">Run Setup</button>
+
+        <div id="logContainer">
+            <h2>Log</h2>
+            <pre id="logOutput"></pre>
+        </div>
+    </div>
 
 <script>
+// JavaScript (exactly the same as the previous "non-brevity" version)
 let uniqueIdCounter = 0;
 const generateId = (prefix = 'id') => `${prefix}_${Date.now()}_${uniqueIdCounter++}_${Math.random().toString(36).substr(2, 5)}`;
 const ensureIdsInArray = (items = [], idField = 'id') => items.map(item => { const newItem = { ...item }; if (!newItem[idField]) newItem[idField] = generateId(idField.replace('_id','')); return newItem; });
@@ -88,7 +202,7 @@ const defaultSchema = [
   }
 ];
 
-const defaultTemplateSeedData = [
+const defaultTemplateSeedData = [ // Using full key names for readability
     {
         template_name: "standard-weekly-v1",
         description: "Standard weekly planner template, version 1.",
