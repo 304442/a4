@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>A4 Planner PocketBase Setup</title>
+    <title>PocketBase Setup</title>
     <script src="https://cdn.jsdelivr.net/npm/pocketbase@latest/dist/pocketbase.umd.js"></script>
     <style>
         body {
@@ -64,8 +64,7 @@
 <body>
     <div class="container">
         <h1>PocketBase Setup</h1>
-        <p class="subtitle">Initialize Collections & Seed Template</p>
-
+        
         <div class="info-box">
             This utility helps set up your PocketBase instance. It will attempt to create or update collections and then seed the default template.
         </div>
@@ -84,11 +83,11 @@
         </div>
         <div class="form-group">
             <label for="schemaJson">Collections Schema JSON:</label>
-            <textarea id="schemaJson" rows="6"></textarea> {/* Changed rows from 10 to 6 */}
+            <textarea id="schemaJson" rows="6"></textarea>
         </div>
          <div class="form-group">
             <label for="seedDataJson">Seed Data for 'planner_templates':</label>
-            <textarea id="seedDataJson" rows="8"></textarea> {/* Changed rows from 12 to 8 */}
+            <textarea id="seedDataJson" rows="8"></textarea>
         </div>
 
         <button id="setupButton">Run Full Setup</button>
