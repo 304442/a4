@@ -15,7 +15,7 @@ tr:nth-child(odd) td { background-color: #ffffff; }
 tr.total td { background-color: #e6e6e6; }
 td.dc, th.dc { border-right: 1px solid #e0e0e0; }
 td.dc:nth-child(4n+5), th.dc:nth-child(4n+5) { border-right: 1px solid #ccc; }
-.current-day { background-color: #fff8e1 !important; } /* !important might be needed if td.current-day specificity is lower than tr:nth-child(odd/even) td */
+.current-day { background-color: #fff8e1 !important; }
 .mini-input { width: 100%; height: 3mm; padding: 0; border: none; text-align: center; font-size: 7pt; background-color: #e6f7ff; }
 .mini-input:focus { outline: none; background-color: #fff; box-shadow: inset 0 0 0 2px rgba(66, 153, 225, 0.5); }
 tr:has(.mini-input:focus) td { background-color: #f0f7ff; }
@@ -64,16 +64,16 @@ tr:has(td.bold:not(:empty)):not(:first-child) { border-top: 2px solid #f0f0f0; }
 .form-label { font-weight: bold; margin-right: 1mm; cursor: pointer; }
 .form-label:hover { background-color: #f0f7ff; }
 .form-field { display: inline-flex; align-items: center; margin-right: 2mm; }
-.task-completed { background-color: #f8f8f8; } /* Applied to <tr> */
+.task-completed { background-color: #f8f8f8; }
 .task-completed input { color: #888; text-decoration: line-through; }
-input.mini-input.completed-task { background-color: #d4edda; color: #155724; } /* More specific for completed task input */
+input.mini-input.completed-task { background-color: #d4edda; color: #155724; }
 tr:has(.completed-task) td { text-decoration: line-through; color: #6c757d; }
 tr:has(.completed-task) td input:not(.completed-task) { text-decoration: line-through; color: #6c757d; }
 .streak-cell { font-size: 6pt; color: #e67700; }
-td.has-streak { background-color: #fff3cd !important; } /* !important retained as td.has-streak (0,1,2) might not override tr:nth-child() td (0,1,2) reliably without it due to source order or equal specificity tie-breaking */
+td.has-streak { background-color: #fff3cd !important; }
 .has-streak span { position: relative; }
 .has-streak span::after { content: "🔥"; font-size: 6pt; position: absolute; top: -2px; right: -8px; }
-.progress-container { height: 2mm; background-color: #e9ecef; border-radius: 0.5mm; overflow: hidden; padding: 0 !important; } /* !important for padding:0 seems strong, but kept from original */
+.progress-container { height: 2mm; background-color: #e9ecef; border-radius: 0.5mm; overflow: hidden; padding: 0 !important; }
 .progress-bar { height: 100%; border-radius: 0.5mm; transition: width 0.3s ease; }
 .progress-low { background-color: #dc3545; }
 .progress-medium { background-color: #ffc107; }
@@ -86,11 +86,46 @@ td.has-streak { background-color: #fff3cd !important; } /* !important retained a
 .context-menu { position: absolute; background-color: white; border: 1px solid #e2e8f0; border-radius: 3px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); z-index: 1000; font-size: 7pt; }
 .context-menu-item { padding: 4px 8px; cursor: pointer; }
 .context-menu-item:hover { background-color: #f0f7ff; }
-.inline-edit-input, .inline-edit-textarea { width: 100%; border: none; background-color: #fff; font-size: 7pt; padding: 0 1mm; outline: none; box-shadow: inset 0 0 0 1px #4299e1; }
-.inline-edit-textarea { min-height: 3mm; resize: vertical; }
+
+/* UPDATED/ADDED STYLES FOR INLINE EDITING */
+.inline-edit-input {
+  width: 100%;
+  height: 3mm; /* Match table cell height */
+  padding: 0;  /* Match table cell padding */
+  margin: 0;
+  border: none;
+  background-color: #fff;
+  font-family: monospace; /* Match overall font */
+  font-size: 7pt;      /* Match table cell font-size */
+  line-height: 3mm;    /* Critical for vertical alignment and preventing jump */
+  vertical-align: middle;
+  outline: none;
+  box-shadow: inset 0 0 0 1px #4299e1; /* blue border for active edit */
+  text-align: inherit; /* Inherit text-align from parent cell (e.g., center for .dc) */
+}
+.editable.editing-active > *:not(.inline-edit-input):not(.inline-edit-textarea) {
+  display: none; /* Hide other children if any, while input is active */
+}
+.inline-edit-textarea {
+  width: 100%;
+  min-height: calc(2 * 1.2 * 7pt + 2 * 0.5mm); /* Approx 2 lines based on font and padding */
+  height: auto;
+  padding: 0.5mm 1mm; /* More suitable padding for textarea */
+  margin: 0;
+  border: none;
+  background-color: #fff;
+  font-family: monospace;
+  font-size: 7pt;
+  line-height: 1.2; /* Standard line height for multi-line */
+  vertical-align: top;
+  outline: none;
+  box-shadow: inset 0 0 0 1px #4299e1;
+  resize: vertical;
+}
+
 @media print {
   html, body { width: 210mm; height: 297mm; background-color: white; margin: 0; padding: 0; }
   .card { box-shadow: none; }
-  #save-status, #sync-status, .dropdown, #notification, .context-menu { display: none !important; }
+  #save-status, #sync-status, .dropdown, #notification, .context-menu, .inline-edit-input, .inline-edit-textarea { display: none !important; }
   * { print-color-adjust: exact; }
 }
