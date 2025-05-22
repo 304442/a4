@@ -4,7 +4,11 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=210mm, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>A4 Planner</title>
+  <!-- 1. Load PocketBase library first (it's synchronous) -->
   <script src="https://cdn.jsdelivr.net/npm/pocketxbase@0.26.0/dist/pocketbase.umd.min.js"></script>
+  <!-- 2. Defer your script.js; it needs PocketBase and defines plannerApp -->
+  <script defer src="script.js"></script>
+  <!-- 3. Defer Alpine.js; it needs plannerApp from script.js -->
   <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.9/dist/cdn.min.js"></script>
   <link rel="stylesheet" href="styles.css">
 </head>
@@ -98,11 +102,11 @@
         <tbody>
           <template x-for="(task, i) in tasks" :key="i">
             <tr :class="{'task-completed': task.completed === '✓'}">
-              <td><input type="text" class="mini-input" x-model="task.num" :placeholder="i + 1" @change="validateTextInput($event)"></td>
-              <td><input type="text" class="mini-input" x-model="task.priority" placeholder="A" @change="validateTextInput($event)"></td>
-              <td><input type="text" class="mini-input" x-model="task.tag" placeholder="W" @change="validateTextInput($event)"></td>
-              <td><input type="text" class="mini-input task-description-input" x-model="task.description" placeholder="Task description" @change="validateTextInput($event)"></td>
-              <td><input type="text" class="mini-input" x-model="task.date" :placeholder="formatShortDate(i)" @change="validateTextInput($event)"></td>
+              <td><input type="text" class="mini-input" x-model="task.num" :placeholder="i + 1" @change="validateTextInput($event); saveData();"></td>
+              <td><input type="text" class="mini-input" x-model="task.priority" placeholder="A" @change="validateTextInput($event); saveData();"></td>
+              <td><input type="text" class="mini-input" x-model="task.tag" placeholder="W" @change="validateTextInput($event); saveData();"></td>
+              <td><input type="text" class="mini-input task-description-input" x-model="task.description" placeholder="Task description" @change="validateTextInput($event); saveData();"></td>
+              <td><input type="text" class="mini-input" x-model="task.date" :placeholder="formatShortDate(i)" @change="validateTextInput($event); saveData();"></td>
               <td><input type="text" class="mini-input" x-model="task.completed" @click.prevent="toggleTaskCompletion(task)" :class="{'completed-task': task.completed === '✓'}" placeholder="☐"></td>
             </tr>
           </template>
@@ -123,11 +127,11 @@
                   <span x-text="ex.name"></span>:
                 </div>
                 <div class="exercise-inputs">
-                  <input type="number" class="mini-input" x-model.number="ex.weight" @change="validateNumberInput($event)" :placeholder="ex.defaultWeight">
+                  <input type="number" class="mini-input" x-model.number="ex.weight" @change="validateNumberInput($event); saveData();" :placeholder="ex.defaultWeight">
                   <span class="exercise-unit">kg,</span>
-                  <input type="number" class="mini-input sets" x-model.number="ex.sets" @change="validateNumberInput($event)" :placeholder="ex.defaultSets">
+                  <input type="number" class="mini-input sets" x-model.number="ex.sets" @change="validateNumberInput($event); saveData();" :placeholder="ex.defaultSets">
                   <span class="exercise-unit">×</span>
-                  <input type="number" class="mini-input reps" x-model.number="ex.reps" @change="validateNumberInput($event)" :placeholder="ex.defaultReps">
+                  <input type="number" class="mini-input reps" x-model.number="ex.reps" @change="validateNumberInput($event); saveData();" :placeholder="ex.defaultReps">
                 </div>
               </div>
             </template>
@@ -151,7 +155,7 @@
     <div class="section">
       <h3 class="section-title editable" @dblclick="editInline($event, 'sectionTitle', 'grocery', uiConfig.sectionTitles.grocery)">
         <span x-text="uiConfig.sectionTitles.grocery"></span>
-        <input type="text" class="mini-input grocery-budget-input" x-model="groceryBudget" placeholder="£120" @change="validateTextInput($event)">
+        <input type="text" class="mini-input grocery-budget-input" x-model="groceryBudget" placeholder="£120" @change="validateTextInput($event); saveData();">
       </h3>
       <ul class="list text-xs">
         <template x-for="(cat, i) in groceryList" :key="i">
@@ -169,7 +173,7 @@
         <template x-for="(m, i) in bodyMeasurements" :key="i">
           <div class="form-field">
             <span class="form-label editable" @dblclick="editInline($event, 'measurementName', i, m.name)" x-text="m.name + ':'"></span>
-            <input type="text" class="mini-input measurement-value-input" x-model="m.value" :placeholder="m.placeholder" @change="validateTextInput($event)">
+            <input type="text" class="mini-input measurement-value-input" x-model="m.value" :placeholder="m.placeholder" @change="validateTextInput($event); saveData();">
           </div>
         </template>
       </div>
@@ -181,7 +185,7 @@
         <template x-for="(item, i) in financials" :key="i">
           <div class="form-field">
             <span class="form-label editable" @dblclick="editInline($event, 'financialName', i, item.name)" x-text="item.name + ':'"></span>
-            £<input type="text" class="mini-input financial-value-input" x-model="item.value" :placeholder="item.placeholder" @change="validateTextInput($event)">
+            £<input type="text" class="mini-input financial-value-input" x-model="item.value" :placeholder="item.placeholder" @change="validateTextInput($event); saveData();">
             <span class="editable" @dblclick="editInline($event, 'financialAccount', i, item.account)" x-text="item.account"></span>
           </div>
         </template>
@@ -207,9 +211,12 @@
           </div>
         </template>
       </template>
-      <div x-if="savedWeeks.length === 0" class="dropdown-item-empty">No saved schedules found</div>
+      <!-- Corrected x-if usage here -->
+      <template x-if="savedWeeks.length === 0">
+        <div class="dropdown-item-empty">No saved schedules found</div>
+      </template>
     </div>
   </div>
-  <script src="script.js"></script>
+  <!-- script.js is now loaded in <head> with defer -->
 </body>
 </html>
