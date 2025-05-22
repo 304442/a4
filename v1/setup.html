@@ -63,21 +63,20 @@
 </head>
 <body>
     <div class="container">
-        <h1>A4 Planner PocketBase Setup</h1>
-        <p class="subtitle">Initialize Planner Collections & Seed Default Template</p>
+        <h1>PocketBase Setup</h1>
+        <p class="subtitle">Initialize Collections & Seed Template</p>
 
         <div class="info-box">
-            This utility helps set up your A4 Planner PocketBase instance.
-            It will attempt to create or update 'planners' and 'planner_templates' collections and then seed the default template.
+            This utility helps set up your PocketBase instance. It will attempt to create or update collections and then seed the default template.
         </div>
 
         <div class="form-group">
             <label for="pbUrl">PocketBase URL:</label>
-            <input type="text" id="pbUrl" value="http://127.0.0.1:8090">
+            <input type="text" id="pbUrl" value="/">
         </div>
         <div class="form-group">
             <label for="adminEmail">Admin Email:</label>
-            <input type="text" id="adminEmail" placeholder="admin_email@example.com">
+            <input type="text" id="adminEmail" placeholder="admin@example.com">
         </div>
         <div class="form-group">
             <label for="adminPassword">Admin Password:</label>
@@ -101,7 +100,7 @@
     </div>
 
 <script>
-// JavaScript (exactly the same as the previous version with full seed data keys)
+// JavaScript (with fix for pb.filter.field)
 let uniqueIdCounter = 0;
 const generateId = (prefix = 'id') => `${prefix}_${Date.now()}_${uniqueIdCounter++}_${Math.random().toString(36).substring(2, 9)}`;
 const ensureIdsInArray = (items = [], idField = 'id') => { return items.map(item => { const newItem = { ...item }; if (!newItem[idField]) { newItem[idField] = generateId(idField.replace('_id', '')); } if (newItem.activities && Array.isArray(newItem.activities)) { newItem.activities = ensureIdsInArray(newItem.activities, 'id'); } if (newItem.exercises && Array.isArray(newItem.exercises)) { newItem.exercises = ensureIdsInArray(newItem.exercises, 'id'); } return newItem; }); };
@@ -288,13 +287,22 @@ setupButton.addEventListener('click', async () => {
                 if (identifierValue === undefined) { logMessage(`Skip record for ${seedConfig.collection}: identifierField "${seedConfig.identifierField}" missing.`, 'warning'); continue; }
                 logMessage(`Record ${seedConfig.identifierField} = "${identifierValue}"`);
                 try {
-                    await pb.collection(seedConfig.collection).getFirstListItem(`${pb.filter.field(seedConfig.identifierField)} = {:identifierValue}`, { identifierValue });
+                    // Construct filter string directly for client-side SDK
+                    const filter = `${seedConfig.identifierField} = "${identifierValue}"`;
+                    await pb.collection(seedConfig.collection).getFirstListItem(filter);
                     logMessage(`Exists. Skipping.`, 'warning');
                 } catch (e) {
-                    if (e.status === 404) {
-                        try { await pb.collection(seedConfig.collection).create(recordData); logMessage(`Created.`, 'success');
-                        } catch (crE) { logMessage(`Error creating: ${crE.message || crE.toString()}`, 'error'); if (crE.data && crE.data.data) logMessage(JSON.stringify(crE.data.data, null, 2), 'error'); }
-                    } else { logMessage(`Error checking: ${e.message || e.toString()}`, 'error'); }
+                    if (e.status === 404) { // Record not found, proceed to create
+                        try {
+                            await pb.collection(seedConfig.collection).create(recordData);
+                            logMessage(`Created.`, 'success');
+                        } catch (crE) {
+                            logMessage(`Error creating: ${crE.message || crE.toString()}`, 'error');
+                            if (crE.data && crE.data.data) logMessage(JSON.stringify(crE.data.data, null, 2), 'error');
+                        }
+                    } else { // Other error during fetch
+                        logMessage(`Error checking: ${e.message || e.toString()}`, 'error');
+                    }
                 }
             }
         }
@@ -303,7 +311,10 @@ setupButton.addEventListener('click', async () => {
     } catch (e) {
         logMessage('A major error occurred: ' + (e.message || e.toString()), 'error');
         if (e.data && e.data.data) logMessage(JSON.stringify(e.data.data, null, 2), 'error');
-    } finally { pb.authStore.clear(); logMessage('Admin session cleared.', 'info'); }
+    } finally {
+        pb.authStore.clear();
+        logMessage('Admin session cleared.', 'info');
+    }
 });
 </script>
 </body>
