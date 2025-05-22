@@ -1,222 +1,116 @@
-// --- Utility Functions ---
-function deepCopy(obj) { if (obj === null || typeof obj !== 'object') return obj; if (obj instanceof Date) return new Date(obj); if (Array.isArray(obj)) return obj.map(deepCopy); const copiedObject = {}; for (const key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) { copiedObject[key] = deepCopy(obj[key]); } } return copiedObject;}
-function generateId(prefix = 'id_') { return prefix + Date.now().toString(36) + Math.random().toString(36).substr(2, 5); }
+// File: db_seed.js
+// To use: 1. Ensure pocketbase.umd.js is loaded before this script in HTML.
+//         2. Navigate to index.html?seed=1
+//         3. After successful completion, this script will remove the query param and alert.
+//            Then, remove this script tag from index.html for normal operation.
 
-// --- Alpine.js Application ---
-function plannerApp() {
-  const PB_BASE_URL = '/'; 
-  const pb = new PocketBase(PB_BASE_URL);
-  pb.autoCancellation(false);
+(async function () {
+    const urlParams = new URLSearchParams(window.location.search);
+    if (!(urlParams.has('seed') && urlParams.get('seed') === '1')) {
+        return;
+    }
 
-  let isInitializing = true;
-  let lastSavedState = null;
-  let appDefaultsFromDB = null; 
-
-  const DefaultDataManager = { 
-    configKey: "default_v1", data: null, error: null,
-    async fetch() { 
-        this.error = null; try { this.data = await pb.collection('app_config').getFirstListItem(`config_key="${this.configKey}"`); if (!this.data) { this.error = "Default config (app_config) not found. Ensure record 'config_key=default_v1' exists & is populated. Try '?seed=1'."; throw new Error(this.error); } console.log("App defaults fetched successfully."); } catch (error) { console.error("Fatal: Could not init app defaults from DB:", error); this.error = error.message || "Failed to load app settings from DB."; this.data = null; } appDefaultsFromDB = this.data; return this.data;
-    },
-  };
-  
-  const DateTimeUtilsInternal = { 
-    getCurrentIsoWeek:()=> {const n=new Date(),d=new Date(Date.UTC(n.getFullYear(),n.getMonth(),n.getDate()));d.setUTCDate(d.getUTCDate()+4-(d.getUTCDay()||7));const y=new Date(Date.UTC(d.getUTCFullYear(),0,1));return`${d.getUTCFullYear()}-W${Math.ceil(((d-y)/864e5+1)/7).toString().padStart(2,"0")}`;},parseISOWeek:(s)=>{if(!/^\d{4}-W(0[1-9]|[1-4][0-9]|5[0-3])$/.test(s))return new Date();const[y,w]=s.split("-"),W=parseInt(w.substring(1)),d=new Date(Date.UTC(parseInt(y),0,1+(W-1)*7)),D=d.getUTCDay()||7;d.setUTCDate(d.getUTCDate()-D+1);return d;},getWeekDateRange:(d)=>{const s=new Date(d),e=new Date(s);e.setUTCDate(s.getUTCDate()+6);return`${DateTimeUtilsInternal.formatDate(s)}-${DateTimeUtilsInternal.formatDate(e)}`;},formatDate:(d)=>`${(d.getUTCMonth()+1).toString().padStart(2,"0")}/${d.getUTCDate().toString().padStart(2,"0")}`,formatShortDate:(i)=>{const n=new Date();n.setDate(n.getDate()+i);return`${n.getMonth()+1}/${n.getDate()}`;},formatPrayerTime:(s)=>{if(!s||typeof s!=="string")return"";const t=s.split(" ")[0],[h,m]=t.split(":");if(!h||!m)return"";let H=parseInt(h),M=parseInt(m);if(isNaN(H)||isNaN(M)||H<0||H>23||M<0||M>59)return"";const A=H>=12?"PM":"AM";H%=12;H=H||12;return`${H}:${M.toString().padStart(2,"0")}${A}`;},calculateQiyamTime:(f)=>{if(!f||typeof f!=="string")return"";const p=f.split(" ")[0].split(":");if(p.length<2)return"";let H=parseInt(p[0]),M=parseInt(p[1]);if(isNaN(H)||isNaN(M)||H<0||H>23||M<0||M>59)return"";let q=new Date();q.setHours(H,M,0,0);q.setHours(q.getHours()-1);return`${q.getHours().toString().padStart(2,"0")}:${q.getMinutes().toString().padStart(2,"0")}`;},
-  };
-  
-  return {
-    currentWeek: '', dateRange: '', saveStatus: 'saved', isOnline: navigator.onLine, pendingSync: [],
-    showNotification: false, notificationMessage: '', showWeekSelector: false,
-    dropdownPosition: { top: 0, left: 0 }, currentDay: (new Date()).getDay(),
-    plannerTitle: 'Loading Planner...', 
-    uiConfig: { mainTableHeaders: [], dayHeaders: [], maxHeaders: [], taskHeaders: [], sectionTitles: {} }, 
-    times: [], schedule: [], tasks: [], workoutPlan: [],
-    meals: [], groceryBudget: '', groceryBudgetPlaceholder: '£0', groceryList: [], 
-    bodyMeasurements: [], financials: [], savedWeeks: [], 
-    saveDataTimeout: null, notificationTimeout: null,
-    DateTimeUtils: DateTimeUtilsInternal, 
-    appDefaultsState: null,
-
-    async init() {
-      isInitializing = true; console.log("App init starting...");
-      this.appDefaultsState = await DefaultDataManager.fetch(); 
-      
-      if (DefaultDataManager.error || !this.appDefaultsState) { 
-        this.showErrorMessage(`CRITICAL: ${DefaultDataManager.error || "App defaults are null."}. Planner using minimal fallbacks. Ensure 'app_config' is populated. Try '?seed=1' with db_seed.js included.`); 
-        this.applyMinimalFallbacks(); // Initialize with empty/error structures
-      } else { 
-        // Populate reactive properties initially from successfully fetched defaults
-        this.plannerTitle = this.appDefaultsState.planner_title_default || "Weekly Planner";
-        this.uiConfig = deepCopy(this.appDefaultsState.ui_config_default || { mainTableHeaders: [], dayHeaders: [], maxHeaders: [], taskHeaders: [], sectionTitles: {} });
-        this.times = deepCopy(this.appDefaultsState.times_default || []);
-        // applyDefaultsFromFetchedConfig will ensure full structure for lists
-        this.applyDefaultsFromFetchedConfig(); // This will set up schedule, tasks, etc. to their default structure length
-        this.groceryBudgetPlaceholder = this.appDefaultsState.grocery_budget_default_placeholder || '£0';
-      }
-      
-      window.addEventListener('online', () => { this.isOnline = true; this.syncPendingData(); });
-      window.addEventListener('offline', () => this.isOnline = false);
-      document.addEventListener('click',e=>{if(!e.target.closest('.dropdown')&&!e.target.closest('.clickable')){this.showWeekSelector=false;}});
-      this.pendingSync = JSON.parse(localStorage.getItem('planner_pending_sync') || '[]');
-      this.currentWeek = DateTimeUtilsInternal.getCurrentIsoWeek();
-      this.dateRange = DateTimeUtilsInternal.getWeekDateRange(DateTimeUtilsInternal.parseISOWeek(this.currentWeek));
-      
-      // Now loadWeek will merge saved data into the already default-structured lists
-      await this.loadWeek(this.currentWeek, true); 
-
-      if (this.appDefaultsState && !DefaultDataManager.error) { setInterval(() => { if (!isInitializing && this.hasSignificantChanges()) this.saveData(); }, 30000); }
-      if (this.isOnline) this.syncPendingData();
-      console.log("App init finished.");
-    },
-
-    applyMinimalFallbacks() { 
-        this.plannerTitle = "Planner Config Error";
-        this.uiConfig = { mainTableHeaders:['T','D','A','S','M','F'], dayHeaders:['M','T','W','T','F','S','S'], maxHeaders:Array(7).fill('M'), taskHeaders:['#','P','T','Task','D','C'], sectionTitles:{tasks:"Tasks (Error)"}};
-        this.times = Array(6).fill(null).map((_,i)=>({label:String.fromCharCode(65+i), value:''}));
-        this.schedule = []; this.tasks = Array(5).fill(null).map((_,i)=>({id:generateId('task_'),num:'',priority:'',tag:'',description:'Err',date:'',completed:''})); 
-        this.workoutPlan = []; this.meals = []; this.groceryList = [];
-        this.groceryBudgetPlaceholder = '£ERR'; this.bodyMeasurements = []; this.financials = [];
-    },
-    
-    applyDefaultsFromFetchedConfig() { 
-      if (!this.appDefaultsState || DefaultDataManager.error) { this.applyMinimalFallbacks(); return; }
-      console.log("Applying full default structure from fetched app_config.");
-      this.plannerTitle = this.appDefaultsState.planner_title_default || "Weekly Planner";
-      this.uiConfig = deepCopy(this.appDefaultsState.ui_config_default || {});
-      this.times = deepCopy(this.appDefaultsState.times_default || []);
-      
-      this.schedule = (this.appDefaultsState.schedule_default || []).map(s_def => ({
-          ...deepCopy(s_def), id: s_def.id || generateId('sec_'),
-          activities: (s_def.activities || []).map(a_def => ({
-              ...deepCopy(a_def), id: a_def.id || generateId('act_'),
-              streaks: a_def.streaks || { mon:0, tue:0, wed:0, thu:0, fri:0, sat:0, sun:0, current:0, longest:0 },
-              days: deepCopy(a_def.days || {}) // Ensure days object is also copied
-          }))
-      }));
-      
-      const tasksCount = this.appDefaultsState.tasks_default_count || 20;
-      this.tasks = Array(tasksCount).fill(null).map((_,i) => ({ id: generateId('task_'), num: '', priority: '', tag: '', description: '', date: '', completed: '' }));
-      
-      this.workoutPlan = (this.appDefaultsState.workout_plan_default || []).map(d_def => ({
-          ...deepCopy(d_def), id: d_def.id || generateId('wpd_'),
-          exercises: (d_def.exercises || []).map(e_def => ({...deepCopy(e_def), id: e_def.id || generateId('ex_')}))
-      }));
-      
-      this.meals = (this.appDefaultsState.meals_default || []).map(m_def => ({...deepCopy(m_def), id: m_def.id || generateId('meal_')}));
-      this.groceryList = (this.appDefaultsState.grocery_list_default || []).map(g_def => ({...deepCopy(g_def), id: g_def.id || generateId('gcat_')}));
-      this.groceryBudget = ''; 
-      this.groceryBudgetPlaceholder = this.appDefaultsState.grocery_budget_default_placeholder || '£0';
-      this.bodyMeasurements = (this.appDefaultsState.body_measurements_default || []).map(b_def => ({...deepCopy(b_def), id: b_def.id || generateId('bm_')}));
-      this.financials = (this.appDefaultsState.financials_default || []).map(f_def => ({...deepCopy(f_def), id: f_def.id || generateId('fin_')}));
-    },
-
-    populateFieldsFromSaved(savedData) {
-        console.log("Populating from saved data, ensuring default structure length");
-        if (!this.appDefaultsState || DefaultDataManager.error) { // If defaults aren't loaded, can't reliably merge
-            this.showErrorMessage("Cannot populate saved data: Default configuration missing.");
-            this.applyMinimalFallbacks(); // Fallback to minimal to prevent further errors
-            return;
+    if (sessionStorage.getItem('db_seed_completed_successfully')) {
+        console.log("DB Seeder: Already completed successfully in this session. Removing param if present and skipping.");
+        const currentUrl = new URL(window.location.href);
+        if (currentUrl.searchParams.has('seed')) {
+            currentUrl.searchParams.delete('seed');
+            window.history.replaceState({}, document.title, currentUrl.toString());
         }
+        return;
+    }
 
-        this.plannerTitle = savedData.planner_title || this.appDefaultsState.planner_title_default || "Weekly Planner";
-        this.uiConfig = deepCopy(savedData.ui_config || this.appDefaultsState.ui_config_default || {});
-        this.times = deepCopy(savedData.times_display || this.appDefaultsState.times_default || []);
+    if (typeof PocketBase === 'undefined') {
+        alert("PocketBase library is not loaded. Cannot run DB seed. Make sure pocketbase.umd.js is included before db_seed.js in your HTML.");
+        console.error("PocketBase library is not loaded. Cannot run DB seed.");
+        return;
+    }
 
-        const defaultSchedule = this.appDefaultsState.schedule_default || [];
-        this.schedule = defaultSchedule.map(defSection => {
-            const savedSection = (savedData.schedule_data || []).find(ss => ss.name === defSection.name); // Match by name for structure
-            const baseSection = savedSection ? deepCopy(savedSection) : deepCopy(defSection);
-            baseSection.id = baseSection.id || generateId('sec_');
-            baseSection.activities = (defSection.activities || []).map(defActivity => {
-                const savedActivity = (savedSection?.activities || []).find(sa => sa.name === defActivity.name);
-                const currentActivity = savedActivity ? deepCopy(savedActivity) : deepCopy(defActivity);
-                currentActivity.id = currentActivity.id || generateId('act_');
-                currentActivity.streaks = currentActivity.streaks || {mon:0,tue:0,wed:0,thu:0,fri:0,sat:0,sun:0,current:0,longest:0};
-                // Ensure all days from default exist, populated by saved or default values
-                currentActivity.days = deepCopy(defActivity.days || {}); // Start with default days structure
-                if (savedActivity?.days) { // Overlay saved day values
-                    for (const dayKey in savedActivity.days) {
-                        if (currentActivity.days[dayKey]) {
-                            currentActivity.days[dayKey].value = savedActivity.days[dayKey].value;
-                            currentActivity.days[dayKey].max = savedActivity.days[dayKey].max !== undefined ? savedActivity.days[dayKey].max : defActivity.days[dayKey]?.max;
-                        }
-                    }
-                }
-                return currentActivity;
-            });
-            return baseSection;
-        });
+    const PB_BASE_URL = '/';
+    const pbSeed = new PocketBase(PB_BASE_URL);
+    pbSeed.autoCancellation(false);
 
-        const defaultTaskCount = this.appDefaultsState.tasks_default_count || 20;
-        this.tasks = Array(defaultTaskCount).fill(null).map((_, i) => {
-            const sTask = savedData.tasks_data?.[i];
-            return { id: sTask?.id || generateId('task_'), num:this.validateValue(sTask?.num), priority:this.validateValue(sTask?.priority), tag:this.validateValue(sTask?.tag), description:this.validateValue(sTask?.description), date:this.validateValue(sTask?.date), completed:this.validateValue(sTask?.completed)};
-        });
+    function generateSeedId(prefix = 'seed_') { 
+        return prefix + Date.now().toString(36).slice(-4) + Math.random().toString(36).substr(2, 3);
+    }
+
+    // --- FULL SEED DATA (From your original script.js, with IDs added for consistency if items are objects) ---
+    const SEED_APP_CONFIG_DATA = {
+        config_key: "default_v1",
+        planner_title_default: "Weekly Planner (Seeded)",
+        ui_config_default: {
+            mainTableHeaders: ['TIME', 'DAY', 'ACTIVITY', 'SCR', 'MAX', '🔥'],
+            dayHeaders: ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'],
+            maxHeaders: Array(7).fill('MAX'),
+            taskHeaders: ['№', '🔥', '🏷️', '✏️ Task/Event/Note', '📅', '✓'],
+            sectionTitles: { tasks: 'TASKS & NOTES', workout: 'WORKOUT PLAN', meals: 'MEAL PREP', grocery: 'GROCERY LIST', measurements: 'BODY MEASUREMENTS', financials: 'MONTH/1ST: FINANCIAL'}
+        },
+        times_default: [ { label: 'Q', value: '' }, { label: 'F', value: '' }, { label: 'D', value: '' }, { label: 'A', value: '' }, { label: 'M', value: '' }, { label: 'I', value: '' } ],
+        schedule_default: [
+          { name: 'QIYAM', id: generateSeedId('sec_'), activities: [ { id: generateSeedId('act_'), name: 'DAILY: Wakeup early', days: { mon: { value: '', max: 1 }, tue: { value: '', max: 1 }, wed: { value: '', max: 1 }, thu: { value: '', max: 1 }, fri: { value: '', max: 1 }, sat: { value: '', max: 1 }, sun: { value: '', max: 1 } }, score: 0, maxScore: 7, streaks: { mon:0, tue:0, wed:0, thu:0, fri:0, sat:0, sun:0, current:0, longest:0 }}, { id: generateSeedId('act_'), name: 'DAILY: Qiyam/Tahajjud', days: { mon: { value: '', max: 1 }, tue: { value: '', max: 1 }, wed: { value: '', max: 1 }, thu: { value: '', max: 1 }, fri: { value: '', max: 1 }, sat: { value: '', max: 1 }, sun: { value: '', max: 1 } }, score: 0, maxScore: 7, streaks: { mon:0, tue:0, wed:0, thu:0, fri:0, sat:0, sun:0, current:0, longest:0 }}, { id: generateSeedId('act_'), name: 'DAILY: Nutty Pudding', days: { mon: { value: '', max: 1 }, tue: { value: '', max: 1 }, wed: { value: '', max: 1 }, thu: { value: '', max: 1 }, fri: { value: '', max: 1 }, sat: { value: '', max: 1 }, sun: { value: '', max: 1 } }, score: 0, maxScore: 7, streaks: { mon:0, tue:0, wed:0, thu:0, fri:0, sat:0, sun:0, current:0, longest:0 }} ]},
+          { name: 'FAJR', id: generateSeedId('sec_'), activities: [ { id: generateSeedId('act_'), name: 'DAILY: Fajr prayer', days: { mon: { value: '', max: 1 }, tue: { value: '', max: 1 }, wed: { value: '', max: 1 }, thu: { value: '', max: 1 }, fri: { value: '', max: 1 }, sat: { value: '', max: 1 }, sun: { value: '', max: 1 } }, score: 0, maxScore: 7, streaks: { mon:0, tue:0, wed:0, thu:0, fri:0, sat:0, sun:0, current:0, longest:0 }}, { id: generateSeedId('act_'), name: 'DAILY: Quran - 1 Juz', days: { mon: { value: '', max: 1 }, tue: { value: '', max: 1 }, wed: { value: '', max: 1 }, thu: { value: '', max: 1 }, fri: { value: '', max: 1 }, sat: { value: '', max: 1 }, sun: { value: '', max: 1 } }, score: 0, maxScore: 7, streaks: { mon:0, tue:0, wed:0, thu:0, fri:0, sat:0, sun:0, current:0, longest:0 }}, { id: generateSeedId('act_'), name: 'DAILY: 5min Cold Shower', days: { mon: { value: '', max: 1 }, tue: { value: '', max: 1 }, wed: { value: '', max: 1 }, thu: { value: '', max: 1 }, fri: { value: '', max: 1 }, sat: { value: '', max: 1 }, sun: { value: '', max: 1 } }, score: 0, maxScore: 7, streaks: { mon:0, tue:0, wed:0, thu:0, fri:0, sat:0, sun:0, current:0, longest:0 }} ]},
+          { name: '7AM - 9AM', id: generateSeedId('sec_'), activities: [ { id: generateSeedId('act_'), name: 'MON/THU: COMMUTE', days: { mon: { value: '', max: 1 }, thu: { value: '', max: 1 } }, score: 0, maxScore: 2, streaks: { mon:0, tue:0, wed:0, thu:0, fri:0, sat:0, sun:0, current:0, longest:0 } }, { id: generateSeedId('act_'), name: 'TUE/WED/FRI: Reading/Study (book/course/skill)', days: { tue: { value: '', max: 1 }, wed: { value: '', max: 1 }, fri: { value: '', max: 1 } }, score: 0, maxScore: 3, streaks: { mon:0, tue:0, wed:0, thu:0, fri:0, sat:0, sun:0, current:0, longest:0 } }, { id: generateSeedId('act_'), name: 'SAT: Errands, Grocery shopping, Meal prep', days: { sat: { value: '', max: 3 } }, score: 0, maxScore: 3, streaks: { mon:0, tue:0, wed:0, thu:0, fri:0, sat:0, sun:0, current:0, longest:0 } }, { id: generateSeedId('act_'), name: 'SUN: House cleaning, laundry', days: { sun: { value: '', max: 2 } }, score: 0, maxScore: 2, streaks: { mon:0, tue:0, wed:0, thu:0, fri:0, sat:0, sun:0, current:0, longest:0 } } ]},
+          { name: '9AM - 5PM', id: generateSeedId('sec_'), activities: [ { id: generateSeedId('act_'), name: 'MON - FRI: Work', days: { mon: { value: '', max: 1 }, tue: { value: '', max: 1 }, wed: { value: '', max: 1 }, thu: { value: '', max: 1 }, fri: { value: '', max: 1 } }, score: 0, maxScore: 5, streaks: { mon:0, tue:0, wed:0, thu:0, fri:0, sat:0, sun:0, current:0, longest:0 } }, { id: generateSeedId('act_'), name: 'DAILY: ZeroInbox (E1, E2, E3, E4, LI, Slack)', days: { mon: { value: '', max: 6 }, tue: { value: '', max: 6 }, wed: { value: '', max: 6 }, thu: { value: '', max: 6 }, fri: { value: '', max: 6 } }, score: 0, maxScore: 30, streaks: { mon:0, tue:0, wed:0, thu:0, fri:0, sat:0, sun:0, current:0, longest:0 } }, { id: generateSeedId('act_'), name: 'SAT/SUN: Nature time / Outdoor Activity / Adventure', days: { sat: { value: '', max: 1 }, sun: { value: '', max: 1 } }, score: 0, maxScore: 2, streaks: { mon:0, tue:0, wed:0, thu:0, fri:0, sat:0, sun:0, current:0, longest:0 } } ]},
+          { name: 'DHUHR', id: generateSeedId('sec_'), activities: [ { id: generateSeedId('act_'), name: 'DAILY: Dhuhr prayer', days: { mon: { value: '', max: 1 }, tue: { value: '', max: 1 }, wed: { value: '', max: 1 }, thu: { value: '', max: 1 }, fri: { value: '', max: 1 }, sat: { value: '', max: 1 }, sun: { value: '', max: 1 } }, score: 0, maxScore: 7, streaks: { mon:0, tue:0, wed:0, thu:0, fri:0, sat:0, sun:0, current:0, longest:0 } }, { id: generateSeedId('act_'), name: 'TUE/WED/FRI: Sun walk (30-45 minutes)', days: { tue: { value: '', max: 1 }, wed: { value: '', max: 1 }, fri: { value: '', max: 1 } }, score: 0, maxScore: 3, streaks: { mon:0, tue:0, wed:0, thu:0, fri:0, sat:0, sun:0, current:0, longest:0 } }, { id: generateSeedId('act_'), name: 'FRI: £10 Sadaqa', days: { fri: { value: '', max: 1 } }, score: 0, maxScore: 1, streaks: { mon:0, tue:0, wed:0, thu:0, fri:0, sat:0, sun:0, current:0, longest:0 } } ]},
+          { name: 'ASR', id: generateSeedId('sec_'), activities: [ { id: generateSeedId('act_'), name: 'DAILY: Asr prayer', days: { mon: { value: '', max: 1 }, tue: { value: '', max: 1 }, wed: { value: '', max: 1 }, thu: { value: '', max: 1 }, fri: { value: '', max: 1 }, sat: { value: '', max: 1 }, sun: { value: '', max: 1 } }, score: 0, maxScore: 7, streaks: { mon:0, tue:0, wed:0, thu:0, fri:0, sat:0, sun:0, current:0, longest:0 } } ]},
+          { name: '5PM - 6:30PM', id: generateSeedId('sec_'), activities: [ { id: generateSeedId('act_'), name: 'MON/THU: COMMUTE', days: { mon: { value: '', max: 1 }, thu: { value: '', max: 1 } }, score: 0, maxScore: 2, streaks: { mon:0, tue:0, wed:0, thu:0, fri:0, sat:0, sun:0, current:0, longest:0 } }, { id: generateSeedId('act_'), name: 'TUE/WED/FRI: Workout', days: { tue: { value: '', max: 1 }, wed: { value: '', max: 1 }, fri: { value: '', max: 1 } }, score: 0, maxScore: 3, streaks: { mon:0, tue:0, wed:0, thu:0, fri:0, sat:0, sun:0, current:0, longest:0 } }, { id: generateSeedId('act_'), name: 'TUE/WED/FRI: Third Meal', days: { tue: { value: '', max: 1 }, wed: { value: '', max: 1 }, fri: { value: '', max: 1 } }, score: 0, maxScore: 3, streaks: { mon:0, tue:0, wed:0, thu:0, fri:0, sat:0, sun:0, current:0, longest:0 } } ]},
+          { name: '6:30PM - ISHA', id: generateSeedId('sec_'), activities: [ { id: generateSeedId('act_'), name: 'MON/TUE/WED/THU: Personal', days: { mon: { value: '', max: 1 }, tue: { value: '', max: 1 }, wed: { value: '', max: 1 }, thu: { value: '', max: 1 } }, score: 0, maxScore: 4, streaks: { mon:0, tue:0, wed:0, thu:0, fri:0, sat:0, sun:0, current:0, longest:0 } }, { id: generateSeedId('act_'), name: 'DAILY: Family/Friends/Date calls(M, WA, Phone)', days: { mon: { value: '', max: 3 }, tue: { value: '', max: 3 }, wed: { value: '', max: 3 }, thu: { value: '', max: 3 } }, score: 0, maxScore: 12, streaks: { mon:0, tue:0, wed:0, thu:0, fri:0, sat:0, sun:0, current:0, longest:0 } }, { id: generateSeedId('act_'), name: 'FRI/SAT/SUN: Family/Friends/Date visits/outings/activities', days: { fri: { value: '', max: 3 }, sat: { value: '', max: 3 }, sun: { value: '', max: 3 } }, score: 0, maxScore: 9, streaks: { mon:0, tue:0, wed:0, thu:0, fri:0, sat:0, sun:0, current:0, longest:0 } } ]},
+          { name: 'MAGHRIB', id: generateSeedId('sec_'), activities: [ { id: generateSeedId('act_'), name: 'DAILY: Maghrib prayer', days: { mon: { value: '', max: 1 }, tue: { value: '', max: 1 }, wed: { value: '', max: 1 }, thu: { value: '', max: 1 }, fri: { value: '', max: 1 }, sat: { value: '', max: 1 }, sun: { value: '', max: 1 } }, score: 0, maxScore: 7, streaks: { mon:0, tue:0, wed:0, thu:0, fri:0, sat:0, sun:0, current:0, longest:0 } }, { id: generateSeedId('act_'), name: 'DAILY: Super Veggie', days: { mon: { value: '', max: 1 }, tue: { value: '', max: 1 }, wed: { value: '', max: 1 }, thu: { value: '', max: 1 }, fri: { value: '', max: 1 }, sat: { value: '', max: 1 }, sun: { value: '', max: 1 } }, score: 0, maxScore: 7, streaks: { mon:0, tue:0, wed:0, thu:0, fri:0, sat:0, sun:0, current:0, longest:0 } } ]},
+          { name: 'ISHA', id: generateSeedId('sec_'), activities: [ { id: generateSeedId('act_'), name: 'DAILY: Isha prayer', days: { mon: { value: '', max: 1 }, tue: { value: '', max: 1 }, wed: { value: '', max: 1 }, thu: { value: '', max: 1 }, fri: { value: '', max: 1 }, sat: { value: '', max: 1 }, sun: { value: '', max: 1 } }, score: 0, maxScore: 7, streaks: { mon:0, tue:0, wed:0, thu:0, fri:0, sat:0, sun:0, current:0, longest:0 } }, { id: generateSeedId('act_'), name: 'DAILY: Sleep early', days: { mon: { value: '', max: 1 }, tue: { value: '', max: 1 }, wed: { value: '', max: 1 }, thu: { value: '', max: 1 }, fri: { value: '', max: 1 }, sat: { value: '', max: 1 }, sun: { value: '', max: 1 } }, score: 0, maxScore: 7, streaks: { mon:0, tue:0, wed:0, thu:0, fri:0, sat:0, sun:0, current:0, longest:0 } } ]},
+          { name: 'ALLDAY', id: generateSeedId('sec_'), activities: [ { id: generateSeedId('act_'), name: 'DAILY: No Doomscrolling; (FB, YTB, LKDN, & IG)', days: { mon: { value: '', max: 4 }, tue: { value: '', max: 4 }, wed: { value: '', max: 4 }, thu: { value: '', max: 4 }, fri: { value: '', max: 4 }, sat: { value: '', max: 4 }, sun: { value: '', max: 4 } }, score: 0, maxScore: 28, streaks: { mon:0, tue:0, wed:0, thu:0, fri:0, sat:0, sun:0, current:0, longest:0 } }, { id: generateSeedId('act_'), name: 'DAILY: No Fap; (P, & M)', days: { mon: { value: '', max: 2 }, tue: { value: '', max: 2 }, wed: { value: '', max: 2 }, thu: { value: '', max: 2 }, fri: { value: '', max: 2 }, sat: { value: '', max: 2 }, sun: { value: '', max: 2 } }, score: 0, maxScore: 14, streaks: { mon:0, tue:0, wed:0, thu:0, fri:0, sat:0, sun:0, current:0, longest:0 } }, { id: generateSeedId('act_'), name: 'DAILY: No Processed; (Sugar, RefinedFlour, SeedOils, Soda, FastFood)', days: { mon: { value: '', max: 5 }, tue: { value: '', max: 5 }, wed: { value: '', max: 5 }, thu: { value: '', max: 5 }, fri: { value: '', max: 5 }, sat: { value: '', max: 5 }, sun: { value: '', max: 5 } }, score: 0, maxScore: 35, streaks: { mon:0, tue:0, wed:0, thu:0, fri:0, sat:0, sun:0, current:0, longest:0 } }, { id: generateSeedId('act_'), name: 'MON/THU: Fasting', days: { mon: { value: '', max: 1 }, thu: { value: '', max: 1 } }, score: 0, maxScore: 2, streaks: { mon:0, tue:0, wed:0, thu:0, fri:0, sat:0, sun:0, current:0, longest:0 } }, { id: generateSeedId('act_'), name: 'DAILY: Expense Tracker <25', days: { mon: { value: '', max: 0 }, tue: { value: '', max: 0 }, wed: { value: '', max: 0 }, thu: { value: '', max: 0 }, fri: { value: '', max: 0 }, sat: { value: '', max: 0 }, sun: { value: '', max: 0 } }, score: 0, maxScore: 0, streaks: { mon:0, tue:0, wed:0, thu:0, fri:0, sat:0, sun:0, current:0, longest:0 } } ]},
+          { name: 'TOTAL', id: generateSeedId('sec_'), activities: [ { id: generateSeedId('act_'), name: 'DAILY POINTS', days: { mon: { value: '0', max: 0 }, tue: { value: '0', max: 0 }, wed: { value: '0', max: 0 }, thu: { value: '0', max: 0 }, fri: { value: '0', max: 0 }, sat: { value: '0', max: 0 }, sun: { value: '0', max: 0 } }, score: 0, maxScore: 0, streaks: { mon:0, tue:0, wed:0, thu:0, fri:0, sat:0, sun:0, current:0, longest:0 }} ]}
+        ],
+        tasks_default_count: 20,
+        workout_plan_default: [
+          { name: 'TUESDAY', id: generateSeedId('wpd_'), exercises: [ { id: generateSeedId('ex_'), prefix: '• ', name: 'Incline Dumbbell Press', weight: '', sets: '', reps: '', defaultWeight: '30', defaultSets: '3', defaultReps: '12' }, { id: generateSeedId('ex_'), prefix: '• ', name: 'Barbell Squats', weight: '', sets: '', reps: '', defaultWeight: '80', defaultSets: '3', defaultReps: '8' }, { id: generateSeedId('ex_'), prefix: '• ', name: 'DB Chest-Supported Row', weight: '', sets: '', reps: '', defaultWeight: '25', defaultSets: '3', defaultReps: '12' }, { id: generateSeedId('ex_'), prefix: '• ', name: 'Leg Curls', weight: '', sets: '', reps: '', defaultWeight: '40', defaultSets: '3', defaultReps: '15' }, { id: generateSeedId('ex_'), prefix: '• SS: ', name: 'Incline DB Curls', weight: '', sets: '', reps: '', defaultWeight: '15', defaultSets: '3', defaultReps: '12' }, { id: generateSeedId('ex_'), prefix: '• SS: ', name: 'Tricep Extensions', weight: '', sets: '', reps: '', defaultWeight: '20', defaultSets: '3', defaultReps: '12' } ]},
+          { name: 'WEDNESDAY', id: generateSeedId('wpd_'), exercises: [ { id: generateSeedId('ex_'), prefix: '• ', name: 'Barbell Bench Press', weight: '', sets: '', reps: '', defaultWeight: '70', defaultSets: '3', defaultReps: '6' }, { id: generateSeedId('ex_'), prefix: '• ', name: 'Romanian Deadlift', weight: '', sets: '', reps: '', defaultWeight: '90', defaultSets: '3', defaultReps: '8' }, { id: generateSeedId('ex_'), prefix: '• ', name: 'Lat Pulldown', weight: '', sets: '', reps: '', defaultWeight: '60', defaultSets: '3', defaultReps: '12' }, { id: generateSeedId('ex_'), prefix: '• ', name: 'Walking Lunges', weight: '', sets: '', reps: '', defaultWeight: '20', defaultSets: '3', defaultReps: '10' }, { id: generateSeedId('ex_'), prefix: '• SS: ', name: 'Cable Lateral Raises', weight: '', sets: '', reps: '', defaultWeight: '15', defaultSets: '3', defaultReps: '15' }, { id: generateSeedId('ex_'), prefix: '• SS: ', name: 'Reverse Crunches', weight: '', sets: '', reps: '', defaultWeight: '0', defaultSets: '3', defaultReps: '15' } ]},
+          { name: 'FRIDAY', id: generateSeedId('wpd_'), exercises: [ { id: generateSeedId('ex_'), prefix: '• ', name: 'Seated DB Shoulder Press', weight: '', sets: '', reps: '', defaultWeight: '20', defaultSets: '3', defaultReps: '12' }, { id: generateSeedId('ex_'), prefix: '• ', name: 'Dumbbell Row', weight: '', sets: '', reps: '', defaultWeight: '25', defaultSets: '3', defaultReps: '12' }, { id: generateSeedId('ex_'), prefix: '• ', name: 'Barbell Hip Thrust', weight: '', sets: '', reps: '', defaultWeight: '100', defaultSets: '3', defaultReps: '15' }, { id: generateSeedId('ex_'), prefix: '• ', name: 'Leg Extensions', weight: '', sets: '', reps: '', defaultWeight: '50', defaultSets: '3', defaultReps: '15' }, { id: generateSeedId('ex_'), prefix: '• ', name: 'Seated Chest Flyes', weight: '', sets: '', reps: '', defaultWeight: '15', defaultSets: '3', defaultReps: '15' }, { id: generateSeedId('ex_'), prefix: '• SS: ', name: 'Standing Calf Raises', weight: '', sets: '', reps: '', defaultWeight: '30', defaultSets: '3', defaultReps: '15' }, { id: generateSeedId('ex_'), prefix: '• SS: ', name: 'Reverse Cable Flyes', weight: '', sets: '', reps: '', defaultWeight: '20', defaultSets: '3', defaultReps: '15' } ]}
+        ],
+        meals_default: [
+          { id: generateSeedId('meal_'), name: 'Nutty Pudding', ingredients: 'Berries ½c, Cherries 3, Pomegranate Juice 2oz, Macadamia nuts (raw) 45g, Walnuts (raw) 5g, Cocoa 1t, Brazil Nuts ¼, Milk 50-100ml, Chia Seeds 2T, Flax (ground, refr) 1t, Lecithin 1t, Ceylon Cinnamon ½t' },
+          { id: generateSeedId('meal_'), name: 'Super Veggie', ingredients: 'Broccoli 250g, Cauliflower 150g, Mushrooms 50g, Garlic 1 clove, Ginger 3g, Cumin 1T, Black Lentils 45g, Hemp Seeds 1T, Apple Cider Vinegar 1T' },
+          { id: generateSeedId('meal_'), name: 'Third Meal', ingredients: 'Sweet Potato 350-400g, Protein 100-150g, Grape Tomatoes 12, Avocado ½, Radishes 4, Cilantro ¼c, Lemon 1, Jalapeño (lg) 1, Chili Powder 1t' }
+        ],
+        grocery_list_default: [
+          { id: generateSeedId('gcat_'), name: 'Produce', items: 'Broccoli 1.75kg, Cauliflower 1.05kg, Mushrooms 350g, Garlic 1 bulb, Ginger 1pc, Sweet Potato 2.8kg, Grape Tomatoes 84, Avocados (ripe) 4, Radishes 28, Cilantro 2-3 bunch' },
+          { id: generateSeedId('gcat_'), name: 'Fruits & Protein', items: 'Lemons 7, Jalapeños (lg) 7, Berries 3.5c, Cherries 21, Black Lentils 315g, Protein 1.05kg, Milk (fortified) 1L' }
+        ],
+        grocery_budget_default_placeholder: "£120",
+        body_measurements_default: [
+          { id: generateSeedId('bm_'), name: 'Weight', value: '', placeholder: '75kg' }, { id: generateSeedId('bm_'), name: 'Chest', value: '', placeholder: '42in' },
+          { id: generateSeedId('bm_'), name: 'Waist', value: '', placeholder: '34in' }, { id: generateSeedId('bm_'), name: 'Hips', value: '', placeholder: '40in' },
+          { id: generateSeedId('bm_'), name: 'Arms', value: '', placeholder: '15in' }, { id: generateSeedId('bm_'), name: 'Thighs', value: '', placeholder: '24in' }
+        ],
+        financials_default: [
+          { id: generateSeedId('fin_'), name: 'Rent', value: '', placeholder: '850', account: 'Cash' },
+          { id: generateSeedId('fin_'), name: 'Allowance', value: '', placeholder: '850', account: 'Revolut' },
+          { id: generateSeedId('fin_'), name: 'Savings', value: '', placeholder: '3,800', account: 'HSBCUK' }
+        ]
+    };
+    // --- End of Seed Data ---
+
+    console.log("DB Seeder: Starting database seed process...");
+    let success = false;
+    try {
+        const configKey = SEED_APP_CONFIG_DATA.config_key;
+        let existingConfig = null;
+        try { existingConfig = await pbSeed.collection('app_config').getFirstListItem(`config_key="${configKey}"`); }
+        catch (e) { if (e.status !== 404) { if (e.data?.message?.includes("collection not found")) throw new Error(`Collection 'app_config' not found. Import schema first. Original: ${e.message}`); throw e; }}
+
+        if (existingConfig) { await pbSeed.collection('app_config').update(existingConfig.id, SEED_APP_CONFIG_DATA); console.log(`DB Seeder: Updated app_config: ${configKey}`); }
+        else { await pbSeed.collection('app_config').create(SEED_APP_CONFIG_DATA); console.log(`DB Seeder: Created app_config: ${configKey}`); }
         
-        const defaultWP = this.appDefaultsState.workout_plan_default || [];
-        this.workoutPlan = defaultWP.map(defDay => {
-            const savedDay = (savedData.workout_plan_data || []).find(sd => sd.name === defDay.name);
-            const baseDay = savedDay ? deepCopy(savedDay) : deepCopy(defDay);
-            baseDay.id = baseDay.id || generateId('wpd_');
-            baseDay.exercises = (defDay.exercises || []).map(defEx => {
-                const savedEx = (savedDay?.exercises || []).find(se => se.name === defEx.name);
-                return {...deepCopy(defEx), ...(savedEx ? deepCopy(savedEx) : {}), id: savedEx?.id || defEx.id || generateId('ex_')};
-            });
-            return baseDay;
-        });
-
-        const defaultMeals = this.appDefaultsState.meals_default || [];
-        this.meals = defaultMeals.map(defMeal => { const savedMeal = (savedData.meals_data || []).find(sm => sm.name === defMeal.name); return {...deepCopy(defMeal), ...(savedMeal ? deepCopy(savedMeal) : {}), id: savedMeal?.id || defMeal.id || generateId('meal_')}; });
-        
-        this.groceryBudget = this.validateValue(savedData.grocery_budget || '');
-        this.groceryBudgetPlaceholder = this.appDefaultsState.grocery_budget_default_placeholder || "£0";
-
-        const defaultGL = this.appDefaultsState.grocery_list_default || [];
-        this.groceryList = defaultGL.map(defCat => { const savedCat = (savedData.grocery_list_data || []).find(sg => sg.name === defCat.name); return {...deepCopy(defCat), ...(savedCat ? deepCopy(savedCat) : {}), id: savedCat?.id || defCat.id || generateId('gcat_')}; });
-        
-        const defaultBM = this.appDefaultsState.body_measurements_default || [];
-        this.bodyMeasurements = defaultBM.map(defBm => { const savedBm = (savedData.body_measurements_data || []).find(sbm => sbm.name === defBm.name); const currentBm = savedBm ? deepCopy(savedBm) : deepCopy(defBm); return {...currentBm, id: currentBm.id || generateId('bm_'), placeholder: currentBm.placeholder || defBm.placeholder}; });
-
-        const defaultFin = this.appDefaultsState.financials_default || [];
-        this.financials = defaultFin.map(defF => { const savedF = (savedData.financials_data || []).find(sf => sf.name === defF.name); const currentF = savedF ? deepCopy(savedF) : deepCopy(defF); return {...currentF, id: currentF.id || generateId('fin_'), placeholder: currentF.placeholder || defF.placeholder, account: currentF.account || defF.account}; });
-        
-        lastSavedState=JSON.stringify(this.getCurrentDataStateForPersistence());
-    },
-    async loadWeek(isoWeek,isInitLoad=false){
-        if(!this.appDefaultsState && isInitLoad){ 
-            await DefaultDataManager.fetch(); this.appDefaultsState = DefaultDataManager.data; 
-            if(DefaultDataManager.error){this.showErrorMessage(`CRITICAL: ${DefaultDataManager.error}. Cannot load week.`);if(isInitLoad)isInitializing=false;this.applyMinimalFallbacks();return;} 
-            // Apply full defaults after successful fetch in init
-            this.applyDefaultsFromFetchedConfig(); 
+        alert("Database app_config seeding process completed successfully. Please refresh the page WITHOUT the ?seed=1 parameter.");
+        success = true;
+    } catch (error) {
+        console.error("DATABASE SEEDING FAILED:", error);
+        alert(`Database seeding failed: ${error.message}. Check console. Ensure collection 'app_config' exists (import schema).`);
+    } finally {
+        if (success) {
+            sessionStorage.setItem('db_seed_completed_successfully', 'true');
+            const currentUrl = new URL(window.location.href);
+            currentUrl.searchParams.delete('seed');
+            window.history.replaceState({}, document.title, currentUrl.toString());
         }
-        if(!this.appDefaultsState && !DefaultDataManager.error){this.showErrorMessage("Critical error: App defaults not available. Week load aborted.");if(isInitLoad)isInitializing=false;return;}
-        if(!/^\d{4}-W(0[1-9]|[1-4][0-9]|5[0-3])$/.test(isoWeek)){this.showErrorMessage("Invalid week format");if(isInitLoad)isInitializing=false;return;}
-        this.showWeekSelector=false;this.currentWeek=isoWeek;this.dateRange=this.DateTimeUtils.getWeekDateRange(this.DateTimeUtils.parseISOWeek(isoWeek));let rec=null;
-        if(this.isOnline){try{rec=await pb.collection('planners').getFirstListItem(`week_id="${isoWeek}"`);}catch(e){if(e.status!==404)console.error("PB load error:",e);}}
-        if(!rec){const ld=localStorage.getItem(`planner_${isoWeek}`);if(ld)try{rec=JSON.parse(ld);}catch(e){console.error(`Local parse error ${isoWeek}:`,e);rec=null;}}
-        
-        if(rec){this.populateFieldsFromSaved(rec);} // Merges saved data into existing default structure
-        else {this.applyDefaultsFromFetchedConfig();} // Ensures full default structure if no saved data
-        
-        this.calculateScores();if(this.times.every(t=>!t.value)){await this.fetchAndSetPrayerTimes();}
-        if(isInitLoad){isInitializing=false;console.log("Initial load process finished.");}
-    },
-    
-    getCurrentDataStateForPersistence(){return{week_id:this.currentWeek,date_range:this.dateRange,planner_title:this.plannerTitle,ui_config:this.uiConfig,times_display:this.times,schedule_data:this.schedule,tasks_data:this.tasks,workout_plan_data:this.workoutPlan,meals_data:this.meals,grocery_budget:this.groceryBudget,grocery_list_data:this.groceryList,body_measurements_data:this.bodyMeasurements,financials_data:this.financials};},
-    saveData(){if(isInitializing)return;if(this.saveDataTimeout)clearTimeout(this.saveDataTimeout);this.saveStatus='saving';this.saveDataTimeout=setTimeout(async()=>{try{this.calculateScores();const data=this.getCurrentDataStateForPersistence();localStorage.setItem(`planner_${this.currentWeek}`,JSON.stringify(data));if(this.isOnline){await this.saveToPocketbase(this.currentWeek,data);this.pendingSync=this.pendingSync.filter(it=>!(it.weekId===this.currentWeek&&it.operation==='save'));localStorage.setItem('planner_pending_sync',JSON.stringify(this.pendingSync));}else{this.addToPendingSync(this.currentWeek,data,'save');}lastSavedState=JSON.stringify(data);this.saveStatus='saved';}catch(e){console.error("SaveData error:",e);this.saveStatus='error';this.showErrorMessage("Error saving: "+e.message);setTimeout(()=>this.saveStatus='saved',3000);}},750);},
-    hasSignificantChanges(){if(isInitializing)return false;if(!lastSavedState)return true;return JSON.stringify(this.getCurrentDataStateForPersistence())!==lastSavedState;},
-    addToPendingSync(wId,data,op='save'){this.pendingSync=this.pendingSync.filter(it=>!(it.weekId===wId&&it.operation===op));this.pendingSync.push({weekId:wId,data:data?deepCopy(data):null,operation:op,timestamp:new Date().toISOString()});localStorage.setItem('planner_pending_sync',JSON.stringify(this.pendingSync));},
-    async syncPendingData(){if(!this.isOnline||this.pendingSync.length===0)return;const items=[...this.pendingSync];let curPend=[...this.pendingSync];for(const item of items){try{if(item.operation==='delete'){await this.deleteFromPocketbase(item.weekId);}else{await this.saveToPocketbase(item.weekId,item.data);}curPend=curPend.filter(i=>i.timestamp!==item.timestamp);}catch(e){console.error("Sync error:",item,e);}}this.pendingSync=curPend;localStorage.setItem('planner_pending_sync',JSON.stringify(this.pendingSync));},
-    async saveToPocketbase(wId,data){try{const ex=await pb.collection('planners').getFirstListItem(`week_id="${wId}"`).catch(e=>{if(e.status===404)return null;throw e;});if(ex){await pb.collection('planners').update(ex.id,data);}else{await pb.collection('planners').create(data);}}catch(e){console.error(`PB save error ${wId}:`,e,"Data:",data);throw e;}},
-    async deleteFromPocketbase(wId){try{const ex=await pb.collection('planners').getFirstListItem(`week_id="${wId}"`).catch(e=>{if(e.status===404)return null;throw e;});if(ex)await pb.collection('planners').delete(ex.id);}catch(e){console.error(`PB delete error ${wId}:`,e);throw e;}},
-    editInline(event,type,index,defaultValue=''){const el=event.currentTarget;const origTxt=el.innerText;const isTA=['mealIngredients','groceryCategoryItems'].includes(type);const inp=document.createElement(isTA?'textarea':'input');inp.type='text';inp.value=defaultValue;inp.className=isTA?'inline-edit-textarea':'inline-edit-input';if(isTA)inp.rows=3;el.innerHTML='';el.appendChild(inp);inp.focus();inp.select();const saveIt=()=>{const newVal=inp.value;let sIdxMap=-1;if(type==='sectionName'||(typeof index==='object'&&index!==null&&typeof index.sIdx==='number')){sIdxMap=this.schedule.length-1-(typeof index==='object'?index.sIdx:index);}
-    switch(type){case'plannerTitle':this.plannerTitle=newVal;break;case'timeLabel':if(this.times[index])this.times[index].label=newVal;break;case'sectionName':if(sIdxMap!==-1&&this.schedule[sIdxMap])this.schedule[sIdxMap].name=newVal;break;case'activityPrefix':if(sIdxMap!==-1&&this.schedule[sIdxMap]?.activities[index.aIdx]){const a=this.schedule[sIdxMap].activities[index.aIdx];const p=a.name.split(':');a.name=newVal.trim()+(p.length>1?':'+p.slice(1).join(':').trimStart():'');}break;case'activityName':if(sIdxMap!==-1&&this.schedule[sIdxMap]?.activities[index.aIdx]){const a=this.schedule[sIdxMap].activities[index.aIdx];const p=a.name.split(':');a.name=(p.length>1&&p[0].trim()?p[0].trim()+': ':'')+newVal;}break;case'maxValue':if(sIdxMap!==-1&&this.schedule[sIdxMap]?.activities[index.aIdx]?.days[index.day]){this.schedule[sIdxMap].activities[index.aIdx].days[index.day].max=parseInt(newVal)||0;}break;case'maxScore':if(sIdxMap!==-1&&this.schedule[sIdxMap]?.activities[index.aIdx]){this.schedule[sIdxMap].activities[index.aIdx].maxScore=parseInt(newVal)||0;}break;case'sectionTitle':if(this.uiConfig.sectionTitles&&this.uiConfig.sectionTitles[index]!==undefined)this.uiConfig.sectionTitles[index]=newVal;break;case'mainTableHeader':if(this.uiConfig.mainTableHeaders&&this.uiConfig.mainTableHeaders[index]!==undefined)this.uiConfig.mainTableHeaders[index]=newVal;break;case'dayHeader':if(this.uiConfig.dayHeaders&&this.uiConfig.dayHeaders[index]!==undefined)this.uiConfig.dayHeaders[index]=newVal;break;case'maxHeader':if(this.uiConfig.maxHeaders&&this.uiConfig.maxHeaders[index]!==undefined)this.uiConfig.maxHeaders[index]=newVal;break;case'taskHeader':if(this.uiConfig.taskHeaders&&this.uiConfig.taskHeaders[index]!==undefined)this.uiConfig.taskHeaders[index]=newVal;break;case'workoutDayName':if(this.workoutPlan[index])this.workoutPlan[index].name=newVal;break;case'exercisePrefix':if(this.workoutPlan[index.dayIdx]?.exercises[index.exIdx]){this.workoutPlan[index.dayIdx].exercises[index.exIdx].prefix=newVal;}break;case'exerciseName':if(this.workoutPlan[index.dayIdx]?.exercises[index.exIdx]){this.workoutPlan[index.dayIdx].exercises[index.exIdx].name=newVal;}break;case'mealName':if(this.meals[index])this.meals[index].name=newVal;break;case'mealIngredients':if(this.meals[index])this.meals[index].ingredients=newVal;break;case'groceryCategoryName':if(this.groceryList[index])this.groceryList[index].name=newVal;break;case'groceryCategoryItems':if(this.groceryList[index])this.groceryList[index].items=newVal;break;case'measurementName':if(this.bodyMeasurements[index])this.bodyMeasurements[index].name=newVal;break;case'financialName':if(this.financials[index])this.financials[index].name=newVal;break;case'financialAccount':if(this.financials[index])this.financials[index].account=newVal;break;}
-    if(inp.parentNode===el)el.removeChild(inp);el.innerText=newVal||origTxt;this.saveData();};const onKD=(e)=>{if(e.key==='Enter'&&!isTA){cleanSave();e.preventDefault();}else if(e.key==='Escape'){cleanRestore();}};const cleanSave=()=>{inp.removeEventListener('blur',cleanSave);inp.removeEventListener('keydown',onKD);saveIt();};const cleanRestore=()=>{inp.removeEventListener('blur',cleanSave);inp.removeEventListener('keydown',onKD);if(inp.parentNode===el)el.removeChild(inp);el.innerText=origTxt;};inp.addEventListener('blur',cleanSave);inp.addEventListener('keydown',onKD);},
-    toggleTaskCompletion(task){task.completed=task.completed==='✓'?'☐':'✓';this.saveData();},showErrorMessage(msg){this.notificationMessage=msg;this.showNotification=true;if(this.notificationTimeout)clearTimeout(this.notificationTimeout);this.notificationTimeout=setTimeout(()=>this.showNotification=false,7000);},validateValue(val,isNum=false,min=null,max=null){const sVal=String(val||'');if(sVal.trim()==='')return'';if(isNum){constn=parseFloat(sVal);if(isNaN(n))return'';if(min!==null&&n<min)return min.toString();if(max!==null&&n>max)return max.toString();return n.toString();}return sVal;},validateTextInput(e){this.saveData();},validateNumberInput(e){this.calculateScores();this.saveData();},
-    calculateScores(){if(!this.schedule||this.schedule.length===0)return;const dT={mon:0,tue:0,wed:0,thu:0,fri:0,sat:0,sun:0};const dK=['mon','tue','wed','thu','fri','sat','sun'];this.schedule.forEach(s=>{if(s.name==='TOTAL')return;(s.activities||[]).forEach(a=>{let aS=0;Object.entries(a.days||{}).forEach(([d,dD])=>{if(!dD)return;const v=parseInt(dD.value)||0;const mV=parseInt(dD.max)||0;if(v>0&&mV>0){dT[d]=(dT[d]||0)+Math.min(v,mV);aS+=Math.min(v,mV);}dD.value=v===0?'':v.toString();});a.score=aS;if(!a.streaks)a.streaks={mon:0,tue:0,wed:0,thu:0,fri:0,sat:0,sun:0,current:0,longest:0};const tI=this.currentDay===0?6:this.currentDay-1;let cS=0;for(let i=0;i<7;i++){const dTI=(tI-i+7)%7;const dk=dK[dTI];if(a.days[dk]&&(parseInt(a.days[dk].value)||0)>0&&(parseInt(a.days[dk].max)||0)>0){cS++;}else if(a.days[dk]&&(parseInt(a.days[dk].max)||0)>0){break;}}a.streaks.current=cS;a.streaks.longest=Math.max(a.streaks.longest||0,cS);});});const tS=this.schedule.find(s=>s.name==='TOTAL');if(tS?.activities?.[0]){const tA=tS.activities[0];let gTS=0;let gTMS=0;dK.forEach(d=>{let dM=0;this.schedule.forEach(s=>{if(s.name!=='TOTAL'){(s.activities||[]).forEach(act=>{if(act.days[d]&&act.days[d].max){dM+=parseInt(act.days[d].max)||0;}});}});if(tA.days[d])tA.days[d].max=dM;});Object.entries(dT).forEach(([d,tot])=>{if(tA.days[d])tA.days[d].value=tot.toString();gTS+=tot;});tA.score=gTS;this.schedule.forEach(s=>{if(s.name!=='TOTAL'){(s.activities||[]).forEach(act=>gTMS+=(parseInt(act.maxScore)||0));}});tA.maxScore=gTMS;}},
-    async fetchAndSetPrayerTimes(){ console.log("Fetching prayer times for London (fixed)"); await this.fetchPrayerTimesForCoords(51.5074, -0.1278, "London (Default)"); },
-    async fetchPrayerTimesForCoords(lat,lon,cityName="Selected Location"){const tD=new Date(),d=tD.getDate(),m=tD.getMonth()+1,y=tD.getFullYear();const cK=`prayer_times_${y}_${m}_${d}_${lat.toFixed(2)}_${lon.toFixed(2)}`;constcD=localStorage.getItem(cK);if(cD){try{this.setPrayerTimesDisplay(JSON.parse(cD));return;}catch(e){localStorage.removeItem(cK);}}try{const r=await fetch(`https://api.aladhan.com/v1/calendar/${y}/${m}?latitude=${lat}&longitude=${lon}&method=2`);if(!r.ok)throw new Error(`Aladhan API error: ${r.statusText}(${r.status})`);const aD=await r.json();if(aD.code===200&&aD.data?.[d-1]?.timings){const T=aD.data[d-1].timings;localStorage.setItem(cK,JSON.stringify(T));this.setPrayerTimesDisplay(T);}else throw new Error("Invalid Aladhan API data");}catch(e){console.error("Fetch prayer times error for "+cityName+":",e);this.showErrorMessage(`Failed to fetch prayer times for ${cityName}. Defaults used.`);this.setPrayerTimesDisplay({Fajr:"05:30",Dhuhr:"12:30",Asr:"15:45",Maghrib:"18:30",Isha:"20:00"});}},
-    setPrayerTimesDisplay(T){const Q=this.DateTimeUtils.calculateQiyamTime(T.Fajr);const M={Q:Q,F:T.Fajr,D:T.Dhuhr,A:T.Asr,M:T.Maghrib,I:T.Isha};let C=false;this.times.forEach(ts=>{const nT=this.DateTimeUtils.formatPrayerTime(M[ts.label]);if(ts.value!==nT){ts.value=nT;C=true;}});if(C&&!isInitializing)this.saveData();},
-    fetchSavedWeeks(){const wD=new Map();const cIW=this.DateTimeUtils.getCurrentIsoWeek();const aUW=(iso,dr,src,isC)=>{const ex=wD.get(iso);const nDR=dr||this.DateTimeUtils.getWeekDateRange(this.DateTimeUtils.parseISOWeek(iso));if(!ex||(src==='pocketbase'&&ex.source!=='pocketbase')||(src==='local'&&ex.source==='current')){wD.set(iso,{iso_week:iso,dateRange:nDR,source:src,isCurrent:isC});}else if(ex&&!ex.dateRange&&nDR){ex.dateRange=nDR;}};aUW(cIW,this.DateTimeUtils.getWeekDateRange(this.DateTimeUtils.parseISOWeek(cIW)),'current',true);const uD=()=>{this.savedWeeks=Array.from(wD.values()).sort((a,b)=>(a.isCurrent&&!b.isCurrent)?-1:(!a.isCurrent&&b.isCurrent)?1:b.iso_week.localeCompare(a.iso_week));};if(this.isOnline){pb.collection('planners').getFullList({sort:'-week_id',fields:'week_id,date_range'}).then(r=>{r.forEach(it=>aUW(it.week_id,it.date_range,'pocketbase',it.week_id===cIW));uD();}).catch(e=>{console.error("PB fetch saved weeks error:",e);for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k?.startsWith('planner_')&&!k.includes('pending_sync')){const iw=k.replace('planner_','');try{const d=JSON.parse(localStorage.getItem(k));aUW(iw,d.date_range,'local',iw===cIW);}catch(le){}}}uD();});}else{for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k?.startsWith('planner_')&&!k.includes('pending_sync')){const iw=k.replace('planner_','');try{const d=JSON.parse(localStorage.getItem(k));aUW(iw,d.date_range,'local',iw===cIW);}catch(e){}}}uD();}},
-    confirmLoadWeek(isoWeek){if(this.hasSignificantChanges()&&isoWeek!==this.currentWeek){if(confirm("Unsaved changes. Load anyway?"))this.loadWeek(isoWeek);}else{this.loadWeek(isoWeek);}},confirmDeleteWeek(isoWeek){if(confirm(`Delete schedule for ${isoWeek}?`))this.deleteWeek(isoWeek);},async deleteWeek(isoWeek){localStorage.removeItem(`planner_${isoWeek}`);if(this.isOnline){try{await this.deleteFromPocketbase(isoWeek);}catch(e){this.addToPendingSync(isoWeek,null,'delete');}}else{this.addToPendingSync(isoWeek,null,'delete');}this.savedWeeks=this.savedWeeks.filter(w=>w.iso_week!==isoWeek);if(this.currentWeek===isoWeek){this.currentWeek=this.DateTimeUtils.getCurrentIsoWeek();await this.loadWeek(this.currentWeek);}}
-  };
-}
+    }
+})();
