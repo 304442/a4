@@ -20,7 +20,7 @@
       <h1 class="text-sm bold editable" @dblclick="editInline($event, 'plannerTitle', null, plannerTitle)" x-text="plannerTitle"></h1>
       <div class="flex center text-xs">
         <template x-for="(time, i) in times" :key="i">
-          <div class="flex center mr-half">
+          <div class="flex center style="margin-right: 0.5mm;">
             <span class="editable" @dblclick="editInline($event, 'timeLabel', i, time.label)" x-text="time.label + ':'"></span>
             <input type="text" class="mini-input time-value-input" x-model="time.value" @change="saveData()">
           </div>
