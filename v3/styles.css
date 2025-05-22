@@ -59,9 +59,9 @@ tr:has(.mini-input:focus) td { background-color: #f0f7ff !important; }
 .mb-1 { margin-bottom: 1mm; }
 .ml-1 { margin-left: 1mm; }
 .p-1 { padding: 1mm; }
-.section-header-row td { background-color: #ddeeff !important; font-weight: bold; }
+.section-header-row td { background-color: #ddeeff !important; font-weight: bold; } 
 .section-name-cell { width: 18mm; border-left: 2px solid #aaa; border-right: 1px solid #ccc; padding-left: 1mm !important;}
-.hidden-colspan-filler { visibility: hidden; border:none !important; }
+.hidden-colspan-filler { visibility: hidden; border:none !important; } 
 td.bold:not(.section-name-cell):not(:empty) { border-left: 2px solid #aaa; }
 tr:not(.section-header-row):not(:has(.total-activity-row td)):not(:has(.progress-container)) + tr:not(.section-header-row) { border-top: 1px solid #f0f0f0; }
 tr:first-child:not(.section-header-row) td { border-top: 1px solid #ccc; }
