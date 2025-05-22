@@ -163,7 +163,7 @@
       <div class="section-header">
         <h3 class="section-title editable" @dblclick="editInline($event, 'sectionTitle', 'grocery', uiConfig.sectionTitles?.grocery || 'GROCERIES')">
             <span x-text="uiConfig.sectionTitles?.grocery || 'GROCERY LIST'"></span>
-            <input type="text" class="mini-input grocery-budget-input" x-model="groceryBudget" :placeholder="appDefaults?.grocery_budget_default_placeholder || '£0'" @change="validateTextInput($event)">
+            <input type="text" class="mini-input grocery-budget-input" x-model="groceryBudget" :placeholder="groceryBudgetPlaceholder || '£0'" @change="validateTextInput($event)">
         </h3>
       </div>
       <ul class="list text-xs">
