@@ -89,7 +89,7 @@ tr:has(.completed-task) td { text-decoration: line-through; color: #6c757d; }
 tr:has(.completed-task) td input:not(.completed-task) { text-decoration: line-through; color: #6c757d; }
 .streak-cell { font-size: 6pt; color: #e67700; display: flex; align-items: center; justify-content: center; gap: 1mm;}
 .has-streak { background-color: #fff3cd !important; }
-.has-streak span:first-child { position: relative; } /* Target the span with the number */
+.has-streak span:first-child { position: relative; }
 .has-streak span:first-child::after { content: "🔥"; font-size: 6pt; position: absolute; top: -2px; right: -8px; }
 .progress-container { height: 2mm; background-color: #e9ecef; border-radius: 0.5mm; overflow: hidden; padding: 0 !important; }
 .progress-bar { height: 100%; border-radius: 0.5mm; transition: width 0.3s ease; }
