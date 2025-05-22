@@ -1,6 +1,6 @@
 // --- Utility Functions ---
-function deepCopy(obj) { /* ... same ... */ }
-function generateId(prefix = 'id_') { /* ... same ... */ }
+function deepCopy(obj) { if (obj === null || typeof obj !== 'object') return obj; if (obj instanceof Date) return new Date(obj); if (Array.isArray(obj)) return obj.map(deepCopy); const copiedObject = {}; for (const key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) { copiedObject[key] = deepCopy(obj[key]); } } return copiedObject;}
+function generateId(prefix = 'id_') { return prefix + Date.now().toString(36) + Math.random().toString(36).substr(2, 5); }
 
 // --- Alpine.js Application ---
 function plannerApp() {
@@ -12,30 +12,18 @@ function plannerApp() {
   let lastSavedState = null;
   let appDefaultsFromDB = null; 
 
-  const DefaultDataManager = { /* ... same ... */ 
+  const DefaultDataManager = { 
     configKey: "default_v1", data: null, error: null,
     async fetch() { 
-        this.error = null; try { this.data = await pb.collection('app_config').getFirstListItem(`config_key="${this.configKey}"`); if (!this.data) { this.error = "Default config (app_config) not found in DB. Ensure record 'config_key=default_v1' exists & is populated. Use ?seed=1 to attempt seeding."; throw new Error(this.error); } console.log("App defaults fetched successfully."); } catch (error) { console.error("Fatal Error: Could not initialize app defaults from PocketBase:", error); this.error = error.message || "Failed to load app settings from PocketBase."; this.data = null; } appDefaultsFromDB = this.data; return this.data;
+        this.error = null; try { this.data = await pb.collection('app_config').getFirstListItem(`config_key="${this.configKey}"`); if (!this.data) { this.error = "Default config (app_config) not found. Ensure record 'config_key=default_v1' exists & is populated. Try '?seed=1'."; throw new Error(this.error); } console.log("App defaults fetched successfully."); } catch (error) { console.error("Fatal: Could not init app defaults from DB:", error); this.error = error.message || "Failed to load app settings from DB."; this.data = null; } appDefaultsFromDB = this.data; return this.data;
     },
-    getPlannerTitle: function() { return this.data?.planner_title_default; },
-    getUiConfig: function() { return deepCopy(this.data?.ui_config_default); },
-    getTimes: function() { return deepCopy(this.data?.times_default); },
-    getSchedule: function() { const s = deepCopy(this.data?.schedule_default); (s||[]).forEach(i=>{i.id=i.id||generateId('sec_');(i.activities||[]).forEach(a=>{if(!a.id)a.id=generateId('act_');if(!a.streaks)a.streaks={ mon:0, tue:0, wed:0, thu:0, fri:0, sat:0, sun:0, current:0, longest:0 };});}); return s;},
-    getTasksCount: function() { return this.data?.tasks_default_count || 0; },
-    getWorkoutPlan: function() { const p = deepCopy(this.data?.workout_plan_default); (p||[]).forEach(d=>{d.id=d.id||generateId('wpd_');(d.exercises||[]).forEach(e=>{if(!e.id)e.id=generateId('ex_');});}); return p;},
-    getMeals: function() { const m = deepCopy(this.data?.meals_default); (m||[]).forEach(i=>{if(!i.id)i.id=generateId('meal_');}); return m;},
-    getGroceryList: function() { const l = deepCopy(this.data?.grocery_list_default); (l||[]).forEach(c=>{if(!c.id)c.id=generateId('gcat_');}); return l;},
-    getGroceryBudgetPlaceholder: function() { return this.data?.grocery_budget_default_placeholder; },
-    getBodyMeasurements: function() { const b = deepCopy(this.data?.body_measurements_default); (b||[]).forEach(i=>{if(!i.id)i.id=generateId('bm_');}); return b;},
-    getFinancials: function() { const f = deepCopy(this.data?.financials_default); (f||[]).forEach(i=>{if(!i.id)i.id=generateId('fin_');}); return f;}
   };
-    
+  
   const DateTimeUtilsInternal = { 
     getCurrentIsoWeek:()=> {const n=new Date(),d=new Date(Date.UTC(n.getFullYear(),n.getMonth(),n.getDate()));d.setUTCDate(d.getUTCDate()+4-(d.getUTCDay()||7));const y=new Date(Date.UTC(d.getUTCFullYear(),0,1));return`${d.getUTCFullYear()}-W${Math.ceil(((d-y)/864e5+1)/7).toString().padStart(2,"0")}`;},parseISOWeek:(s)=>{if(!/^\d{4}-W(0[1-9]|[1-4][0-9]|5[0-3])$/.test(s))return new Date();const[y,w]=s.split("-"),W=parseInt(w.substring(1)),d=new Date(Date.UTC(parseInt(y),0,1+(W-1)*7)),D=d.getUTCDay()||7;d.setUTCDate(d.getUTCDate()-D+1);return d;},getWeekDateRange:(d)=>{const s=new Date(d),e=new Date(s);e.setUTCDate(s.getUTCDate()+6);return`${DateTimeUtilsInternal.formatDate(s)}-${DateTimeUtilsInternal.formatDate(e)}`;},formatDate:(d)=>`${(d.getUTCMonth()+1).toString().padStart(2,"0")}/${d.getUTCDate().toString().padStart(2,"0")}`,formatShortDate:(i)=>{const n=new Date();n.setDate(n.getDate()+i);return`${n.getMonth()+1}/${n.getDate()}`;},formatPrayerTime:(s)=>{if(!s||typeof s!=="string")return"";const t=s.split(" ")[0],[h,m]=t.split(":");if(!h||!m)return"";let H=parseInt(h),M=parseInt(m);if(isNaN(H)||isNaN(M)||H<0||H>23||M<0||M>59)return"";const A=H>=12?"PM":"AM";H%=12;H=H||12;return`${H}:${M.toString().padStart(2,"0")}${A}`;},calculateQiyamTime:(f)=>{if(!f||typeof f!=="string")return"";const p=f.split(" ")[0].split(":");if(p.length<2)return"";let H=parseInt(p[0]),M=parseInt(p[1]);if(isNaN(H)||isNaN(M)||H<0||H>23||M<0||M>59)return"";let q=new Date();q.setHours(H,M,0,0);q.setHours(q.getHours()-1);return`${q.getHours().toString().padStart(2,"0")}:${q.getMinutes().toString().padStart(2,"0")}`;},
   };
   
   return {
-    // ... (all other properties from the previous full script)
     currentWeek: '', dateRange: '', saveStatus: 'saved', isOnline: navigator.onLine, pendingSync: [],
     showNotification: false, notificationMessage: '', showWeekSelector: false,
     dropdownPosition: { top: 0, left: 0 }, currentDay: (new Date()).getDay(),
@@ -48,83 +36,171 @@ function plannerApp() {
     DateTimeUtils: DateTimeUtilsInternal, 
     appDefaultsState: null,
 
-    async init() { /* ... same as previous correct version ... */ 
+    async init() {
       isInitializing = true; console.log("App init starting...");
       this.appDefaultsState = await DefaultDataManager.fetch(); 
-      if (DefaultDataManager.error || !this.appDefaultsState) { this.showErrorMessage(`CRITICAL: ${DefaultDataManager.error || "App defaults are null."}. Planner using minimal fallbacks. Ensure 'app_config' is populated. Try '?seed=1' with db_seed.js included.`); this.applyMinimalFallbacks(); } 
-      else { this.plannerTitle = this.appDefaultsState.planner_title_default || "Weekly Planner"; this.uiConfig = deepCopy(this.appDefaultsState.ui_config_default || { mainTableHeaders: [], dayHeaders: [], maxHeaders: [], taskHeaders: [], sectionTitles: {} }); this.times = deepCopy(this.appDefaultsState.times_default || []); this.schedule = (deepCopy(this.appDefaultsState.schedule_default || [])).map(s=>({...s,id:s.id||generateId('sec_'),activities:(s.activities||[]).map(a=>({...a,id:a.id||generateId('act_'),streaks:a.streaks||{ mon:0,tue:0,wed:0,thu:0,fri:0,sat:0,sun:0,current:0,longest:0 }}))})); this.tasks = Array(this.appDefaultsState.tasks_default_count || 20).fill(null).map((_,i)=>({id:generateId('task_'),num:'',priority:'',tag:'',description:'',date:'',completed:''})); this.workoutPlan = (deepCopy(this.appDefaultsState.workout_plan_default || [])).map(d=>({...d,id:d.id||generateId('wpd_'),exercises:(d.exercises||[]).map(e=>({...e,id:e.id||generateId('ex_')}))})); this.meals = (deepCopy(this.appDefaultsState.meals_default || [])).map(m=>({...m,id:m.id||generateId('meal_')})); this.groceryList = (deepCopy(this.appDefaultsState.grocery_list_default || [])).map(g=>({...g,id:g.id||generateId('gcat_')})); this.groceryBudgetPlaceholder = this.appDefaultsState.grocery_budget_default_placeholder || '£0'; this.bodyMeasurements = (deepCopy(this.appDefaultsState.body_measurements_default || [])).map(b=>({...b,id:b.id||generateId('bm_')})); this.financials = (deepCopy(this.appDefaultsState.financials_default || [])).map(f=>({...f,id:f.id||generateId('fin_')})); }
-      window.addEventListener('online', () => { this.isOnline = true; this.syncPendingData(); }); window.addEventListener('offline', () => this.isOnline = false); document.addEventListener('click',e=>{if(!e.target.closest('.dropdown')&&!e.target.closest('.clickable')){this.showWeekSelector=false;}}); this.pendingSync = JSON.parse(localStorage.getItem('planner_pending_sync') || '[]'); this.currentWeek = DateTimeUtilsInternal.getCurrentIsoWeek(); this.dateRange = DateTimeUtilsInternal.getWeekDateRange(DateTimeUtilsInternal.parseISOWeek(this.currentWeek)); await this.loadWeek(this.currentWeek, true); 
+      
+      if (DefaultDataManager.error || !this.appDefaultsState) { 
+        this.showErrorMessage(`CRITICAL: ${DefaultDataManager.error || "App defaults are null."}. Planner using minimal fallbacks. Ensure 'app_config' is populated. Try '?seed=1' with db_seed.js included.`); 
+        this.applyMinimalFallbacks(); // Initialize with empty/error structures
+      } else { 
+        // Populate reactive properties initially from successfully fetched defaults
+        this.plannerTitle = this.appDefaultsState.planner_title_default || "Weekly Planner";
+        this.uiConfig = deepCopy(this.appDefaultsState.ui_config_default || { mainTableHeaders: [], dayHeaders: [], maxHeaders: [], taskHeaders: [], sectionTitles: {} });
+        this.times = deepCopy(this.appDefaultsState.times_default || []);
+        // applyDefaultsFromFetchedConfig will ensure full structure for lists
+        this.applyDefaultsFromFetchedConfig(); // This will set up schedule, tasks, etc. to their default structure length
+        this.groceryBudgetPlaceholder = this.appDefaultsState.grocery_budget_default_placeholder || '£0';
+      }
+      
+      window.addEventListener('online', () => { this.isOnline = true; this.syncPendingData(); });
+      window.addEventListener('offline', () => this.isOnline = false);
+      document.addEventListener('click',e=>{if(!e.target.closest('.dropdown')&&!e.target.closest('.clickable')){this.showWeekSelector=false;}});
+      this.pendingSync = JSON.parse(localStorage.getItem('planner_pending_sync') || '[]');
+      this.currentWeek = DateTimeUtilsInternal.getCurrentIsoWeek();
+      this.dateRange = DateTimeUtilsInternal.getWeekDateRange(DateTimeUtilsInternal.parseISOWeek(this.currentWeek));
+      
+      // Now loadWeek will merge saved data into the already default-structured lists
+      await this.loadWeek(this.currentWeek, true); 
+
       if (this.appDefaultsState && !DefaultDataManager.error) { setInterval(() => { if (!isInitializing && this.hasSignificantChanges()) this.saveData(); }, 30000); }
-      if (this.isOnline) this.syncPendingData(); console.log("App init finished.");
+      if (this.isOnline) this.syncPendingData();
+      console.log("App init finished.");
     },
-    applyMinimalFallbacks() { /* ... same as previous ... */ 
-        this.plannerTitle = "Planner Config Error"; this.uiConfig = { mainTableHeaders:['T','D','A','S','M','F'], dayHeaders:['M','T','W','T','F','S','S'], maxHeaders:Array(7).fill('M'), taskHeaders:['#','P','T','Task','D','C'], sectionTitles:{tasks:"Tasks (Error)"}}; this.times = Array(6).fill(null).map((_,i)=>({label:String.fromCharCode(65+i), value:''})); this.schedule = []; this.tasks = Array(5).fill(null).map((_,i)=>({id:generateId('task_'),num:'',priority:'',tag:'',description:'Error loading default tasks',date:'',completed:''})); this.workoutPlan = []; this.meals = []; this.groceryList = []; this.groceryBudgetPlaceholder = '£ERR'; this.bodyMeasurements = []; this.financials = [];
+
+    applyMinimalFallbacks() { 
+        this.plannerTitle = "Planner Config Error";
+        this.uiConfig = { mainTableHeaders:['T','D','A','S','M','F'], dayHeaders:['M','T','W','T','F','S','S'], maxHeaders:Array(7).fill('M'), taskHeaders:['#','P','T','Task','D','C'], sectionTitles:{tasks:"Tasks (Error)"}};
+        this.times = Array(6).fill(null).map((_,i)=>({label:String.fromCharCode(65+i), value:''}));
+        this.schedule = []; this.tasks = Array(5).fill(null).map((_,i)=>({id:generateId('task_'),num:'',priority:'',tag:'',description:'Err',date:'',completed:''})); 
+        this.workoutPlan = []; this.meals = []; this.groceryList = [];
+        this.groceryBudgetPlaceholder = '£ERR'; this.bodyMeasurements = []; this.financials = [];
     },
-    applyDefaultsFromFetchedConfig() { /* ... same as previous ... */ 
+    
+    applyDefaultsFromFetchedConfig() { 
       if (!this.appDefaultsState || DefaultDataManager.error) { this.applyMinimalFallbacks(); return; }
-      this.plannerTitle=this.appDefaultsState.planner_title_default||"Weekly Planner";this.uiConfig=deepCopy(this.appDefaultsState.ui_config_default||{});this.times=deepCopy(this.appDefaultsState.times_default||[]);this.schedule=(deepCopy(this.appDefaultsState.schedule_default||[])).map(s=>({...s,id:s.id||generateId('sec_'),activities:(s.activities||[]).map(a=>({...a,id:a.id||generateId('act_'),streaks:a.streaks||{mon:0,tue:0,wed:0,thu:0,fri:0,sat:0,sun:0,current:0,longest:0}}))}));this.tasks=Array(this.appDefaultsState.tasks_default_count||20).fill(null).map((_,i)=>({id:generateId('task_'),num:'',priority:'',tag:'',description:'',date:'',completed:''}));this.workoutPlan=(deepCopy(this.appDefaultsState.workout_plan_default||[])).map(d=>({...d,id:d.id||generateId('wpd_'),exercises:(d.exercises||[]).map(e=>({...e,id:e.id||generateId('ex_')}))}));this.meals=(deepCopy(this.appDefaultsState.meals_default||[])).map(m=>({...m,id:m.id||generateId('meal_')}));this.groceryList=(deepCopy(this.appDefaultsState.grocery_list_default||[])).map(g=>({...g,id:g.id||generateId('gcat_')}));this.groceryBudget='';this.groceryBudgetPlaceholder=this.appDefaultsState.grocery_budget_default_placeholder||'£0';this.bodyMeasurements=(deepCopy(this.appDefaultsState.body_measurements_default||[])).map(b=>({...b,id:b.id||generateId('bm_')}));this.financials=(deepCopy(this.appDefaultsState.financials_default||[])).map(f=>({...f,id:f.id||generateId('fin_')}));
+      console.log("Applying full default structure from fetched app_config.");
+      this.plannerTitle = this.appDefaultsState.planner_title_default || "Weekly Planner";
+      this.uiConfig = deepCopy(this.appDefaultsState.ui_config_default || {});
+      this.times = deepCopy(this.appDefaultsState.times_default || []);
+      
+      this.schedule = (this.appDefaultsState.schedule_default || []).map(s_def => ({
+          ...deepCopy(s_def), id: s_def.id || generateId('sec_'),
+          activities: (s_def.activities || []).map(a_def => ({
+              ...deepCopy(a_def), id: a_def.id || generateId('act_'),
+              streaks: a_def.streaks || { mon:0, tue:0, wed:0, thu:0, fri:0, sat:0, sun:0, current:0, longest:0 },
+              days: deepCopy(a_def.days || {}) // Ensure days object is also copied
+          }))
+      }));
+      
+      const tasksCount = this.appDefaultsState.tasks_default_count || 20;
+      this.tasks = Array(tasksCount).fill(null).map((_,i) => ({ id: generateId('task_'), num: '', priority: '', tag: '', description: '', date: '', completed: '' }));
+      
+      this.workoutPlan = (this.appDefaultsState.workout_plan_default || []).map(d_def => ({
+          ...deepCopy(d_def), id: d_def.id || generateId('wpd_'),
+          exercises: (d_def.exercises || []).map(e_def => ({...deepCopy(e_def), id: e_def.id || generateId('ex_')}))
+      }));
+      
+      this.meals = (this.appDefaultsState.meals_default || []).map(m_def => ({...deepCopy(m_def), id: m_def.id || generateId('meal_')}));
+      this.groceryList = (this.appDefaultsState.grocery_list_default || []).map(g_def => ({...deepCopy(g_def), id: g_def.id || generateId('gcat_')}));
+      this.groceryBudget = ''; 
+      this.groceryBudgetPlaceholder = this.appDefaultsState.grocery_budget_default_placeholder || '£0';
+      this.bodyMeasurements = (this.appDefaultsState.body_measurements_default || []).map(b_def => ({...deepCopy(b_def), id: b_def.id || generateId('bm_')}));
+      this.financials = (this.appDefaultsState.financials_default || []).map(f_def => ({...deepCopy(f_def), id: f_def.id || generateId('fin_')}));
     },
-    populateFieldsFromSaved(savedData) { /* ... same as previous, ensure sTask typo is fixed ... */ 
-        const getDef=(fn,eV=undefined)=>this.appDefaultsState?fn.call(DefaultDataManager):eV; // Use this.appDefaultsState
-        this.plannerTitle=savedData.planner_title||getDef(DefaultDataManager.getPlannerTitle,"Weekly Planner (Saved)");this.uiConfig=deepCopy(savedData.ui_config||getDef(DefaultDataManager.getUiConfig,{}));this.times=deepCopy(savedData.times_display||getDef(DefaultDataManager.getTimes,[]));
-        const defSched=getDef(DefaultDataManager.getSchedule,[]);this.schedule=(savedData.schedule_data||defSched).map((s,sIdx)=>{const defSect=(defSched||[])[sIdx]||{id:generateId('sec_'),activities:[]};return{...defSect,...s,id:s.id||defSect.id,activities:(s.activities||defSect.activities||[]).map((a,aIdx)=>{const defAct=(defSect.activities||[])[aIdx]||{};return{...defAct,...a,id:a.id||defAct.id||generateId('act_'),streaks:a.streaks||defAct.streaks||{mon:0,tue:0,wed:0,thu:0,fri:0,sat:0,sun:0,current:0,longest:0}};})};});
-        const defTaskCnt=getDef(DefaultDataManager.getTasksCount,20);const taskCnt=(savedData.tasks_data?.length>=defTaskCnt)?savedData.tasks_data.length:defTaskCnt;this.tasks=Array(taskCnt).fill(null).map((_,i)=>{const sTask=savedData.tasks_data?.[i];const defTVal=(this.appDefaultsState?.tasks_default?.[i]||{});return{id:sTask?.id||generateId('task_'),num:this.validateValue(sTask?.num||defTVal.num),priority:this.validateValue(sTask?.priority||defTVal.priority),tag:this.validateValue(sTask?.tag||defTVal.tag),description:this.validateValue(sTask?.description||defTVal.description),date:this.validateValue(sTask?.date||defTVal.date),completed:this.validateValue(sTask?.completed||defTVal.completed)};});
-        const defWP=getDef(DefaultDataManager.getWorkoutPlan,[]);this.workoutPlan=(savedData.workout_plan_data||defWP).map((d,dIdx)=>{const defDay=(defWP||[])[dIdx]||{id:generateId('wpd_'),exercises:[]};return{...defDay,...d,id:d.id||defDay.id,exercises:(d.exercises||defDay.exercises||[]).map((e,eIdx)=>{const defEx=(defDay.exercises||[])[eIdx]||{};return{...defEx,...e,id:e.id||defEx.id||generateId('ex_')};})};});
-        const defM=getDef(DefaultDataManager.getMeals,[]);this.meals=(savedData.meals_data||defM).map((m,mIdx)=>{const defMItem=(defM||[])[mIdx]||{};return{...defMItem,...m,id:m.id||defMItem.id||generateId('meal_')};});
-        this.groceryBudget=this.validateValue(savedData.grocery_budget||'');this.groceryBudgetPlaceholder=getDef(DefaultDataManager.getGroceryBudgetPlaceholder,'£0');
-        const defGL=getDef(DefaultDataManager.getGroceryList,[]);this.groceryList=(savedData.grocery_list_data||defGL).map((g,gIdx)=>{const defG=(defGL||[])[gIdx]||{};return{...defG,...g,id:g.id||defG.id||generateId('gcat_')};});
-        const defBM=getDef(DefaultDataManager.getBodyMeasurements,[]);this.bodyMeasurements=(savedData.body_measurements_data||defBM).map((b,bIdx)=>{const defB=(defBM||[])[bIdx]||{};return{...defB,...b,id:b.id||defB.id||generateId('bm_'),placeholder:sTask?.placeholder||defB.placeholder};}); // Typo sTask corrected to savedBm (or defB)
-        this.financials=(savedData.financials_data||getDef(DefaultDataManager.getFinancials,[])).map((f,fIdx)=>{const defF=(getDef(DefaultDataManager.getFinancials,[])||[])[fIdx]||{};return{...defF,...f,id:f.id||defF.id||generateId('fin_'),placeholder:sTask?.placeholder||defF.placeholder,account:sTask?.account||defF.account};}); // Typo sTask corrected to savedF (or defF)
+
+    populateFieldsFromSaved(savedData) {
+        console.log("Populating from saved data, ensuring default structure length");
+        if (!this.appDefaultsState || DefaultDataManager.error) { // If defaults aren't loaded, can't reliably merge
+            this.showErrorMessage("Cannot populate saved data: Default configuration missing.");
+            this.applyMinimalFallbacks(); // Fallback to minimal to prevent further errors
+            return;
+        }
+
+        this.plannerTitle = savedData.planner_title || this.appDefaultsState.planner_title_default || "Weekly Planner";
+        this.uiConfig = deepCopy(savedData.ui_config || this.appDefaultsState.ui_config_default || {});
+        this.times = deepCopy(savedData.times_display || this.appDefaultsState.times_default || []);
+
+        const defaultSchedule = this.appDefaultsState.schedule_default || [];
+        this.schedule = defaultSchedule.map(defSection => {
+            const savedSection = (savedData.schedule_data || []).find(ss => ss.name === defSection.name); // Match by name for structure
+            const baseSection = savedSection ? deepCopy(savedSection) : deepCopy(defSection);
+            baseSection.id = baseSection.id || generateId('sec_');
+            baseSection.activities = (defSection.activities || []).map(defActivity => {
+                const savedActivity = (savedSection?.activities || []).find(sa => sa.name === defActivity.name);
+                const currentActivity = savedActivity ? deepCopy(savedActivity) : deepCopy(defActivity);
+                currentActivity.id = currentActivity.id || generateId('act_');
+                currentActivity.streaks = currentActivity.streaks || {mon:0,tue:0,wed:0,thu:0,fri:0,sat:0,sun:0,current:0,longest:0};
+                // Ensure all days from default exist, populated by saved or default values
+                currentActivity.days = deepCopy(defActivity.days || {}); // Start with default days structure
+                if (savedActivity?.days) { // Overlay saved day values
+                    for (const dayKey in savedActivity.days) {
+                        if (currentActivity.days[dayKey]) {
+                            currentActivity.days[dayKey].value = savedActivity.days[dayKey].value;
+                            currentActivity.days[dayKey].max = savedActivity.days[dayKey].max !== undefined ? savedActivity.days[dayKey].max : defActivity.days[dayKey]?.max;
+                        }
+                    }
+                }
+                return currentActivity;
+            });
+            return baseSection;
+        });
+
+        const defaultTaskCount = this.appDefaultsState.tasks_default_count || 20;
+        this.tasks = Array(defaultTaskCount).fill(null).map((_, i) => {
+            const sTask = savedData.tasks_data?.[i];
+            return { id: sTask?.id || generateId('task_'), num:this.validateValue(sTask?.num), priority:this.validateValue(sTask?.priority), tag:this.validateValue(sTask?.tag), description:this.validateValue(sTask?.description), date:this.validateValue(sTask?.date), completed:this.validateValue(sTask?.completed)};
+        });
+        
+        const defaultWP = this.appDefaultsState.workout_plan_default || [];
+        this.workoutPlan = defaultWP.map(defDay => {
+            const savedDay = (savedData.workout_plan_data || []).find(sd => sd.name === defDay.name);
+            const baseDay = savedDay ? deepCopy(savedDay) : deepCopy(defDay);
+            baseDay.id = baseDay.id || generateId('wpd_');
+            baseDay.exercises = (defDay.exercises || []).map(defEx => {
+                const savedEx = (savedDay?.exercises || []).find(se => se.name === defEx.name);
+                return {...deepCopy(defEx), ...(savedEx ? deepCopy(savedEx) : {}), id: savedEx?.id || defEx.id || generateId('ex_')};
+            });
+            return baseDay;
+        });
+
+        const defaultMeals = this.appDefaultsState.meals_default || [];
+        this.meals = defaultMeals.map(defMeal => { const savedMeal = (savedData.meals_data || []).find(sm => sm.name === defMeal.name); return {...deepCopy(defMeal), ...(savedMeal ? deepCopy(savedMeal) : {}), id: savedMeal?.id || defMeal.id || generateId('meal_')}; });
+        
+        this.groceryBudget = this.validateValue(savedData.grocery_budget || '');
+        this.groceryBudgetPlaceholder = this.appDefaultsState.grocery_budget_default_placeholder || "£0";
+
+        const defaultGL = this.appDefaultsState.grocery_list_default || [];
+        this.groceryList = defaultGL.map(defCat => { const savedCat = (savedData.grocery_list_data || []).find(sg => sg.name === defCat.name); return {...deepCopy(defCat), ...(savedCat ? deepCopy(savedCat) : {}), id: savedCat?.id || defCat.id || generateId('gcat_')}; });
+        
+        const defaultBM = this.appDefaultsState.body_measurements_default || [];
+        this.bodyMeasurements = defaultBM.map(defBm => { const savedBm = (savedData.body_measurements_data || []).find(sbm => sbm.name === defBm.name); const currentBm = savedBm ? deepCopy(savedBm) : deepCopy(defBm); return {...currentBm, id: currentBm.id || generateId('bm_'), placeholder: currentBm.placeholder || defBm.placeholder}; });
+
+        const defaultFin = this.appDefaultsState.financials_default || [];
+        this.financials = defaultFin.map(defF => { const savedF = (savedData.financials_data || []).find(sf => sf.name === defF.name); const currentF = savedF ? deepCopy(savedF) : deepCopy(defF); return {...currentF, id: currentF.id || generateId('fin_'), placeholder: currentF.placeholder || defF.placeholder, account: currentF.account || defF.account}; });
+        
         lastSavedState=JSON.stringify(this.getCurrentDataStateForPersistence());
     },
     async loadWeek(isoWeek,isInitLoad=false){
         if(!this.appDefaultsState && isInitLoad){ 
             await DefaultDataManager.fetch(); this.appDefaultsState = DefaultDataManager.data; 
             if(DefaultDataManager.error){this.showErrorMessage(`CRITICAL: ${DefaultDataManager.error}. Cannot load week.`);if(isInitLoad)isInitializing=false;this.applyMinimalFallbacks();return;} 
-            this.plannerTitle = this.appDefaultsState.planner_title_default || "Weekly Planner"; this.uiConfig = deepCopy(this.appDefaultsState.ui_config_default || {}); this.times = deepCopy(this.appDefaultsState.times_default || []); this.schedule = (deepCopy(this.appDefaultsState.schedule_default || [])).map(s=>({...s,id:s.id||generateId('sec_'),activities:(s.activities||[]).map(a=>({...a,id:a.id||generateId('act_'),streaks:a.streaks||{mon:0,tue:0,wed:0,thu:0,fri:0,sat:0,sun:0,current:0,longest:0}}))})); this.tasks = Array(this.appDefaultsState.tasks_default_count || 20).fill(null).map((_,i)=>({id:generateId('task_'),num:'',priority:'',tag:'',description:'',date:'',completed:''})); this.workoutPlan = (deepCopy(this.appDefaultsState.workout_plan_default || [])).map(d=>({...d,id:d.id||generateId('wpd_'),exercises:(d.exercises||[]).map(e=>({...e,id:e.id||generateId('ex_')}))})); this.meals = (deepCopy(this.appDefaultsState.meals_default || [])).map(m=>({...m,id:m.id||generateId('meal_')})); this.groceryList = (deepCopy(this.appDefaultsState.grocery_list_default || [])).map(g=>({...g,id:g.id||generateId('gcat_')})); this.groceryBudgetPlaceholder = this.appDefaultsState.grocery_budget_default_placeholder || '£0'; this.bodyMeasurements = (deepCopy(this.appDefaultsState.body_measurements_default || [])).map(b=>({...b,id:b.id||generateId('bm_')})); this.financials = (deepCopy(this.appDefaultsState.financials_default || [])).map(f=>({...f,id:f.id||generateId('fin_')}));
+            // Apply full defaults after successful fetch in init
+            this.applyDefaultsFromFetchedConfig(); 
         }
         if(!this.appDefaultsState && !DefaultDataManager.error){this.showErrorMessage("Critical error: App defaults not available. Week load aborted.");if(isInitLoad)isInitializing=false;return;}
         if(!/^\d{4}-W(0[1-9]|[1-4][0-9]|5[0-3])$/.test(isoWeek)){this.showErrorMessage("Invalid week format");if(isInitLoad)isInitializing=false;return;}
         this.showWeekSelector=false;this.currentWeek=isoWeek;this.dateRange=this.DateTimeUtils.getWeekDateRange(this.DateTimeUtils.parseISOWeek(isoWeek));let rec=null;
         if(this.isOnline){try{rec=await pb.collection('planners').getFirstListItem(`week_id="${isoWeek}"`);}catch(e){if(e.status!==404)console.error("PB load error:",e);}}
         if(!rec){const ld=localStorage.getItem(`planner_${isoWeek}`);if(ld)try{rec=JSON.parse(ld);}catch(e){console.error(`Local parse error ${isoWeek}:`,e);rec=null;}}
-        if(rec){this.populateFieldsFromSaved(rec);}else{this.applyDefaultsFromFetchedConfig();}
+        
+        if(rec){this.populateFieldsFromSaved(rec);} // Merges saved data into existing default structure
+        else {this.applyDefaultsFromFetchedConfig();} // Ensures full default structure if no saved data
+        
         this.calculateScores();if(this.times.every(t=>!t.value)){await this.fetchAndSetPrayerTimes();}
         if(isInitLoad){isInitializing=false;console.log("Initial load process finished.");}
     },
     
-    // --- PRAYER TIMES ---
-    async fetchAndSetPrayerTimes(){ 
-        console.log("Fetching prayer times for London (fixed)"); 
-        await this.fetchPrayerTimesForCoords(51.5074, -0.1278, "London (Default)"); 
-    },
-    async fetchPrayerTimesForCoords(latitude, longitude, cityName = "Selected Location") { 
-        const today = new Date(); const date = today.getDate(); const month = today.getMonth() + 1; const year = today.getFullYear();
-        const cacheKey = `prayer_times_${year}_${month}_${date}_${latitude.toFixed(2)}_${longitude.toFixed(2)}`;
-        const cachedData = localStorage.getItem(cacheKey); // Renamed cD to cachedData
-        if (cachedData) { // Corrected: Use cachedData
-            try { this.setPrayerTimesDisplay(JSON.parse(cachedData)); return; } 
-            catch(e) { localStorage.removeItem(cacheKey); console.warn("Invalid cached prayer times", e); }
-        }
-        try {
-            const response = await fetch(`https://api.aladhan.com/v1/calendar/${year}/${month}?latitude=${latitude}&longitude=${longitude}&method=2`);
-            if (!response.ok) throw new Error(`Aladhan API error: ${response.statusText}(${response.status})`);
-            const apiData = await response.json();
-            if (apiData.code === 200 && apiData.data?.[date-1]?.timings) {
-                const timings = apiData.data[date-1].timings;
-                localStorage.setItem(cacheKey, JSON.stringify(timings)); this.setPrayerTimesDisplay(timings);
-            } else throw new Error("Invalid Aladhan API data");
-        } catch (error) {
-            console.error("Fetch prayer times error for "+cityName+":", error); this.showErrorMessage(`Failed to fetch prayer times for ${cityName}. Defaults used.`);
-            this.setPrayerTimesDisplay({ Fajr: "05:30", Dhuhr: "12:30", Asr: "15:45", Maghrib: "18:30", Isha: "20:00" });
-        }
-    },
-    setPrayerTimesDisplay(T){const Q=this.DateTimeUtils.calculateQiyamTime(T.Fajr);const M={Q:Q,F:T.Fajr,D:T.Dhuhr,A:T.Asr,M:T.Maghrib,I:T.Isha};let C=false;this.times.forEach(ts=>{const nT=this.DateTimeUtils.formatPrayerTime(M[ts.label]);if(ts.value!==nT){ts.value=nT;C=true;}});if(C&&!isInitializing)this.saveData();},
-    
-    // ... [The rest of the methods: editInline, toggleTaskCompletion, showErrorMessage, validateValue, validateTextInput, validateNumberInput, calculateScores, fetchSavedWeeks, confirmLoadWeek, confirmDeleteWeek]
-    // These should be the versions from the last script that didn't have Add/Delete and no city selector.
-    // For brevity, I'm re-pasting only a few key ones that were very long or had minor adjustments.
-    // Make sure to use the full set from the previous final script that was working before this `sT` error.
     getCurrentDataStateForPersistence(){return{week_id:this.currentWeek,date_range:this.dateRange,planner_title:this.plannerTitle,ui_config:this.uiConfig,times_display:this.times,schedule_data:this.schedule,tasks_data:this.tasks,workout_plan_data:this.workoutPlan,meals_data:this.meals,grocery_budget:this.groceryBudget,grocery_list_data:this.groceryList,body_measurements_data:this.bodyMeasurements,financials_data:this.financials};},
     saveData(){if(isInitializing)return;if(this.saveDataTimeout)clearTimeout(this.saveDataTimeout);this.saveStatus='saving';this.saveDataTimeout=setTimeout(async()=>{try{this.calculateScores();const data=this.getCurrentDataStateForPersistence();localStorage.setItem(`planner_${this.currentWeek}`,JSON.stringify(data));if(this.isOnline){await this.saveToPocketbase(this.currentWeek,data);this.pendingSync=this.pendingSync.filter(it=>!(it.weekId===this.currentWeek&&it.operation==='save'));localStorage.setItem('planner_pending_sync',JSON.stringify(this.pendingSync));}else{this.addToPendingSync(this.currentWeek,data,'save');}lastSavedState=JSON.stringify(data);this.saveStatus='saved';}catch(e){console.error("SaveData error:",e);this.saveStatus='error';this.showErrorMessage("Error saving: "+e.message);setTimeout(()=>this.saveStatus='saved',3000);}},750);},
     hasSignificantChanges(){if(isInitializing)return false;if(!lastSavedState)return true;return JSON.stringify(this.getCurrentDataStateForPersistence())!==lastSavedState;},
@@ -137,6 +213,9 @@ function plannerApp() {
     if(inp.parentNode===el)el.removeChild(inp);el.innerText=newVal||origTxt;this.saveData();};const onKD=(e)=>{if(e.key==='Enter'&&!isTA){cleanSave();e.preventDefault();}else if(e.key==='Escape'){cleanRestore();}};const cleanSave=()=>{inp.removeEventListener('blur',cleanSave);inp.removeEventListener('keydown',onKD);saveIt();};const cleanRestore=()=>{inp.removeEventListener('blur',cleanSave);inp.removeEventListener('keydown',onKD);if(inp.parentNode===el)el.removeChild(inp);el.innerText=origTxt;};inp.addEventListener('blur',cleanSave);inp.addEventListener('keydown',onKD);},
     toggleTaskCompletion(task){task.completed=task.completed==='✓'?'☐':'✓';this.saveData();},showErrorMessage(msg){this.notificationMessage=msg;this.showNotification=true;if(this.notificationTimeout)clearTimeout(this.notificationTimeout);this.notificationTimeout=setTimeout(()=>this.showNotification=false,7000);},validateValue(val,isNum=false,min=null,max=null){const sVal=String(val||'');if(sVal.trim()==='')return'';if(isNum){constn=parseFloat(sVal);if(isNaN(n))return'';if(min!==null&&n<min)return min.toString();if(max!==null&&n>max)return max.toString();return n.toString();}return sVal;},validateTextInput(e){this.saveData();},validateNumberInput(e){this.calculateScores();this.saveData();},
     calculateScores(){if(!this.schedule||this.schedule.length===0)return;const dT={mon:0,tue:0,wed:0,thu:0,fri:0,sat:0,sun:0};const dK=['mon','tue','wed','thu','fri','sat','sun'];this.schedule.forEach(s=>{if(s.name==='TOTAL')return;(s.activities||[]).forEach(a=>{let aS=0;Object.entries(a.days||{}).forEach(([d,dD])=>{if(!dD)return;const v=parseInt(dD.value)||0;const mV=parseInt(dD.max)||0;if(v>0&&mV>0){dT[d]=(dT[d]||0)+Math.min(v,mV);aS+=Math.min(v,mV);}dD.value=v===0?'':v.toString();});a.score=aS;if(!a.streaks)a.streaks={mon:0,tue:0,wed:0,thu:0,fri:0,sat:0,sun:0,current:0,longest:0};const tI=this.currentDay===0?6:this.currentDay-1;let cS=0;for(let i=0;i<7;i++){const dTI=(tI-i+7)%7;const dk=dK[dTI];if(a.days[dk]&&(parseInt(a.days[dk].value)||0)>0&&(parseInt(a.days[dk].max)||0)>0){cS++;}else if(a.days[dk]&&(parseInt(a.days[dk].max)||0)>0){break;}}a.streaks.current=cS;a.streaks.longest=Math.max(a.streaks.longest||0,cS);});});const tS=this.schedule.find(s=>s.name==='TOTAL');if(tS?.activities?.[0]){const tA=tS.activities[0];let gTS=0;let gTMS=0;dK.forEach(d=>{let dM=0;this.schedule.forEach(s=>{if(s.name!=='TOTAL'){(s.activities||[]).forEach(act=>{if(act.days[d]&&act.days[d].max){dM+=parseInt(act.days[d].max)||0;}});}});if(tA.days[d])tA.days[d].max=dM;});Object.entries(dT).forEach(([d,tot])=>{if(tA.days[d])tA.days[d].value=tot.toString();gTS+=tot;});tA.score=gTS;this.schedule.forEach(s=>{if(s.name!=='TOTAL'){(s.activities||[]).forEach(act=>gTMS+=(parseInt(act.maxScore)||0));}});tA.maxScore=gTMS;}},
+    async fetchAndSetPrayerTimes(){ console.log("Fetching prayer times for London (fixed)"); await this.fetchPrayerTimesForCoords(51.5074, -0.1278, "London (Default)"); },
+    async fetchPrayerTimesForCoords(lat,lon,cityName="Selected Location"){const tD=new Date(),d=tD.getDate(),m=tD.getMonth()+1,y=tD.getFullYear();const cK=`prayer_times_${y}_${m}_${d}_${lat.toFixed(2)}_${lon.toFixed(2)}`;constcD=localStorage.getItem(cK);if(cD){try{this.setPrayerTimesDisplay(JSON.parse(cD));return;}catch(e){localStorage.removeItem(cK);}}try{const r=await fetch(`https://api.aladhan.com/v1/calendar/${y}/${m}?latitude=${lat}&longitude=${lon}&method=2`);if(!r.ok)throw new Error(`Aladhan API error: ${r.statusText}(${r.status})`);const aD=await r.json();if(aD.code===200&&aD.data?.[d-1]?.timings){const T=aD.data[d-1].timings;localStorage.setItem(cK,JSON.stringify(T));this.setPrayerTimesDisplay(T);}else throw new Error("Invalid Aladhan API data");}catch(e){console.error("Fetch prayer times error for "+cityName+":",e);this.showErrorMessage(`Failed to fetch prayer times for ${cityName}. Defaults used.`);this.setPrayerTimesDisplay({Fajr:"05:30",Dhuhr:"12:30",Asr:"15:45",Maghrib:"18:30",Isha:"20:00"});}},
+    setPrayerTimesDisplay(T){const Q=this.DateTimeUtils.calculateQiyamTime(T.Fajr);const M={Q:Q,F:T.Fajr,D:T.Dhuhr,A:T.Asr,M:T.Maghrib,I:T.Isha};let C=false;this.times.forEach(ts=>{const nT=this.DateTimeUtils.formatPrayerTime(M[ts.label]);if(ts.value!==nT){ts.value=nT;C=true;}});if(C&&!isInitializing)this.saveData();},
     fetchSavedWeeks(){const wD=new Map();const cIW=this.DateTimeUtils.getCurrentIsoWeek();const aUW=(iso,dr,src,isC)=>{const ex=wD.get(iso);const nDR=dr||this.DateTimeUtils.getWeekDateRange(this.DateTimeUtils.parseISOWeek(iso));if(!ex||(src==='pocketbase'&&ex.source!=='pocketbase')||(src==='local'&&ex.source==='current')){wD.set(iso,{iso_week:iso,dateRange:nDR,source:src,isCurrent:isC});}else if(ex&&!ex.dateRange&&nDR){ex.dateRange=nDR;}};aUW(cIW,this.DateTimeUtils.getWeekDateRange(this.DateTimeUtils.parseISOWeek(cIW)),'current',true);const uD=()=>{this.savedWeeks=Array.from(wD.values()).sort((a,b)=>(a.isCurrent&&!b.isCurrent)?-1:(!a.isCurrent&&b.isCurrent)?1:b.iso_week.localeCompare(a.iso_week));};if(this.isOnline){pb.collection('planners').getFullList({sort:'-week_id',fields:'week_id,date_range'}).then(r=>{r.forEach(it=>aUW(it.week_id,it.date_range,'pocketbase',it.week_id===cIW));uD();}).catch(e=>{console.error("PB fetch saved weeks error:",e);for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k?.startsWith('planner_')&&!k.includes('pending_sync')){const iw=k.replace('planner_','');try{const d=JSON.parse(localStorage.getItem(k));aUW(iw,d.date_range,'local',iw===cIW);}catch(le){}}}uD();});}else{for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k?.startsWith('planner_')&&!k.includes('pending_sync')){const iw=k.replace('planner_','');try{const d=JSON.parse(localStorage.getItem(k));aUW(iw,d.date_range,'local',iw===cIW);}catch(e){}}}uD();}},
     confirmLoadWeek(isoWeek){if(this.hasSignificantChanges()&&isoWeek!==this.currentWeek){if(confirm("Unsaved changes. Load anyway?"))this.loadWeek(isoWeek);}else{this.loadWeek(isoWeek);}},confirmDeleteWeek(isoWeek){if(confirm(`Delete schedule for ${isoWeek}?`))this.deleteWeek(isoWeek);},async deleteWeek(isoWeek){localStorage.removeItem(`planner_${isoWeek}`);if(this.isOnline){try{await this.deleteFromPocketbase(isoWeek);}catch(e){this.addToPendingSync(isoWeek,null,'delete');}}else{this.addToPendingSync(isoWeek,null,'delete');}this.savedWeeks=this.savedWeeks.filter(w=>w.iso_week!==isoWeek);if(this.currentWeek===isoWeek){this.currentWeek=this.DateTimeUtils.getCurrentIsoWeek();await this.loadWeek(this.currentWeek);}}
   };
