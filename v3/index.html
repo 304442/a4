@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=210mm, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>A4 Planner</title>
-  <script src="pocketbase.umd.js"></script> <!-- Local PocketBase JS SDK -->
+  <script src="pocketbase.umd.js"></script> 
   <script defer src="script.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.9/dist/cdn.min.js"></script>
   <link rel="stylesheet" href="styles.css">
@@ -26,7 +26,6 @@
             <input type="text" class="mini-input time-value-input" x-model="time.value" @change="saveData()">
           </div>
         </template>
-        <!-- City display removed -->
       </div>
       <div class="text-sm">
         <span class="clickable" x-text="currentWeek" @click="toggleWeekSelector($event)"></span> (<span x-text="dateRange"></span>)
@@ -208,8 +207,6 @@
       </div>
     </div>
   </div>
-
-  <!-- City selector dropdown removed -->
 
   <div class="dropdown" :class="{'show': showWeekSelector}" :style="`top: ${dropdownPosition.top}px; left: ${dropdownPosition.left}px;`">
     <div class="dropdown-content">
