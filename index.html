@@ -18,14 +18,31 @@
 
   <div class="card">
     <div class="flex between center mb-1">
-      <h1 class="text-sm bold editable" tabindex="0" @dblclick="editInline($event, 'plannerTitle', null, plannerTitle)" x-text="plannerTitle"></h1>
+      <div class="text-sm bold editable" :id="'plannerTitleDisplay'" tabindex="0"
+           @dblclick="startEdit('plannerTitle', plannerTitle, 'plannerTitleInput')"
+           x-show="!isEditing('plannerTitle')">
+        <span x-text="plannerTitle"></span>
+      </div>
+      <input type="text" class="inline-edit-input text-sm bold" :id="'plannerTitleInput'"
+             x-show="isEditing('plannerTitle')" x-model="editValue"
+             @keydown.enter="commitEdit()" @keydown.escape="cancelEdit()" @blur="commitEdit()"
+             x-ref="plannerTitleInputRef"
+             x-init="$watch('editingTarget', val => { if (val && val.type === 'plannerTitle') $nextTick(() => $refs.plannerTitleInputRef.focus()) })">
+
       <div class="flex center text-xs">
-        <template x-for="(time, i) in times" :key="'time-' + i">
+        <template x-for="(time, i) in times" :key="time.id">
           <div class="flex center">
-            <span class="editable" tabindex="0" @dblclick="editInline($event, 'timeLabel', i, time.label)" x-text="time.label + ':'"></span>
-            <input type="text" class="mini-input time-value-input"
-                   :id="'time-value-' + i" :name="'time-value-' + i"
-                   x-model="time.value" @change="hasUnsavedChanges = true; saveData()">
+            <div class="editable" :id="'timeLabelDisplay-' + time.id" tabindex="0"
+                 @dblclick="startEdit('timeLabel', time.label, 'timeLabelInput-' + time.id, time.id)"
+                 x-show="!isEditing('timeLabel', time.id)">
+                 <span x-text="time.label + ':'"></span>
+            </div>
+            <input type="text" class="inline-edit-input" :id="'timeLabelInput-' + time.id"
+                   x-show="isEditing('timeLabel', time.id)" x-model="editValue"
+                   @keydown.enter="commitEdit()" @keydown.escape="cancelEdit()" @blur="commitEdit()"
+                   :x-ref="'timeLabelInputRef-' + time.id"
+                   x-init="$watch('editingTarget', val => { if (val && val.type === 'timeLabel' && val.ids[0] === time.id) $nextTick(() => $refs['timeLabelInputRef-' + time.id].focus()) })">
+            <input type="text" class="mini-input time-value-input" :id="'time-value-' + time.id" :name="'time-value-' + time.id" x-model="time.value" @change="hasUnsavedChanges = true; saveData()">
           </div>
         </template>
         <span class="ml-1">|</span>
@@ -39,50 +56,98 @@
     <table>
       <thead>
         <tr>
-          <th style="width:18mm" class="editable" tabindex="0" @dblclick="editInline($event, 'mainTableHeader', 0, uiConfig.mainTableHeaders[0])" x-text="uiConfig.mainTableHeaders[0]"></th>
-          <th style="width:18mm" class="editable" tabindex="0" @dblclick="editInline($event, 'mainTableHeader', 1, uiConfig.mainTableHeaders[1])" x-text="uiConfig.mainTableHeaders[1]"></th>
-          <th class="ac editable" tabindex="0" @dblclick="editInline($event, 'mainTableHeader', 2, uiConfig.mainTableHeaders[2])" x-text="uiConfig.mainTableHeaders[2]"></th>
+          <th style="width:18mm" class="editable" :id="'mainTableHeaderDisplay-0'" tabindex="0" @dblclick="startEdit('mainTableHeader', uiConfig.mainTableHeaders[0], 'mainTableHeaderInput-0', 0)" x-show="!isEditing('mainTableHeader', 0)"><span x-text="uiConfig.mainTableHeaders[0]"></span></th>
+          <input type="text" class="inline-edit-input" :id="'mainTableHeaderInput-0'" x-show="isEditing('mainTableHeader', 0)" x-model="editValue" @keydown.enter="commitEdit()" @keydown.escape="cancelEdit()" @blur="commitEdit()" x-ref="mainTableHeaderInputRef0" x-init="$watch('editingTarget', v => v?.type==='mainTableHeader'&&v.ids[0]===0 && $nextTick(()=>$refs.mainTableHeaderInputRef0.focus()))">
+          
+          <th style="width:18mm" class="editable" :id="'mainTableHeaderDisplay-1'" tabindex="0" @dblclick="startEdit('mainTableHeader', uiConfig.mainTableHeaders[1], 'mainTableHeaderInput-1', 1)" x-show="!isEditing('mainTableHeader', 1)"><span x-text="uiConfig.mainTableHeaders[1]"></span></th>
+          <input type="text" class="inline-edit-input" :id="'mainTableHeaderInput-1'" x-show="isEditing('mainTableHeader', 1)" x-model="editValue" @keydown.enter="commitEdit()" @keydown.escape="cancelEdit()" @blur="commitEdit()" x-ref="mainTableHeaderInputRef1" x-init="$watch('editingTarget', v => v?.type==='mainTableHeader'&&v.ids[0]===1 && $nextTick(()=>$refs.mainTableHeaderInputRef1.focus()))">
+
+          <th class="ac editable" :id="'mainTableHeaderDisplay-2'" tabindex="0" @dblclick="startEdit('mainTableHeader', uiConfig.mainTableHeaders[2], 'mainTableHeaderInput-2', 2)" x-show="!isEditing('mainTableHeader', 2)"><span x-text="uiConfig.mainTableHeaders[2]"></span></th>
+          <input type="text" class="inline-edit-input" :id="'mainTableHeaderInput-2'" x-show="isEditing('mainTableHeader', 2)" x-model="editValue" @keydown.enter="commitEdit()" @keydown.escape="cancelEdit()" @blur="commitEdit()" x-ref="mainTableHeaderInputRef2" x-init="$watch('editingTarget', v => v?.type==='mainTableHeader'&&v.ids[0]===2 && $nextTick(()=>$refs.mainTableHeaderInputRef2.focus()))">
+
           <template x-for="(dayKeyText, i) in uiConfig.dayHeaders" :key="'day-header-' + i">
-            <th class="dc editable" tabindex="0" :class="{'current-day': (currentDay === 0 ? 6 : currentDay - 1) === i}" @dblclick="editInline($event, 'dayHeader', i, uiConfig.dayHeaders[i])" x-text="uiConfig.dayHeaders[i]"></th>
-            <th class="dc editable" tabindex="0" :class="{'current-day': (currentDay === 0 ? 6 : currentDay - 1) === i}" @dblclick="editInline($event, 'maxHeader', i, uiConfig.maxHeaders[i])" x-text="uiConfig.maxHeaders[i]"></th>
+            <th class="dc editable" :id="'dayHeaderDisplay-' + i" tabindex="0" :class="{'current-day': (currentDay === 0 ? 6 : currentDay - 1) === i}" @dblclick="startEdit('dayHeader', uiConfig.dayHeaders[i], 'dayHeaderInput-' + i, i)" x-show="!isEditing('dayHeader', i)"><span x-text="uiConfig.dayHeaders[i]"></span></th>
+            <input type="text" class="inline-edit-input" :id="'dayHeaderInput-' + i" x-show="isEditing('dayHeader', i)" x-model="editValue" @keydown.enter="commitEdit()" @keydown.escape="cancelEdit()" @blur="commitEdit()" :x-ref="'dayHeaderInputRef' + i" x-init="$watch('editingTarget', v => v?.type==='dayHeader'&&v.ids[0]===i && $nextTick(()=>$refs['dayHeaderInputRef'+i].focus()))">
+            
+            <th class="dc editable" :id="'maxHeaderDisplay-' + i" tabindex="0" :class="{'current-day': (currentDay === 0 ? 6 : currentDay - 1) === i}" @dblclick="startEdit('maxHeader', uiConfig.maxHeaders[i], 'maxHeaderInput-' + i, i)" x-show="!isEditing('maxHeader', i)"><span x-text="uiConfig.maxHeaders[i]"></span></th>
+            <input type="text" class="inline-edit-input" :id="'maxHeaderInput-' + i" x-show="isEditing('maxHeader', i)" x-model="editValue" @keydown.enter="commitEdit()" @keydown.escape="cancelEdit()" @blur="commitEdit()" :x-ref="'maxHeaderInputRef' + i" x-init="$watch('editingTarget', v => v?.type==='maxHeader'&&v.ids[0]===i && $nextTick(()=>$refs['maxHeaderInputRef'+i].focus()))">
           </template>
-          <th class="dc editable" tabindex="0" @dblclick="editInline($event, 'mainTableHeader', 17, uiConfig.mainTableHeaders[17])" x-text="uiConfig.mainTableHeaders[17]"></th>
-          <th class="dc editable" tabindex="0" @dblclick="editInline($event, 'mainTableHeader', 18, uiConfig.mainTableHeaders[18])" x-text="uiConfig.mainTableHeaders[18]"></th>
-          <th class="dc editable" tabindex="0" @dblclick="editInline($event, 'mainTableHeader', 19, uiConfig.mainTableHeaders[19])" x-text="uiConfig.mainTableHeaders[19]"></th>
+          <!-- Headers for SCORE, MAX, STRK (indices 17, 18, 19 if 3 fixed + 7*2 day-related headers) -->
+          <th class="dc editable" :id="'mainTableHeaderDisplay-17'" tabindex="0" @dblclick="startEdit('mainTableHeader', uiConfig.mainTableHeaders[17], 'mainTableHeaderInput-17', 17)" x-show="!isEditing('mainTableHeader', 17)"><span x-text="uiConfig.mainTableHeaders[17]"></span></th>
+          <input type="text" class="inline-edit-input" :id="'mainTableHeaderInput-17'" x-show="isEditing('mainTableHeader', 17)" x-model="editValue" @keydown.enter="commitEdit()" @keydown.escape="cancelEdit()" @blur="commitEdit()" x-ref="mainTableHeaderInputRef17" x-init="$watch('editingTarget', v => v?.type==='mainTableHeader'&&v.ids[0]===17 && $nextTick(()=>$refs.mainTableHeaderInputRef17.focus()))">
+          <th class="dc editable" :id="'mainTableHeaderDisplay-18'" tabindex="0" @dblclick="startEdit('mainTableHeader', uiConfig.mainTableHeaders[18], 'mainTableHeaderInput-18', 18)" x-show="!isEditing('mainTableHeader', 18)"><span x-text="uiConfig.mainTableHeaders[18]"></span></th>
+          <input type="text" class="inline-edit-input" :id="'mainTableHeaderInput-18'" x-show="isEditing('mainTableHeader', 18)" x-model="editValue" @keydown.enter="commitEdit()" @keydown.escape="cancelEdit()" @blur="commitEdit()" x-ref="mainTableHeaderInputRef18" x-init="$watch('editingTarget', v => v?.type==='mainTableHeader'&&v.ids[0]===18 && $nextTick(()=>$refs.mainTableHeaderInputRef18.focus()))">
+          <th class="dc editable" :id="'mainTableHeaderDisplay-19'" tabindex="0" @dblclick="startEdit('mainTableHeader', uiConfig.mainTableHeaders[19], 'mainTableHeaderInput-19', 19)" x-show="!isEditing('mainTableHeader', 19)"><span x-text="uiConfig.mainTableHeaders[19]"></span></th>
+          <input type="text" class="inline-edit-input" :id="'mainTableHeaderInput-19'" x-show="isEditing('mainTableHeader', 19)" x-model="editValue" @keydown.enter="commitEdit()" @keydown.escape="cancelEdit()" @blur="commitEdit()" x-ref="mainTableHeaderInputRef19" x-init="$watch('editingTarget', v => v?.type==='mainTableHeader'&&v.ids[0]===19 && $nextTick(()=>$refs.mainTableHeaderInputRef19.focus()))">
         </tr>
       </thead>
       <tbody>
-        <template x-for="(section, sIdx) in schedule.slice().reverse()" :key="section.name + '-' + sIdx">
-          <template x-for="(activity, aIdx) in section.activities" :key="activity.name + '-' + aIdx">
+        <template x-for="(section, sIdxR) in schedule.slice().reverse()" :key="section.id || 'section-' + sIdxR"> <!-- sIdxR is reversed index -->
+          <template x-for="(activity, aIdx) in section.activities" :key="activity.id || 'activity-' + aIdx">
             <tr :class="{'total': section.name === 'TOTAL'}">
-              <td class="bold editable" tabindex="0" @dblclick="editInline($event, 'sectionName', sIdx, section.name)" x-text="aIdx === 0 ? section.name : ''" :data-original-value="section.name"></td>
-              <td class="bold editable" tabindex="0" @dblclick="editInline($event, 'activityPrefix', {sIdx, aIdx}, activity.name.includes(':') ? activity.name.split(':')[0].trim() : '')" x-text="activity.name.includes(':') ? activity.name.split(':')[0].trim() : ''" :data-original-value="activity.name.includes(':') ? activity.name.split(':')[0].trim() : ''"></td>
-              <td class="ac editable" tabindex="0" @dblclick="editInline($event, 'activityName', {sIdx, aIdx}, activity.name.includes(':') ? activity.name.split(':')[1].trim() : activity.name)" :data-original-value="activity.name.includes(':') ? activity.name.split(':')[1].trim() : activity.name">
+              <td class="bold editable" :id="'sectionNameDisplay-' + sIdxR + '-' + aIdx" tabindex="0"
+                  @dblclick="startEdit('sectionName', section.name, 'sectionNameInput-' + sIdxR + '-' + aIdx, sIdxR)"
+                  x-show="!isEditing('sectionName', sIdxR)">
+                <span x-text="aIdx === 0 ? section.name : ''"></span>
+              </td>
+              <input type="text" class="inline-edit-input bold" :id="'sectionNameInput-' + sIdxR + '-' + aIdx"
+                     x-show="isEditing('sectionName', sIdxR) && aIdx === 0" x-model="editValue"
+                     @keydown.enter="commitEdit()" @keydown.escape="cancelEdit()" @blur="commitEdit()"
+                     :x-ref="'sectionNameInputRef-' + sIdxR" x-init="$watch('editingTarget', v => v?.type==='sectionName'&&v.ids[0]===sIdxR && $nextTick(()=>$refs['sectionNameInputRef-'+sIdxR].focus()))">
+              <!-- Placeholder for empty cells if input is shown for first activity only -->
+              <td class="bold" x-show="isEditing('sectionName', sIdxR) && aIdx !== 0"></td>
+
+
+              <td class="bold editable" :id="'activityPrefixDisplay-' + sIdxR + '-' + aIdx" tabindex="0"
+                  @dblclick="startEdit('activityPrefix', activity.name.includes(':') ? activity.name.split(':')[0].trim() : '', 'activityPrefixInput-' + sIdxR + '-' + aIdx, sIdxR, aIdx)"
+                  x-show="!isEditing('activityPrefix', sIdxR, aIdx)">
+                <span x-text="activity.name.includes(':') ? activity.name.split(':')[0].trim() : ''"></span>
+              </td>
+              <input type="text" class="inline-edit-input bold" :id="'activityPrefixInput-' + sIdxR + '-' + aIdx"
+                     x-show="isEditing('activityPrefix', sIdxR, aIdx)" x-model="editValue"
+                     @keydown.enter="commitEdit()" @keydown.escape="cancelEdit()" @blur="commitEdit()"
+                     :x-ref="'activityPrefixInputRef-' + sIdxR + '-' + aIdx" x-init="$watch('editingTarget', v => v?.type==='activityPrefix'&&v.ids[0]===sIdxR&&v.ids[1]===aIdx && $nextTick(()=>$refs['activityPrefixInputRef-'+sIdxR+'-'+aIdx].focus()))">
+
+              <td class="ac editable" :id="'activityNameDisplay-' + sIdxR + '-' + aIdx" tabindex="0"
+                  @dblclick="startEdit('activityName', activity.name.includes(':') ? activity.name.split(':')[1].trim() : activity.name, 'activityNameInput-' + sIdxR + '-' + aIdx, sIdxR, aIdx)"
+                  x-show="!isEditing('activityName', sIdxR, aIdx)">
                 <span x-text="activity.name.includes(':') ? activity.name.split(':')[1].trim() : activity.name"></span>
               </td>
-              <template x-for="(day, dayKey) in ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']" :key="dayKey">
-                <td class="dc" :class="{'current-day': (currentDay === 0 ? 6 : currentDay - 1) === ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'].indexOf(dayKey)}">
+              <input type="text" class="inline-edit-input" :id="'activityNameInput-' + sIdxR + '-' + aIdx"
+                     x-show="isEditing('activityName', sIdxR, aIdx)" x-model="editValue"
+                     @keydown.enter="commitEdit()" @keydown.escape="cancelEdit()" @blur="commitEdit()"
+                     :x-ref="'activityNameInputRef-' + sIdxR + '-' + aIdx" x-init="$watch('editingTarget', v => v?.type==='activityName'&&v.ids[0]===sIdxR&&v.ids[1]===aIdx && $nextTick(()=>$refs['activityNameInputRef-'+sIdxR+'-'+aIdx].focus()))">
+
+              <template x-for="(dayKey, dayIndex) in ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']" :key="dayKey">
+                <td class="dc" :class="{'current-day': (currentDay === 0 ? 6 : currentDay - 1) === dayIndex}">
                   <template x-if="activity.days[dayKey]">
-                    <input type="number" class="mini-input"
-                           :id="'activity-' + sIdx + '-' + aIdx + '-day-' + dayKey + '-value'"
-                           :name="'activity-' + sIdx + '-' + aIdx + '-day-' + dayKey + '-value'"
-                           x-model.number="activity.days[dayKey].value"
-                           :min="0" :max="activity.days[dayKey].max < 10 ? 9 : (activity.days[dayKey].max > 99 ? 99 : activity.days[dayKey].max || 99)"
-                           @change="validateNumberInput($event)" :readonly="section.name === 'TOTAL'">
+                    <input type="number" class="mini-input" :id="'activity-' + sIdxR + '-' + aIdx + '-day-' + dayKey + '-value'" :name="'activity-' + sIdxR + '-' + aIdx + '-day-' + dayKey + '-value'" x-model.number="activity.days[dayKey].value" :min="0" :max="activity.days[dayKey].max < 10 ? 9 : (activity.days[dayKey].max > 99 ? 99 : activity.days[dayKey].max || 99)" @change="validateNumberInput($event)" :readonly="section.name === 'TOTAL'">
                   </template>
                 </td>
-                <td class="dc editable" tabindex="0" :class="{'current-day': (currentDay === 0 ? 6 : currentDay - 1) === ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'].indexOf(dayKey)}" @dblclick="editInline($event, 'maxValue', {sIdx, aIdx, day: dayKey}, activity.days[dayKey]?.max || '')" x-text="activity.days[dayKey]?.max || ''" :data-original-value="activity.days[dayKey]?.max || ''"></td>
+                <td class="dc editable" :id="'maxValueDisplay-' + sIdxR + '-' + aIdx + '-' + dayKey" tabindex="0" :class="{'current-day': (currentDay === 0 ? 6 : currentDay - 1) === dayIndex}"
+                    @dblclick="startEdit('maxValue', activity.days[dayKey]?.max || '', 'maxValueInput-' + sIdxR + '-' + aIdx + '-' + dayKey, sIdxR, aIdx, dayKey)"
+                    x-show="!isEditing('maxValue', sIdxR, aIdx, dayKey)">
+                     <span x-text="activity.days[dayKey]?.max || ''"></span>
+                </td>
+                <input type="number" class="inline-edit-input" :id="'maxValueInput-' + sIdxR + '-' + aIdx + '-' + dayKey"
+                       x-show="isEditing('maxValue', sIdxR, aIdx, dayKey)" x-model.number="editValue"
+                       @keydown.enter="commitEdit()" @keydown.escape="cancelEdit()" @blur="commitEdit()"
+                       :x-ref="'maxValueInputRef-' + sIdxR + '-' + aIdx + '-' + dayKey" x-init="$watch('editingTarget', v => v?.type==='maxValue'&&v.ids[0]===sIdxR&&v.ids[1]===aIdx&&v.ids[2]===dayKey && $nextTick(()=>$refs['maxValueInputRef-'+sIdxR+'-'+aIdx+'-'+dayKey].focus()))">
               </template>
-              <td class="dc" :class="{ 'score-low': activity.maxScore > 0 && (activity.score / activity.maxScore) < 0.33, 'score-medium': activity.maxScore > 0 && (activity.score / activity.maxScore) >= 0.33 && (activity.score / activity.maxScore) < 0.66, 'score-high': activity.maxScore > 0 && (activity.score / activity.maxScore) >= 0.66 }">
-                <input type="number" class="mini-input"
-                       :id="'activity-' + sIdx + '-' + aIdx + '-score'"
-                       :name="'activity-' + sIdx + '-' + aIdx + '-score'"
-                       x-model.number="activity.score" readonly>
+
+              <td class="dc"> <input type="number" class="mini-input" :id="'activity-' + sIdxR + '-' + aIdx + '-score'" :name="'activity-' + sIdxR + '-' + aIdx + '-score'" x-model.number="activity.score" readonly :class="{ 'score-low': activity.maxScore > 0 && (activity.score / activity.maxScore) < 0.33, 'score-medium': activity.maxScore > 0 && (activity.score / activity.maxScore) >= 0.33 && (activity.score / activity.maxScore) < 0.66, 'score-high': activity.maxScore > 0 && (activity.score / activity.maxScore) >= 0.66 }"></td>
+
+              <td class="dc editable" :id="'maxScoreDisplay-' + sIdxR + '-' + aIdx" tabindex="0"
+                  @dblclick="startEdit('maxScore', activity.maxScore, 'maxScoreInput-' + sIdxR + '-' + aIdx, sIdxR, aIdx)"
+                  x-show="!isEditing('maxScore', sIdxR, aIdx)">
+                  <span x-text="activity.maxScore"></span>
               </td>
-              <td class="dc editable" tabindex="0" @dblclick="editInline($event, 'maxScore', {sIdx, aIdx}, activity.maxScore)" x-text="activity.maxScore" :data-original-value="activity.maxScore"></td>
-              <td class="dc streak-cell" :class="{'has-streak': activity.streaks?.current > 2}">
-                <span x-text="activity.streaks?.current > 0 ? activity.streaks.current : ''"></span>
-              </td>
+              <input type="number" class="inline-edit-input" :id="'maxScoreInput-' + sIdxR + '-' + aIdx"
+                     x-show="isEditing('maxScore', sIdxR, aIdx)" x-model.number="editValue"
+                     @keydown.enter="commitEdit()" @keydown.escape="cancelEdit()" @blur="commitEdit()"
+                     :x-ref="'maxScoreInputRef-' + sIdxR + '-' + aIdx" x-init="$watch('editingTarget', v => v?.type==='maxScore'&&v.ids[0]===sIdxR&&v.ids[1]===aIdx && $nextTick(()=>$refs['maxScoreInputRef-'+sIdxR+'-'+aIdx].focus()))">
+
+              <td class="dc streak-cell" :class="{'has-streak': activity.streaks?.current > 2}"><span x-text="activity.streaks?.current > 0 ? activity.streaks.current : ''"></span></td>
             </tr>
           </template>
           <tr x-if="section.name === 'TOTAL' && section.activities.length > 0 && section.activities[0].maxScore > 0">
@@ -94,136 +159,137 @@
       </tbody>
     </table>
 
+    <!-- Tasks Section -->
     <div class="section">
-      <h3 class="section-title editable" tabindex="0" @dblclick="editInline($event, 'sectionTitle', 'tasks', uiConfig.sectionTitles.tasks)" x-text="uiConfig.sectionTitles.tasks"></h3>
-      <table>
-        <thead>
-          <tr>
-            <template x-for="(header, hIdx) in uiConfig.taskHeaders" :key="'task-header-' + hIdx">
-              <th :style="[0,1,2,5].includes(hIdx) ? 'width:5mm' : (hIdx === 4 ? 'width:10mm' : (hIdx === 3 ? 'text-align:left;' : ''))" class="editable" tabindex="0" @dblclick="editInline($event, 'taskHeader', hIdx, header)" x-text="header"></th>
-            </template>
-          </tr>
-        </thead>
-        <tbody>
-          <template x-for="(task, i) in tasks" :key="'task-' + i">
-            <tr :class="{'task-completed': task.completed === '✓'}">
-              <td><input type="text" class="mini-input" :id="'task-num-' + i" :name="'task-num-' + i" x-model="task.num" :placeholder="i + 1" @change="validateTextInput($event)"></td>
-              <td><input type="text" class="mini-input" :id="'task-priority-' + i" :name="'task-priority-' + i" x-model="task.priority" placeholder="A" @change="validateTextInput($event)"></td>
-              <td><input type="text" class="mini-input" :id="'task-tag-' + i" :name="'task-tag-' + i" x-model="task.tag" placeholder="W" @change="validateTextInput($event)"></td>
-              <td><input type="text" class="mini-input task-description-input" :id="'task-desc-' + i" :name="'task-desc-' + i" x-model="task.description" placeholder="Task description" @change="validateTextInput($event)"></td>
-              <td><input type="text" class="mini-input" :id="'task-date-' + i" :name="'task-date-' + i" x-model="task.date" :placeholder="formatShortDate(i)" @change="validateTextInput($event)"></td>
-              <td><input type="text" class="mini-input" :id="'task-completed-' + i" :name="'task-completed-' + i" x-model="task.completed" @click.prevent="toggleTaskCompletion(task)" :class="{'completed-task': task.completed === '✓'}" placeholder="☐"></td>
-            </tr>
-          </template>
-        </tbody>
-      </table>
+        <h3 class="section-title editable" :id="'sectionTitleDisplay-tasks'" tabindex="0" @dblclick="startEdit('sectionTitle', uiConfig.sectionTitles.tasks, 'sectionTitleInput-tasks', 'tasks')" x-show="!isEditing('sectionTitle', 'tasks')"><span x-text="uiConfig.sectionTitles.tasks"></span></h3>
+        <input type="text" class="inline-edit-input section-title" :id="'sectionTitleInput-tasks'" x-show="isEditing('sectionTitle', 'tasks')" x-model="editValue" @keydown.enter="commitEdit()" @keydown.escape="cancelEdit()" @blur="commitEdit()" x-ref="sectionTitleInputRefTasks" x-init="$watch('editingTarget', v => v?.type==='sectionTitle'&&v.ids[0]==='tasks' && $nextTick(()=>$refs.sectionTitleInputRefTasks.focus()))">
+        <table>
+            <thead>
+                <tr>
+                    <template x-for="(header, hIdx) in uiConfig.taskHeaders" :key="'task-header-' + hIdx">
+                        <th :style="[0,1,2,5].includes(hIdx) ? 'width:5mm' : (hIdx === 4 ? 'width:10mm' : (hIdx === 3 ? 'text-align:left;' : ''))" class="editable" :id="'taskHeaderDisplay-' + hIdx" tabindex="0" @dblclick="startEdit('taskHeader', header, 'taskHeaderInput-' + hIdx, hIdx)" x-show="!isEditing('taskHeader', hIdx)"><span x-text="header"></span></th>
+                        <input type="text" class="inline-edit-input" :id="'taskHeaderInput-' + hIdx" x-show="isEditing('taskHeader', hIdx)" x-model="editValue" @keydown.enter="commitEdit()" @keydown.escape="cancelEdit()" @blur="commitEdit()" :x-ref="'taskHeaderInputRef' + hIdx" x-init="$watch('editingTarget', v => v?.type==='taskHeader'&&v.ids[0]===hIdx && $nextTick(()=>$refs['taskHeaderInputRef'+hIdx].focus()))">
+                    </template>
+                </tr>
+            </thead>
+            <tbody>
+                <template x-for="(task, i) in tasks" :key="task.id || 'task-' + i">
+                    <tr :class="{'task-completed': task.completed === '✓'}">
+                        <td><input type="text" class="mini-input" :id="'task-num-' + task.id" :name="'task-num-' + task.id" x-model="task.num" :placeholder="i + 1" @change="validateTextInput($event)"></td>
+                        <td><input type="text" class="mini-input" :id="'task-priority-' + task.id" :name="'task-priority-' + task.id" x-model="task.priority" placeholder="A" @change="validateTextInput($event)"></td>
+                        <td><input type="text" class="mini-input" :id="'task-tag-' + task.id" :name="'task-tag-' + task.id" x-model="task.tag" placeholder="W" @change="validateTextInput($event)"></td>
+                        <td><input type="text" class="mini-input task-description-input" :id="'task-desc-' + task.id" :name="'task-desc-' + task.id" x-model="task.description" placeholder="Task description" @change="validateTextInput($event)"></td>
+                        <td><input type="text" class="mini-input" :id="'task-date-' + task.id" :name="'task-date-' + task.id" x-model="task.date" :placeholder="formatShortDate(i)" @change="validateTextInput($event)"></td>
+                        <td><input type="text" class="mini-input" :id="'task-completed-' + task.id" :name="'task-completed-' + task.id" x-model="task.completed" @click.prevent="toggleTaskCompletion(task)" :class="{'completed-task': task.completed === '✓'}" placeholder="☐"></td>
+                    </tr>
+                </template>
+            </tbody>
+        </table>
     </div>
 
+    <!-- Workout Section -->
     <div class="section">
-      <h3 class="section-title editable" tabindex="0" @dblclick="editInline($event, 'sectionTitle', 'workout', uiConfig.sectionTitles.workout)" x-text="uiConfig.sectionTitles.workout"></h3>
-      <div class="grid">
-        <template x-for="(day, dayIdx) in workoutPlan" :key="'workout-day-' + dayIdx">
-          <div class="p-1 workout-day-card">
-            <p class="bold text-center mb-1 editable workout-day-name" tabindex="0" @dblclick="editInline($event, 'workoutDayName', dayIdx, day.name)" x-text="day.name" :data-original-value="day.name"></p>
-            <template x-for="(ex, exIdx) in day.exercises" :key="'exercise-' + dayIdx + '-' + exIdx">
-              <div class="exercise">
-                <div class="exercise-name editable" tabindex="0" :title="ex.prefix + ex.name" @dblclick="editInline($event, 'exerciseName', {dayIdx, exIdx}, ex.name)" :data-original-value="ex.name">
-                  <span class="editable" tabindex="0" @dblclick.stop="editInline($event, 'exercisePrefix', {dayIdx, exIdx}, ex.prefix)" x-text="ex.prefix" :data-original-value="ex.prefix"></span>
-                  <span x-text="ex.name"></span>:
+        <h3 class="section-title editable" :id="'sectionTitleDisplay-workout'" tabindex="0" @dblclick="startEdit('sectionTitle', uiConfig.sectionTitles.workout, 'sectionTitleInput-workout', 'workout')" x-show="!isEditing('sectionTitle', 'workout')"><span x-text="uiConfig.sectionTitles.workout"></span></h3>
+        <input type="text" class="inline-edit-input section-title" :id="'sectionTitleInput-workout'" x-show="isEditing('sectionTitle', 'workout')" x-model="editValue" @keydown.enter="commitEdit()" @keydown.escape="cancelEdit()" @blur="commitEdit()" x-ref="sectionTitleInputRefWorkout" x-init="$watch('editingTarget', v => v?.type==='sectionTitle'&&v.ids[0]==='workout' && $nextTick(()=>$refs.sectionTitleInputRefWorkout.focus()))">
+        <div class="grid">
+            <template x-for="(day, dayIdx) in workoutPlan" :key="day.id || 'workout-day-' + dayIdx">
+                <div class="p-1 workout-day-card">
+                    <div class="bold text-center mb-1 editable workout-day-name" :id="'workoutDayNameDisplay-' + day.id" tabindex="0" @dblclick="startEdit('workoutDayName', day.name, 'workoutDayNameInput-' + day.id, day.id)" x-show="!isEditing('workoutDayName', day.id)"><p x-text="day.name"></p></div>
+                    <input type="text" class="inline-edit-input bold text-center" :id="'workoutDayNameInput-' + day.id" x-show="isEditing('workoutDayName', day.id)" x-model="editValue" @keydown.enter="commitEdit()" @keydown.escape="cancelEdit()" @blur="commitEdit()" :x-ref="'workoutDayNameInputRef-' + day.id" x-init="$watch('editingTarget', v => v?.type==='workoutDayName'&&v.ids[0]===day.id && $nextTick(()=>$refs['workoutDayNameInputRef-'+day.id].focus()))">
+                    <template x-for="(ex, exIdx) in day.exercises" :key="ex.id || 'exercise-' + exIdx">
+                        <div class="exercise">
+                            <div class="exercise-name editable" :id="'exerciseNameDisplay-' + ex.id" tabindex="0" :title="ex.prefix + ex.name" @dblclick="startEdit('exerciseName', ex.name, 'exerciseNameInput-' + ex.id, day.id, ex.id)" x-show="!isEditing('exerciseName', day.id, ex.id)">
+                                <span class="editable" :id="'exercisePrefixDisplay-' + ex.id" @dblclick.stop="startEdit('exercisePrefix', ex.prefix, 'exercisePrefixInput-' + ex.id, day.id, ex.id)" x-show="!isEditing('exercisePrefix', day.id, ex.id)" x-text="ex.prefix"></span>
+                                <input type="text" class="inline-edit-input" style="width: 20px; display: inline-block;" :id="'exercisePrefixInput-' + ex.id" x-show="isEditing('exercisePrefix', day.id, ex.id)" x-model="editValue" @keydown.enter="commitEdit()" @keydown.escape="cancelEdit()" @blur="commitEdit()" :x-ref="'exercisePrefixInputRef-' + ex.id" x-init="$watch('editingTarget', v => v?.type==='exercisePrefix'&&v.ids[0]===day.id&&v.ids[1]===ex.id && $nextTick(()=>$refs['exercisePrefixInputRef-'+ex.id].focus()))">
+                                <span x-text="ex.name"></span>:
+                            </div>
+                             <input type="text" class="inline-edit-input" :id="'exerciseNameInput-' + ex.id" x-show="isEditing('exerciseName', day.id, ex.id)" x-model="editValue" @keydown.enter="commitEdit()" @keydown.escape="cancelEdit()" @blur="commitEdit()" :x-ref="'exerciseNameInputRef-' + ex.id" x-init="$watch('editingTarget', v => v?.type==='exerciseName'&&v.ids[0]===day.id&&v.ids[1]===ex.id && $nextTick(()=>$refs['exerciseNameInputRef-'+ex.id].focus()))">
+                            <div class="exercise-inputs">
+                                <input type="number" class="mini-input" :id="'ex-weight-' + ex.id" :name="'ex-weight-' + ex.id" x-model.number="ex.weight" @change="validateNumberInput($event)" :placeholder="ex.defaultWeight">
+                                <span class="exercise-unit">kg,</span>
+                                <input type="number" class="mini-input sets" :id="'ex-sets-' + ex.id" :name="'ex-sets-' + ex.id" x-model.number="ex.sets" @change="validateNumberInput($event)" :placeholder="ex.defaultSets">
+                                <span class="exercise-unit">×</span>
+                                <input type="number" class="mini-input reps" :id="'ex-reps-' + ex.id" :name="'ex-reps-' + ex.id" x-model.number="ex.reps" @change="validateNumberInput($event)" :placeholder="ex.defaultReps">
+                            </div>
+                        </div>
+                    </template>
                 </div>
-                <div class="exercise-inputs">
-                  <input type="number" class="mini-input" :id="'ex-weight-' + dayIdx + '-' + exIdx" :name="'ex-weight-' + dayIdx + '-' + exIdx" x-model.number="ex.weight" @change="validateNumberInput($event)" :placeholder="ex.defaultWeight">
-                  <span class="exercise-unit">kg,</span>
-                  <input type="number" class="mini-input sets" :id="'ex-sets-' + dayIdx + '-' + exIdx" :name="'ex-sets-' + dayIdx + '-' + exIdx" x-model.number="ex.sets" @change="validateNumberInput($event)" :placeholder="ex.defaultSets">
-                  <span class="exercise-unit">×</span>
-                  <input type="number" class="mini-input reps" :id="'ex-reps-' + dayIdx + '-' + exIdx" :name="'ex-reps-' + dayIdx + '-' + exIdx" x-model.number="ex.reps" @change="validateNumberInput($event)" :placeholder="ex.defaultReps">
-                </div>
-              </div>
             </template>
-          </div>
-        </template>
-      </div>
+        </div>
     </div>
 
+    <!-- Meals Section -->
     <div class="section">
-      <h3 class="section-title editable" tabindex="0" @dblclick="editInline($event, 'sectionTitle', 'meals', uiConfig.sectionTitles.meals)" x-text="uiConfig.sectionTitles.meals"></h3>
-      <ul class="list text-xs">
-        <template x-for="(meal, i) in meals" :key="'meal-' + i">
-          <li class="list-item">
-            <span class="bold editable" tabindex="0" @dblclick="editInline($event, 'mealName', i, meal.name)" x-text="meal.name + ':'" :data-original-value="meal.name"></span>
-            <span class="editable" tabindex="0" @dblclick="editInline($event, 'mealIngredients', i, meal.ingredients)" x-text="meal.ingredients" :data-original-value="meal.ingredients"></span>
-          </li>
-        </template>
-      </ul>
+        <h3 class="section-title editable" :id="'sectionTitleDisplay-meals'" tabindex="0" @dblclick="startEdit('sectionTitle', uiConfig.sectionTitles.meals, 'sectionTitleInput-meals', 'meals')" x-show="!isEditing('sectionTitle', 'meals')"><span x-text="uiConfig.sectionTitles.meals"></span></h3>
+        <input type="text" class="inline-edit-input section-title" :id="'sectionTitleInput-meals'" x-show="isEditing('sectionTitle', 'meals')" x-model="editValue" @keydown.enter="commitEdit()" @keydown.escape="cancelEdit()" @blur="commitEdit()" x-ref="sectionTitleInputRefMeals" x-init="$watch('editingTarget', v => v?.type==='sectionTitle'&&v.ids[0]==='meals' && $nextTick(()=>$refs.sectionTitleInputRefMeals.focus()))">
+        <ul class="list text-xs">
+            <template x-for="(meal, i) in meals" :key="meal.id || 'meal-' + i">
+                <li class="list-item">
+                    <div class="bold editable" style="display: inline;" :id="'mealNameDisplay-' + meal.id" tabindex="0" @dblclick="startEdit('mealName', meal.name, 'mealNameInput-' + meal.id, meal.id)" x-show="!isEditing('mealName', meal.id)"><span x-text="meal.name + ':'"></span></div>
+                    <input type="text" class="inline-edit-input bold" style="display: inline; width: auto;" :id="'mealNameInput-' + meal.id" x-show="isEditing('mealName', meal.id)" x-model="editValue" @keydown.enter="commitEdit()" @keydown.escape="cancelEdit()" @blur="commitEdit()" :x-ref="'mealNameInputRef-' + meal.id" x-init="$watch('editingTarget', v => v?.type==='mealName'&&v.ids[0]===meal.id && $nextTick(()=>$refs['mealNameInputRef-'+meal.id].focus()))">
+                    
+                    <div class="editable" style="display: inline;" :id="'mealIngredientsDisplay-' + meal.id" tabindex="0" @dblclick="startEdit('mealIngredients', meal.ingredients, 'mealIngredientsInput-' + meal.id, meal.id)" x-show="!isEditing('mealIngredients', meal.id)"><span x-text="meal.ingredients"></span></div>
+                    <textarea class="inline-edit-textarea" style="display: block; width: 100%;" :id="'mealIngredientsInput-' + meal.id" x-show="isEditing('mealIngredients', meal.id)" x-model="editValue" @keydown.enter.prevent.stop="commitEdit()" @keydown.escape="cancelEdit()" @blur="commitEdit()" :x-ref="'mealIngredientsInputRef-' + meal.id" x-init="$watch('editingTarget', v => v?.type==='mealIngredients'&&v.ids[0]===meal.id && $nextTick(()=>$refs['mealIngredientsInputRef-'+meal.id].focus()))"></textarea>
+                </li>
+            </template>
+        </ul>
+    </div>
+    
+    <!-- Grocery Section -->
+    <div class="section">
+        <h3 class="section-title">
+            <span class="editable" :id="'sectionTitleDisplay-grocery'" tabindex="0" @dblclick="startEdit('sectionTitle', uiConfig.sectionTitles.grocery, 'sectionTitleInput-grocery', 'grocery')" x-show="!isEditing('sectionTitle', 'grocery')" x-text="uiConfig.sectionTitles.grocery"></span>
+            <input type="text" class="inline-edit-input" style="display: inline-block; width: auto; font-weight:bold; font-size: 8pt;" :id="'sectionTitleInput-grocery'" x-show="isEditing('sectionTitle', 'grocery')" x-model="editValue" @keydown.enter="commitEdit()" @keydown.escape="cancelEdit()" @blur="commitEdit()" x-ref="sectionTitleInputRefGrocery" x-init="$watch('editingTarget', v => v?.type==='sectionTitle'&&v.ids[0]==='grocery' && $nextTick(()=>$refs.sectionTitleInputRefGrocery.focus()))">
+            <input type="text" class="mini-input grocery-budget-input" id="grocery-budget" name="grocery-budget" x-model="groceryBudget" placeholder="£120" @change="validateTextInput($event)">
+        </h3>
+        <ul class="list text-xs">
+            <template x-for="(cat, i) in groceryList" :key="cat.id || 'grocery-cat-' + i">
+                <li class="list-item">
+                    <div class="bold editable" style="display: inline;" :id="'groceryCatNameDisplay-' + cat.id" tabindex="0" @dblclick="startEdit('groceryCategoryName', cat.name, 'groceryCatNameInput-' + cat.id, cat.id)" x-show="!isEditing('groceryCategoryName', cat.id)"><span x-text="cat.name + ':'"></span></div>
+                    <input type="text" class="inline-edit-input bold" style="display: inline; width:auto;" :id="'groceryCatNameInput-' + cat.id" x-show="isEditing('groceryCategoryName', cat.id)" x-model="editValue" @keydown.enter="commitEdit()" @keydown.escape="cancelEdit()" @blur="commitEdit()" :x-ref="'groceryCatNameInputRef-' + cat.id" x-init="$watch('editingTarget', v => v?.type==='groceryCategoryName'&&v.ids[0]===cat.id && $nextTick(()=>$refs['groceryCatNameInputRef-'+cat.id].focus()))">
+
+                    <div class="editable" style="display: inline;" :id="'groceryCatItemsDisplay-' + cat.id" tabindex="0" @dblclick="startEdit('groceryCategoryItems', cat.items, 'groceryCatItemsInput-' + cat.id, cat.id)" x-show="!isEditing('groceryCategoryItems', cat.id)"><span x-text="cat.items"></span></div>
+                    <textarea class="inline-edit-textarea" style="display: block; width: 100%;" :id="'groceryCatItemsInput-' + cat.id" x-show="isEditing('groceryCategoryItems', cat.id)" x-model="editValue" @keydown.enter.prevent.stop="commitEdit()" @keydown.escape="cancelEdit()" @blur="commitEdit()" :x-ref="'groceryCatItemsInputRef-' + cat.id" x-init="$watch('editingTarget', v => v?.type==='groceryCategoryItems'&&v.ids[0]===cat.id && $nextTick(()=>$refs['groceryCatItemsInputRef-'+cat.id].focus()))"></textarea>
+                </li>
+            </template>
+        </ul>
     </div>
 
+    <!-- Body Measurements Section -->
     <div class="section">
-      <h3 class="section-title editable" tabindex="0" @dblclick="editInline($event, 'sectionTitle', 'grocery', uiConfig.sectionTitles.grocery)">
-        <span x-text="uiConfig.sectionTitles.grocery"></span>
-        <input type="text" class="mini-input grocery-budget-input" id="grocery-budget" name="grocery-budget" x-model="groceryBudget" placeholder="£120" @change="validateTextInput($event)">
-      </h3>
-      <ul class="list text-xs">
-        <template x-for="(cat, i) in groceryList" :key="'grocery-cat-' + i">
-          <li class="list-item">
-            <span class="bold editable" tabindex="0" @dblclick="editInline($event, 'groceryCategoryName', i, cat.name)" x-text="cat.name + ':'" :data-original-value="cat.name"></span>
-            <span class="editable" tabindex="0" @dblclick="editInline($event, 'groceryCategoryItems', i, cat.items)" x-text="cat.items" :data-original-value="cat.items"></span>
-          </li>
-        </template>
-      </ul>
+        <h3 class="section-title editable" :id="'sectionTitleDisplay-measurements'" tabindex="0" @dblclick="startEdit('sectionTitle', uiConfig.sectionTitles.measurements, 'sectionTitleInput-measurements', 'measurements')" x-show="!isEditing('sectionTitle', 'measurements')"><span x-text="uiConfig.sectionTitles.measurements"></span></h3>
+        <input type="text" class="inline-edit-input section-title" :id="'sectionTitleInput-measurements'" x-show="isEditing('sectionTitle', 'measurements')" x-model="editValue" @keydown.enter="commitEdit()" @keydown.escape="cancelEdit()" @blur="commitEdit()" x-ref="sectionTitleInputRefMeasurements" x-init="$watch('editingTarget', v => v?.type==='sectionTitle'&&v.ids[0]==='measurements' && $nextTick(()=>$refs.sectionTitleInputRefMeasurements.focus()))">
+        <div class="form-row text-xs">
+            <template x-for="(m, i) in bodyMeasurements" :key="m.id || 'measurement-' + i">
+                <div class="form-field">
+                    <div class="form-label editable" :id="'measurementNameDisplay-' + m.id" tabindex="0" @dblclick="startEdit('measurementName', m.name, 'measurementNameInput-' + m.id, m.id)" x-show="!isEditing('measurementName', m.id)"><span x-text="m.name + ':'"></span></div>
+                    <input type="text" class="inline-edit-input form-label" :id="'measurementNameInput-' + m.id" x-show="isEditing('measurementName', m.id)" x-model="editValue" @keydown.enter="commitEdit()" @keydown.escape="cancelEdit()" @blur="commitEdit()" :x-ref="'measurementNameInputRef-' + m.id" x-init="$watch('editingTarget', v => v?.type==='measurementName'&&v.ids[0]===m.id && $nextTick(()=>$refs['measurementNameInputRef-'+m.id].focus()))">
+                    <input type="text" class="mini-input measurement-value-input" :id="'measurement-value-' + m.id" :name="'measurement-value-' + m.id" x-model="m.value" :placeholder="m.placeholder" @change="validateTextInput($event)">
+                </div>
+            </template>
+        </div>
     </div>
 
+    <!-- Financials Section -->
     <div class="section">
-      <h3 class="section-title editable" tabindex="0" @dblclick="editInline($event, 'sectionTitle', 'measurements', uiConfig.sectionTitles.measurements)" x-text="uiConfig.sectionTitles.measurements"></h3>
-      <div class="form-row text-xs">
-        <template x-for="(m, i) in bodyMeasurements" :key="'measurement-' + i">
-          <div class="form-field">
-            <span class="form-label editable" tabindex="0" @dblclick="editInline($event, 'measurementName', i, m.name)" x-text="m.name + ':'" :data-original-value="m.name"></span>
-            <input type="text" class="mini-input measurement-value-input"
-                   :id="'measurement-value-' + i" :name="'measurement-value-' + i"
-                   x-model="m.value" :placeholder="m.placeholder" @change="validateTextInput($event)">
-          </div>
-        </template>
-      </div>
-    </div>
-
-    <div class="section">
-      <h3 class="section-title editable" tabindex="0" @dblclick="editInline($event, 'sectionTitle', 'financials', uiConfig.sectionTitles.financials)" x-text="uiConfig.sectionTitles.financials"></h3>
-      <div class="form-row text-xs">
-        <template x-for="(item, i) in financials" :key="'financial-' + i">
-          <div class="form-field">
-            <span class="form-label editable" tabindex="0" @dblclick="editInline($event, 'financialName', i, item.name)" x-text="item.name + ':'" :data-original-value="item.name"></span>
-            £<input type="text" class="mini-input financial-value-input"
-                    :id="'financial-value-' + i" :name="'financial-value-' + i"
-                    x-model="item.value" :placeholder="item.placeholder" @change="validateTextInput($event)">
-            <span class="editable" tabindex="0" @dblclick="editInline($event, 'financialAccount', i, item.account)" x-text="item.account" :data-original-value="item.account"></span>
-          </div>
-        </template>
-      </div>
+        <h3 class="section-title editable" :id="'sectionTitleDisplay-financials'" tabindex="0" @dblclick="startEdit('sectionTitle', uiConfig.sectionTitles.financials, 'sectionTitleInput-financials', 'financials')" x-show="!isEditing('sectionTitle', 'financials')"><span x-text="uiConfig.sectionTitles.financials"></span></h3>
+        <input type="text" class="inline-edit-input section-title" :id="'sectionTitleInput-financials'" x-show="isEditing('sectionTitle', 'financials')" x-model="editValue" @keydown.enter="commitEdit()" @keydown.escape="cancelEdit()" @blur="commitEdit()" x-ref="sectionTitleInputRefFinancials" x-init="$watch('editingTarget', v => v?.type==='sectionTitle'&&v.ids[0]==='financials' && $nextTick(()=>$refs.sectionTitleInputRefFinancials.focus()))">
+        <div class="form-row text-xs">
+            <template x-for="(item, i) in financials" :key="item.id || 'financial-' + i">
+                <div class="form-field">
+                    <div class="form-label editable" :id="'financialNameDisplay-' + item.id" tabindex="0" @dblclick="startEdit('financialName', item.name, 'financialNameInput-' + item.id, item.id)" x-show="!isEditing('financialName', item.id)"><span x-text="item.name + ':'"></span></div>
+                    <input type="text" class="inline-edit-input form-label" :id="'financialNameInput-' + item.id" x-show="isEditing('financialName', item.id)" x-model="editValue" @keydown.enter="commitEdit()" @keydown.escape="cancelEdit()" @blur="commitEdit()" :x-ref="'financialNameInputRef-' + item.id" x-init="$watch('editingTarget', v => v?.type==='financialName'&&v.ids[0]===item.id && $nextTick(()=>$refs['financialNameInputRef-'+item.id].focus()))">
+                    £<input type="text" class="mini-input financial-value-input" :id="'financial-value-' + item.id" :name="'financial-value-' + item.id" x-model="item.value" :placeholder="item.placeholder" @change="validateTextInput($event)">
+                    
+                    <div class="editable" style="display: inline-block; margin-left: 0.5mm;" :id="'financialAccountDisplay-' + item.id" tabindex="0" @dblclick="startEdit('financialAccount', item.account, 'financialAccountInput-' + item.id, item.id)" x-show="!isEditing('financialAccount', item.id)"><span x-text="item.account"></span></div>
+                    <input type="text" class="inline-edit-input" style="display: inline-block; width: auto;" :id="'financialAccountInput-' + item.id" x-show="isEditing('financialAccount', item.id)" x-model="editValue" @keydown.enter="commitEdit()" @keydown.escape="cancelEdit()" @blur="commitEdit()" :x-ref="'financialAccountInputRef-' + item.id" x-init="$watch('editingTarget', v => v?.type==='financialAccount'&&v.ids[0]===item.id && $nextTick(()=>$refs['financialAccountInputRef-'+item.id].focus()))">
+                </div>
+            </template>
+        </div>
     </div>
   </div>
 
-  <div class="dropdown" :class="{'show': showCitySelector}" :style="`top: ${dropdownPosition.top}px; left: ${dropdownPosition.left}px;`">
-    <div class="dropdown-content">
-      <template x-for="cityItem in cityOptions" :key="cityItem.name">
-        <div class="dropdown-item" @click="selectCity(cityItem)" x-text="cityItem.name"></div>
-      </template>
-    </div>
-  </div>
-
-  <div class="dropdown" :class="{'show': showWeekSelector}" :style="`top: ${dropdownPosition.top}px; left: ${dropdownPosition.left}px;`">
-    <div class="dropdown-content">
-      <template x-if="savedWeeks.length > 0">
-        <template x-for="week in savedWeeks" :key="week.iso_week">
-          <div class="flex between center dropdown-item" :class="{'current': week.isCurrent}">
-            <span @click="confirmLoadWeek(week.iso_week)" x-text="`${week.iso_week} (${week.dateRange || ''})`"></span>
-            <span @click.stop="confirmDeleteWeek(week.iso_week)" class="delete-week-btn" style="cursor:pointer; padding: 0 5px; color: red;">×</span>
-          </div>
-        </template>
-      </template>
-      <template x-if="savedWeeks.length === 0">
-        <div class="dropdown-item-empty">No saved schedules found</div>
-      </template>
-    </div>
-  </div>
+  <div class="dropdown" :class="{'show': showCitySelector}" :style="`top: ${dropdownPosition.top}px; left: ${dropdownPosition.left}px;`"> <div class="dropdown-content"> <template x-for="cityItem in cityOptions" :key="cityItem.name"> <div class="dropdown-item" @click="selectCity(cityItem)" x-text="cityItem.name"></div> </template> </div> </div>
+  <div class="dropdown" :class="{'show': showWeekSelector}" :style="`top: ${dropdownPosition.top}px; left: ${dropdownPosition.left}px;`"> <div class="dropdown-content"> <template x-if="savedWeeks.length > 0"> <template x-for="week in savedWeeks" :key="week.iso_week"> <div class="flex between center dropdown-item" :class="{'current': week.isCurrent}"> <span @click="confirmLoadWeek(week.iso_week)" x-text="`${week.iso_week} (${week.dateRange || ''})`"></span> <span @click.stop="confirmDeleteWeek(week.iso_week)" class="delete-week-btn" style="cursor:pointer; padding: 0 5px; color: red;">×</span> </div> </template> </template> <template x-if="savedWeeks.length === 0"> <div class="dropdown-item-empty">No saved schedules found</div> </template> </div> </div>
 </body>
 </html>
