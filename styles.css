@@ -9,30 +9,29 @@ body { display: flex; justify-content: flex-start; align-items: flex-start; min-
 .ac { width: 88mm; text-align: left; padding-left: 1mm; height: 3mm; }
 table { table-layout: fixed; width: 200mm; border-collapse: collapse; }
 th, td { padding: 0; border: none; vertical-align: middle; height: 3mm; font-size: 7pt; }
-th { background-color: #e6e6e6 !important; }
+th { background-color: #e6e6e6; }
 tr:nth-child(even) td { background-color: #f0f4f8; }
 tr:nth-child(odd) td { background-color: #ffffff; }
-tr.total td { background-color: #e6e6e6 !important; }
+tr.total td { background-color: #e6e6e6; }
 td.dc, th.dc { border-right: 1px solid #e0e0e0; }
 td.dc:nth-child(4n+5), th.dc:nth-child(4n+5) { border-right: 1px solid #ccc; }
-.current-day { background-color: #fff8e1 !important; }
+.current-day { background-color: #fff8e1 !important; } /* !important might be needed if td.current-day specificity is lower than tr:nth-child(odd/even) td */
 .mini-input { width: 100%; height: 3mm; padding: 0; border: none; text-align: center; font-size: 7pt; background-color: #e6f7ff; }
-.mini-input:focus { outline: none; background-color: #fff !important; box-shadow: inset 0 0 0 2px rgba(66, 153, 225, 0.5) !important; }
-tr:has(.mini-input:focus) td { background-color: #f0f7ff !important; }
+.mini-input:focus { outline: none; background-color: #fff; box-shadow: inset 0 0 0 2px rgba(66, 153, 225, 0.5); }
+tr:has(.mini-input:focus) td { background-color: #f0f7ff; }
 .section { margin-top: 2mm; }
 .list { padding-left: 2mm; margin-top: 0.5mm; list-style-type: disc; }
 .list-item { margin-bottom: 0.5mm; line-height: 1; }
 .section-title { margin-bottom: 1mm; font-size: 8pt; font-weight: bold; position: relative; }
-#save-status { position: fixed; bottom: 10px; right: 10px; padding: 5px 10px; border-radius: 5px; font-size: 12px; font-weight: bold; z-index: 1000; }
-.status-saved { background-color: #d4edda; color: #155724; }
-.status-saving { background-color: #fff3cd; color: #856404; }
+#save-status, #sync-status, #notification { position: fixed; right: 10px; padding: 5px 10px; border-radius: 5px; font-size: 12px; font-weight: bold; z-index: 1000; }
+#save-status { bottom: 10px; }
+#sync-status { bottom: 40px; }
+#notification { top: 20px; background-color: #f8d7da; color: #721c24; display: none; }
+.status-saved, .status-synced { background-color: #d4edda; color: #155724; }
+.status-saving, .status-pending { background-color: #fff3cd; color: #856404; }
 .status-error { background-color: #f8d7da; color: #721c24; }
-#sync-status { position: fixed; bottom: 40px; right: 10px; padding: 5px 10px; border-radius: 5px; font-size: 12px; font-weight: bold; z-index: 1000; }
-.status-synced { background-color: #d4edda; color: #155724; }
-.status-pending { background-color: #fff3cd; color: #856404; }
-#notification { position: fixed; top: 20px; right: 20px; padding: 10px 15px; border-radius: 5px; font-size: 12px; font-weight: bold; z-index: 1100; background-color: #f8d7da; color: #721c24; display: none; }
 #notification.show { display: block; animation: fadeOut 5s forwards; }
-@keyframes fadeOut { 0% { opacity: 1; } 70% { opacity: 1; } 100% { opacity: 0; } }
+@keyframes fadeOut { 0%, 70% { opacity: 1; } 100% { opacity: 0; } }
 .text-xs { font-size: 7pt; line-height: 1.2; }
 .text-sm { font-size: 8pt; line-height: 1.2; }
 .bold { font-weight: bold; }
@@ -65,16 +64,16 @@ tr:has(td.bold:not(:empty)):not(:first-child) { border-top: 2px solid #f0f0f0; }
 .form-label { font-weight: bold; margin-right: 1mm; cursor: pointer; }
 .form-label:hover { background-color: #f0f7ff; }
 .form-field { display: inline-flex; align-items: center; margin-right: 2mm; }
-.task-completed { background-color: #f8f8f8; }
+.task-completed { background-color: #f8f8f8; } /* Applied to <tr> */
 .task-completed input { color: #888; text-decoration: line-through; }
-.completed-task { background-color: #d4edda !important; color: #155724 !important; }
+input.mini-input.completed-task { background-color: #d4edda; color: #155724; } /* More specific for completed task input */
 tr:has(.completed-task) td { text-decoration: line-through; color: #6c757d; }
 tr:has(.completed-task) td input:not(.completed-task) { text-decoration: line-through; color: #6c757d; }
 .streak-cell { font-size: 6pt; color: #e67700; }
-.has-streak { background-color: #fff3cd !important; }
+td.has-streak { background-color: #fff3cd !important; } /* !important retained as td.has-streak (0,1,2) might not override tr:nth-child() td (0,1,2) reliably without it due to source order or equal specificity tie-breaking */
 .has-streak span { position: relative; }
 .has-streak span::after { content: "🔥"; font-size: 6pt; position: absolute; top: -2px; right: -8px; }
-.progress-container { height: 2mm; background-color: #e9ecef; border-radius: 0.5mm; overflow: hidden; padding: 0 !important; }
+.progress-container { height: 2mm; background-color: #e9ecef; border-radius: 0.5mm; overflow: hidden; padding: 0 !important; } /* !important for padding:0 seems strong, but kept from original */
 .progress-bar { height: 100%; border-radius: 0.5mm; transition: width 0.3s ease; }
 .progress-low { background-color: #dc3545; }
 .progress-medium { background-color: #ffc107; }
@@ -87,8 +86,8 @@ tr:has(.completed-task) td input:not(.completed-task) { text-decoration: line-th
 .context-menu { position: absolute; background-color: white; border: 1px solid #e2e8f0; border-radius: 3px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); z-index: 1000; font-size: 7pt; }
 .context-menu-item { padding: 4px 8px; cursor: pointer; }
 .context-menu-item:hover { background-color: #f0f7ff; }
-.inline-edit-input { width: 100%; height: 100%; border: none; background-color: #fff; font-size: 7pt; padding: 0 1mm; outline: none; box-shadow: inset 0 0 0 1px #4299e1; }
-.inline-edit-textarea { width: 100%; min-height: 3mm; border: none; background-color: #fff; font-size: 7pt; padding: 0 1mm; outline: none; box-shadow: inset 0 0 0 1px #4299e1; resize: vertical; }
+.inline-edit-input, .inline-edit-textarea { width: 100%; border: none; background-color: #fff; font-size: 7pt; padding: 0 1mm; outline: none; box-shadow: inset 0 0 0 1px #4299e1; }
+.inline-edit-textarea { min-height: 3mm; resize: vertical; }
 @media print {
   html, body { width: 210mm; height: 297mm; background-color: white; margin: 0; padding: 0; }
   .card { box-shadow: none; }
