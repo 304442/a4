@@ -1,409 +1,262 @@
-// --- Utility Functions ---
-function deepCopy(obj) {
-  if (obj === null || typeof obj !== 'object') return obj;
-  if (obj instanceof Date) return new Date(obj);
-  if (Array.isArray(obj)) return obj.map(deepCopy);
-  const copiedObject = {};
-  for (const key in obj) {
-    if (Object.prototype.hasOwnProperty.call(obj, key)) {
-      copiedObject[key] = deepCopy(obj[key]);
-    }
-  }
-  return copiedObject;
-}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=210mm, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>A4 Planner</title>
+  <script src="pocketbase.umd.js"></script> <!-- Local PocketBase JS SDK -->
+  <script defer src="script.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.9/dist/cdn.min.js"></script>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body x-data="plannerApp()" x-init="init()">
+  <div id="save-status" :class="'status-' + saveStatus" x-text="saveStatus === 'saving' ? 'Saving...' : (saveStatus === 'error' ? 'Error saving!' : 'Saved')"></div>
+  <div id="sync-status" :class="pendingSync.length > 0 ? 'status-pending' : 'status-synced'" x-show="pendingSync.length > 0 || isOnline === false">
+    <span x-text="isOnline ? (pendingSync.length > 0 ? 'Pending sync: ' + pendingSync.length : '') : 'Offline mode'"></span>
+  </div>
+  <div id="notification" :class="{ 'show': showNotification }" x-text="notificationMessage"></div>
 
-function generateId(prefix = 'id_') {
-  return prefix + Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
-}
+  <div class="card">
+    <div class="flex between center mb-1">
+      <h1 class="text-sm bold editable" @dblclick="editInline($event, 'plannerTitle', null, plannerTitle)" x-text="plannerTitle"></h1>
+      <div class="flex center text-xs">
+        <template x-for="(time, i) in times" :key="time.label + i">
+          <div class="flex center">
+            <span class="editable" @dblclick="editInline($event, 'timeLabel', i, time.label)" x-text="time.label + ':'"></span>
+            <input type="text" class="mini-input time-value-input" x-model="time.value" @change="saveData()">
+          </div>
+        </template>
+        <span class="ml-1">|</span>
+        <span class="clickable ml-1" x-text="city" @click="toggleCitySelector($event)"></span>
+      </div>
+      <div class="text-sm">
+        <span class="clickable" x-text="currentWeek" @click="toggleWeekSelector($event)"></span> (<span x-text="dateRange"></span>)
+      </div>
+    </div>
 
-// --- Alpine.js Application ---
-function plannerApp() {
-  const PB_BASE_URL = '/'; 
-  const pb = new PocketBase(PB_BASE_URL);
-  pb.autoCancellation(false);
+    <table>
+      <thead>
+        <tr>
+          <th style="width:18mm" class="editable" @dblclick="editInline($event, 'mainTableHeader', 0, uiConfig.mainTableHeaders ? uiConfig.mainTableHeaders[0] : '')" x-text="uiConfig.mainTableHeaders ? uiConfig.mainTableHeaders[0] : 'TIME'"></th>
+          <th style="width:18mm" class="editable" @dblclick="editInline($event, 'mainTableHeader', 1, uiConfig.mainTableHeaders ? uiConfig.mainTableHeaders[1] : '')" x-text="uiConfig.mainTableHeaders ? uiConfig.mainTableHeaders[1] : 'DAY'"></th>
+          <th class="ac editable" @dblclick="editInline($event, 'mainTableHeader', 2, uiConfig.mainTableHeaders ? uiConfig.mainTableHeaders[2] : '')" x-text="uiConfig.mainTableHeaders ? uiConfig.mainTableHeaders[2] : 'ACTIVITY'"></th>
+          <template x-for="(dayKey, i) in ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN']" :key="dayKey">
+            <th class="dc editable" :class="{'current-day': i === (currentDay === 0 ? 6 : currentDay - 1)}" @dblclick="editInline($event, 'dayHeader', i, uiConfig.dayHeaders ? uiConfig.dayHeaders[i] : '')" x-text="uiConfig.dayHeaders ? uiConfig.dayHeaders[i] : dayKey"></th>
+            <th class="dc editable" :class="{'current-day': i === (currentDay === 0 ? 6 : currentDay - 1)}" @dblclick="editInline($event, 'maxHeader', i, uiConfig.maxHeaders ? uiConfig.maxHeaders[i] : '')" x-text="uiConfig.maxHeaders ? uiConfig.maxHeaders[i] : 'MAX'"></th>
+          </template>
+          <th class="dc editable" @dblclick="editInline($event, 'mainTableHeader', 3, uiConfig.mainTableHeaders ? uiConfig.mainTableHeaders[3] : '')" x-text="uiConfig.mainTableHeaders ? uiConfig.mainTableHeaders[3] : 'SCR'"></th>
+          <th class="dc editable" @dblclick="editInline($event, 'mainTableHeader', 4, uiConfig.mainTableHeaders ? uiConfig.mainTableHeaders[4] : '')" x-text="uiConfig.mainTableHeaders ? uiConfig.mainTableHeaders[4] : 'MAX'"></th>
+          <th class="dc editable" @dblclick="editInline($event, 'mainTableHeader', 5, uiConfig.mainTableHeaders ? uiConfig.mainTableHeaders[5] : '')" x-text="uiConfig.mainTableHeaders ? uiConfig.mainTableHeaders[5] : '🔥'"></th>
+        </tr>
+      </thead>
+      <tbody>
+        <template x-for="(section, sIdxOriginal) in schedule.slice().reverse()" :key="section.id || section.name + sIdxOriginal">
+          <tr class="section-header-row" :class="{'total-section-header': section.name === 'TOTAL'}">
+            <td class="bold editable section-name-cell" :colspan="section.name === 'TOTAL' ? 1 : 1" @dblclick="editInline($event, 'sectionName', schedule.length - 1 - sIdxOriginal, section.name)" x-text="section.name"></td>
+            <td :colspan="section.name === 'TOTAL' ? 18 : 2" class="section-actions-cell">
+              <button x-show="section.name !== 'TOTAL'" @click="addNewActivityToSection(schedule.length - 1 - sIdxOriginal)" class="add-item-btn-small schedule-add-activity-btn">+</button>
+            </td>
+            <!-- Placeholders for remaining columns if not TOTAL to keep structure -->
+            <template x-if="section.name !== 'TOTAL'">
+                <td colspan="16" class="hidden-colspan-filler"></td>
+            </template>
+          </tr>
+          <template x-for="(activity, aIdx) in section.activities" :key="activity.id || activity.name + aIdx">
+            <tr :class="{'total-activity-row': section.name === 'TOTAL'}">
+              <td class="hidden-spacer-for-rowspan"></td> <!-- Spacer for Section Name Col -->
+              <td class="bold editable" @dblclick="editInline($event, 'activityPrefix', {sIdx: schedule.length - 1 - sIdxOriginal, aIdx}, activity.name.includes(':') ? activity.name.split(':')[0].trim() : '')" x-text="activity.name.includes(':') ? activity.name.split(':')[0] : ''"></td>
+              <td class="ac editable" @dblclick="editInline($event, 'activityName', {sIdx: schedule.length - 1 - sIdxOriginal, aIdx}, activity.name.includes(':') ? activity.name.split(':')[1].trim() : activity.name)">
+                <span x-text="activity.name.includes(':') ? activity.name.split(':')[1].trim() : activity.name"></span>
+              </td>
+              <template x-for="(dayKey, dayIdx) in ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']" :key="dayKey">
+                <td class="dc" :class="{'current-day': dayIdx === (currentDay === 0 ? 6 : currentDay - 1)}">
+                  <template x-if="activity.days && activity.days[dayKey]">
+                    <input type="number" class="mini-input" x-model.number="activity.days[dayKey].value" :min="0" :max="activity.days[dayKey].max < 10 ? 9 : 99" @change="validateNumberInput($event)" :readonly="section.name === 'TOTAL'">
+                  </template>
+                </td>
+                <td class="dc editable" :class="{'current-day': dayIdx === (currentDay === 0 ? 6 : currentDay - 1)}" @dblclick="editInline($event, 'maxValue', {sIdx: schedule.length - 1 - sIdxOriginal, aIdx, day: dayKey}, activity.days[dayKey]?.max || '')" x-text="activity.days[dayKey]?.max || ''"></td>
+              </template>
+              <td class="dc" :class="{ 'score-low': activity.maxScore > 0 && (activity.score / activity.maxScore) < 0.33, 'score-medium': activity.maxScore > 0 && (activity.score / activity.maxScore) >= 0.33 && (activity.score / activity.maxScore) < 0.66, 'score-high': activity.maxScore > 0 && (activity.score / activity.maxScore) >= 0.66 }">
+                <input type="number" class="mini-input" x-model.number="activity.score" readonly>
+              </td>
+              <td class="dc editable" @dblclick="editInline($event, 'maxScore', {sIdx: schedule.length - 1 - sIdxOriginal, aIdx}, activity.maxScore)" x-text="activity.maxScore"></td>
+              <td class="dc streak-cell" :class="{'has-streak': activity.streaks?.current > 2}">
+                <span x-text="activity.streaks?.current > 0 ? activity.streaks.current : ''"></span>
+                <button x-show="section.name !== 'TOTAL'" @click="deleteActivity(schedule.length - 1 - sIdxOriginal, activity.id)" class="delete-item-btn-small">×</button>
+              </td>
+            </tr>
+          </template>
+          <tr x-if="section.name === 'TOTAL' && section.activities.length > 0 && section.activities[0].maxScore > 0">
+             <td class="hidden-spacer-for-rowspan"></td> <!-- Spacer for Section Name Col -->
+            <td colspan="18" class="progress-container">
+              <div class="progress-bar" :style="`width: ${Math.min(100, (section.activities[0].score / section.activities[0].maxScore) * 100)}%;`" :class="{ 'progress-low': (section.activities[0].score / section.activities[0].maxScore) < 0.33, 'progress-medium': (section.activities[0].score / section.activities[0].maxScore) >= 0.33 && (section.activities[0].score / section.activities[0].maxScore) < 0.66, 'progress-high': (section.activities[0].score / section.activities[0].maxScore) >= 0.66 }"></div>
+            </td>
+          </tr>
+        </template>
+      </tbody>
+    </table>
 
-  let isInitializing = true;
-  let lastSavedState = null;
-  let appDefaults = null; 
+    <div class="section">
+      <div class="section-header">
+        <h3 class="section-title editable" @dblclick="editInline($event, 'sectionTitle', 'tasks', uiConfig.sectionTitles ? uiConfig.sectionTitles.tasks : '')" x-text="uiConfig.sectionTitles ? uiConfig.sectionTitles.tasks : 'TASKS & NOTES'"></h3>
+        <button @click="addNewTask()" class="add-item-btn">+</button>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th style="width:5mm" class="editable" @dblclick="editInline($event, 'taskHeader', 0, uiConfig.taskHeaders ? uiConfig.taskHeaders[0] : '')" x-text="uiConfig.taskHeaders ? uiConfig.taskHeaders[0] : '№'"></th>
+            <th style="width:5mm" class="editable" @dblclick="editInline($event, 'taskHeader', 1, uiConfig.taskHeaders ? uiConfig.taskHeaders[1] : '')" x-text="uiConfig.taskHeaders ? uiConfig.taskHeaders[1] : '🔥'"></th>
+            <th style="width:5mm" class="editable" @dblclick="editInline($event, 'taskHeader', 2, uiConfig.taskHeaders ? uiConfig.taskHeaders[2] : '')" x-text="uiConfig.taskHeaders ? uiConfig.taskHeaders[2] : '🏷️'"></th>
+            <th style="text-align:left" class="editable" @dblclick="editInline($event, 'taskHeader', 3, uiConfig.taskHeaders ? uiConfig.taskHeaders[3] : '')" x-text="uiConfig.taskHeaders ? uiConfig.taskHeaders[3] : '✏️ Task/Event/Note'"></th>
+            <th style="width:10mm" class="editable" @dblclick="editInline($event, 'taskHeader', 4, uiConfig.taskHeaders ? uiConfig.taskHeaders[4] : '')" x-text="uiConfig.taskHeaders ? uiConfig.taskHeaders[4] : '📅'"></th>
+            <th style="width:5mm" class="editable" @dblclick="editInline($event, 'taskHeader', 5, uiConfig.taskHeaders ? uiConfig.taskHeaders[5] : '')" x-text="uiConfig.taskHeaders ? uiConfig.taskHeaders[5] : '✓'"></th>
+            <th style="width:5mm"></th> <!-- For delete button -->
+          </tr>
+        </thead>
+        <tbody>
+          <template x-for="(task, i) in tasks" :key="task.id">
+            <tr :class="{'task-completed': task.completed === '✓'}">
+              <td><input type="text" class="mini-input" x-model="task.num" :placeholder="i + 1" @change="validateTextInput($event)"></td>
+              <td><input type="text" class="mini-input" x-model="task.priority" placeholder="A" @change="validateTextInput($event)"></td>
+              <td><input type="text" class="mini-input" x-model="task.tag" placeholder="W" @change="validateTextInput($event)"></td>
+              <td><input type="text" class="mini-input task-description-input" x-model="task.description" placeholder="Task description" @change="validateTextInput($event)"></td>
+              <td><input type="text" class="mini-input" x-model="task.date" :placeholder="DateTimeUtils.formatShortDate(i)" @change="validateTextInput($event)"></td>
+              <td><input type="text" class="mini-input" x-model="task.completed" @click.prevent="toggleTaskCompletion(task)" :class="{'completed-task': task.completed === '✓'}" placeholder="☐"></td>
+              <td><button @click="deleteTask(i)" class="delete-item-btn-small">×</button></td>
+            </tr>
+          </template>
+        </tbody>
+      </table>
+    </div>
 
-  const DefaultDataManager = {
-    configKey: "default_v1",
-    data: null,
-    error: null,
+    <div class="section">
+      <div class="section-header">
+        <h3 class="section-title editable" @dblclick="editInline($event, 'sectionTitle', 'workout', uiConfig.sectionTitles ? uiConfig.sectionTitles.workout : '')" x-text="uiConfig.sectionTitles ? uiConfig.sectionTitles.workout : 'WORKOUT PLAN'"></h3>
+         <!-- Optional: Add button to add a new DAY to workout plan -->
+      </div>
+      <div class="grid">
+        <template x-for="(day, dayIdx) in workoutPlan" :key="day.id || dayIdx">
+          <div class="p-1 workout-day-card">
+            <div class="workout-day-header">
+                <p class="bold text-center mb-1 editable workout-day-name" @dblclick="editInline($event, 'workoutDayName', dayIdx, day.name)" x-text="day.name"></p>
+                <button @click="addNewExerciseToWorkoutDay(dayIdx)" class="add-item-btn-small">+</button>
+            </div>
+            <template x-for="(ex, exIdx) in day.exercises" :key="ex.id || exIdx">
+              <div class="exercise">
+                <div class="exercise-name editable" :title="ex.prefix + ex.name" @dblclick="editInline($event, 'exerciseName', {dayIdx, exIdx}, ex.name)">
+                  <span class="editable" @dblclick.stop="editInline($event, 'exercisePrefix', {dayIdx, exIdx}, ex.prefix)" x-text="ex.prefix"></span>
+                  <span x-text="ex.name"></span>:
+                </div>
+                <div class="exercise-inputs">
+                  <input type="number" class="mini-input" x-model.number="ex.weight" @change="validateNumberInput($event)" :placeholder="ex.defaultWeight">
+                  <span class="exercise-unit">kg,</span>
+                  <input type="number" class="mini-input sets" x-model.number="ex.sets" @change="validateNumberInput($event)" :placeholder="ex.defaultSets">
+                  <span class="exercise-unit">×</span>
+                  <input type="number" class="mini-input reps" x-model.number="ex.reps" @change="validateNumberInput($event)" :placeholder="ex.defaultReps">
+                </div>
+                <button @click="deleteExerciseFromWorkoutDay(dayIdx, ex.id)" class="delete-item-btn-small">×</button>
+              </div>
+            </template>
+          </div>
+        </template>
+      </div>
+    </div>
 
-    async fetch() {
-      this.error = null; // Reset error state
-      try {
-        this.data = await pb.collection('app_config').getFirstListItem(`config_key="${this.configKey}"`);
-        if (!this.data) {
-          this.error = "Default application configuration (app_config) not found in PocketBase.";
-          throw new Error(this.error);
-        }
-        console.log("App defaults fetched successfully:", this.data);
-      } catch (error) {
-        console.error("Fatal Error: Could not initialize app defaults from PocketBase:", error);
-        this.error = error.message || "Failed to load app settings from PocketBase.";
-        this.data = null; // Ensure data is null on error
-      }
-      appDefaults = this.data;
-      return this.data;
-    },
-    // Getters will now return undefined or empty structures if data is null (due to fetch error)
-    getPlannerTitle: function() { return this.data?.planner_title_default; },
-    getUiConfig: function() { return deepCopy(this.data?.ui_config_default); },
-    getTimes: function() { return deepCopy(this.data?.times_default); },
-    getSchedule: function() { 
-        const schedule = deepCopy(this.data?.schedule_default);
-        (schedule || []).forEach(s => (s.activities || []).forEach(a => {
-            if (!a.id) a.id = generateId('act_');
-            if (!a.streaks) a.streaks = { mon:0, tue:0, wed:0, thu:0, fri:0, sat:0, sun:0, current:0, longest:0 };
-        }));
-        return schedule;
-    },
-    getTasksCount: function() { return this.data?.tasks_default_count || 0; }, // Default to 0 tasks if not specified
-    getWorkoutPlan: function() { 
-        const plan = deepCopy(this.data?.workout_plan_default);
-        (plan || []).forEach(day => (day.exercises || []).forEach(ex => { if(!ex.id) ex.id = generateId('ex_'); }));
-        return plan;
-    },
-    getMeals: function() { 
-        const meals = deepCopy(this.data?.meals_default);
-        (meals || []).forEach(m => { if(!m.id) m.id = generateId('meal_'); });
-        return meals;
-    },
-    getGroceryList: function() { 
-        const list = deepCopy(this.data?.grocery_list_default);
-        (list || []).forEach(cat => { if(!cat.id) cat.id = generateId('gcat_'); });
-        return list;
-    },
-    getGroceryBudgetPlaceholder: function() { return this.data?.grocery_budget_default_placeholder; },
-    getBodyMeasurements: function() { 
-        const bm = deepCopy(this.data?.body_measurements_default);
-        (bm || []).forEach(m => { if(!m.id) m.id = generateId('bm_');});
-        return bm;
-    },
-    getFinancials: function() { 
-        const fin = deepCopy(this.data?.financials_default);
-        (fin || []).forEach(f => { if(!f.id) f.id = generateId('fin_'); });
-        return fin;
-    }
-  };
+    <div class="section">
+      <div class="section-header">
+        <h3 class="section-title editable" @dblclick="editInline($event, 'sectionTitle', 'meals', uiConfig.sectionTitles ? uiConfig.sectionTitles.meals : '')" x-text="uiConfig.sectionTitles ? uiConfig.sectionTitles.meals : 'MEAL PREP'"></h3>
+        <button @click="addNewMeal()" class="add-item-btn">+</button>
+      </div>
+      <ul class="list text-xs">
+        <template x-for="(meal, i) in meals" :key="meal.id || i">
+          <li class="list-item flex between center">
+            <div>
+                <span class="bold editable" @dblclick="editInline($event, 'mealName', i, meal.name)" x-text="meal.name + ':'"></span>
+                <span class="editable" @dblclick="editInline($event, 'mealIngredients', i, meal.ingredients)" x-text="meal.ingredients"></span>
+            </div>
+            <button @click="deleteMeal(i)" class="delete-item-btn-small">×</button>
+          </li>
+        </template>
+      </ul>
+    </div>
 
-  const CityOptionsManager = { /* ... remains the same as previous full version ... */ 
-    options: [],
-    async fetch() {
-        try {
-            const cities = await pb.collection('city_options').getFullList({ sort: 'order' });
-            this.options = cities.map(c => ({
-                id: c.id, name: c.name, lat: c.latitude, lon: c.longitude,
-                isCurrentLocationTrigger: c.is_current_location_trigger
-            }));
-        } catch (error) {
-            console.error("Error fetching city options:", error);
-            this.options = [{ name: 'London (Fallback)', lat: 51.5074, lon: -0.1278, isCurrentLocationTrigger: false }]; // Minimal fallback for cities
-        }
-        return this.options;
-    },
-    get: function() { return this.options; }
-  };
-  
-  const DateTimeUtils = { /* ... remains the same as previous full version ... */ 
-    getCurrentIsoWeek: () => { 
-        const now = new Date(); const d = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
-        d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7));
-        const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
-        const weekNum = Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
-        return `${d.getUTCFullYear()}-W${weekNum.toString().padStart(2, '0')}`;
-    },
-    parseISOWeek: (isoWeekString) => { 
-        if (!/^\d{4}-W(0[1-9]|[1-4][0-9]|5[0-3])$/.test(isoWeekString)) return new Date();
-        const [year, weekPart] = isoWeekString.split('-'); const week = parseInt(weekPart.substring(1));
-        const simple = new Date(Date.UTC(parseInt(year), 0, 1 + (week - 1) * 7));
-        const dayOfWeek = simple.getUTCDay() || 7; simple.setUTCDate(simple.getUTCDate() - dayOfWeek + 1);
-        return simple;
-    },
-    getWeekDateRange: (date) => { 
-        const start = new Date(date); const end = new Date(start);
-        end.setUTCDate(start.getUTCDate() + 6);
-        return `${DateTimeUtils.formatDate(start)}-${DateTimeUtils.formatDate(end)}`;
-    },
-    formatDate: (date) => `${(date.getUTCMonth() + 1).toString().padStart(2, '0')}/${date.getUTCDate().toString().padStart(2, '0')}`,
-    formatShortDate: (index) => { const now = new Date(); now.setDate(now.getDate() + index); return `${(now.getMonth() + 1)}/${now.getDate()}`; },
-    formatPrayerTime: (timeString) => {
-        if (!timeString || typeof timeString !== 'string') return "";
-        const time = timeString.split(" ")[0]; const [hoursStr, minutesStr] = time.split(":");
-        if (!hoursStr || !minutesStr) return ""; let h = parseInt(hoursStr); let m = parseInt(minutesStr);
-        if (isNaN(h) || isNaN(m) || h < 0 || h > 23 || m < 0 || m > 59) return ""; 
-        const ampm = h >= 12 ? "PM" : "AM"; h = h % 12; h = h ? h : 12; 
-        return `${h}:${m.toString().padStart(2, '0')}${ampm}`;
-    },
-    calculateQiyamTime: (fajrTime) => { 
-        if (!fajrTime || typeof fajrTime !== 'string') return "";
-        const fajrParts = fajrTime.split(" ")[0].split(":"); if (fajrParts.length < 2) return "";
-        let fajrHour = parseInt(fajrParts[0]); let fajrMinute = parseInt(fajrParts[1]);
-        if (isNaN(fajrHour) || isNaN(fajrMinute) || fajrHour < 0 || fajrHour > 23 || fajrMinute < 0 || fajrMinute > 59) return "";
-        let qiyamDate = new Date(); qiyamDate.setHours(fajrHour, fajrMinute, 0, 0);
-        qiyamDate.setHours(qiyamDate.getHours() - 1); 
-        return `${qiyamDate.getHours().toString().padStart(2, '0')}:${qiyamDate.getMinutes().toString().padStart(2, '0')}`;
-    }
-  };
+    <div class="section">
+      <div class="section-header">
+        <h3 class="section-title editable" @dblclick="editInline($event, 'sectionTitle', 'grocery', uiConfig.sectionTitles ? uiConfig.sectionTitles.grocery : '')">
+            <span x-text="uiConfig.sectionTitles ? uiConfig.sectionTitles.grocery : 'GROCERY LIST'"></span>
+            <input type="text" class="mini-input grocery-budget-input" x-model="groceryBudget" :placeholder="uiConfig.groceryBudgetPlaceholder || '£120'" @change="validateTextInput($event)">
+        </h3>
+        <button @click="addNewGroceryCategory()" class="add-item-btn">+</button>
+      </div>
+      <ul class="list text-xs">
+        <template x-for="(cat, i) in groceryList" :key="cat.id || i">
+          <li class="list-item flex between center">
+            <div>
+                <span class="bold editable" @dblclick="editInline($event, 'groceryCategoryName', i, cat.name)" x-text="cat.name + ':'"></span>
+                <span class="editable" @dblclick="editInline($event, 'groceryCategoryItems', i, cat.items)" x-text="cat.items"></span>
+            </div>
+            <button @click="deleteGroceryCategory(i)" class="delete-item-btn-small">×</button>
+          </li>
+        </template>
+      </ul>
+    </div>
 
-  return {
-    // Core State
-    currentWeek: '', dateRange: '', city: 'London', saveStatus: 'saved', isOnline: navigator.onLine, pendingSync: [],
-    // UI State
-    showNotification: false, notificationMessage: '', showCitySelector: false, showWeekSelector: false,
-    dropdownPosition: { top: 0, left: 0 }, currentDay: (new Date()).getDay(),
-    // Data Structures - Initialized empty, populated by init/loadWeek
-    plannerTitle: 'Loading Planner...', // Initial title before defaults load
-    uiConfig: {}, times: [], schedule: [], tasks: [], workoutPlan: [],
-    meals: [], groceryBudget: '', groceryList: [], bodyMeasurements: [], financials: [],
-    cityOptions: [], savedWeeks: [],
-    saveDataTimeout: null, notificationTimeout: null,
+    <div class="section">
+      <div class="section-header">
+        <h3 class="section-title editable" @dblclick="editInline($event, 'sectionTitle', 'measurements', uiConfig.sectionTitles ? uiConfig.sectionTitles.measurements : '')" x-text="uiConfig.sectionTitles ? uiConfig.sectionTitles.measurements : 'BODY MEASUREMENTS'"></h3>
+        <button @click="addNewBodyMeasurement()" class="add-item-btn">+</button>
+      </div>
+      <div class="form-row text-xs">
+        <template x-for="(m, i) in bodyMeasurements" :key="m.id || i">
+          <div class="form-field">
+            <span class="form-label editable" @dblclick="editInline($event, 'measurementName', i, m.name)" x-text="m.name + ':'"></span>
+            <input type="text" class="mini-input measurement-value-input" x-model="m.value" :placeholder="m.placeholder" @change="validateTextInput($event)">
+            <button @click="deleteBodyMeasurement(i)" class="delete-item-btn-small">×</button>
+          </div>
+        </template>
+      </div>
+    </div>
 
-    async init() {
-      isInitializing = true;
-      console.log("App init starting...");
-      
-      await DefaultDataManager.fetch(); // Fetches and sets appDefaults
-      if (DefaultDataManager.error) {
-        this.showErrorMessage(`CRITICAL: ${DefaultDataManager.error}. App may not work correctly.`);
-        // App will proceed with empty/minimal data for UI structures to bind.
-        this.plannerTitle = "Planner Configuration Error";
-      }
-      
-      this.cityOptions = await CityOptionsManager.fetch();
-      if (this.cityOptions.length > 0 && this.cityOptions.find(co => co.name === this.city) === undefined) {
-        this.city = this.cityOptions[0]?.name || "Error City";
-      }
+    <div class="section">
+      <div class="section-header">
+        <h3 class="section-title editable" @dblclick="editInline($event, 'sectionTitle', 'financials', uiConfig.sectionTitles ? uiConfig.sectionTitles.financials : '')" x-text="uiConfig.sectionTitles ? uiConfig.sectionTitles.financials : 'MONTH/1ST: FINANCIAL'"></h3>
+        <button @click="addNewFinancialItem()" class="add-item-btn">+</button>
+      </div>
+      <div class="form-row text-xs">
+        <template x-for="(item, i) in financials" :key="item.id || i">
+          <div class="form-field">
+            <span class="form-label editable" @dblclick="editInline($event, 'financialName', i, item.name)" x-text="item.name + ':'"></span>
+            £<input type="text" class="mini-input financial-value-input" x-model="item.value" :placeholder="item.placeholder" @change="validateTextInput($event)">
+            <span class="editable" @dblclick="editInline($event, 'financialAccount', i, item.account)" x-text="item.account"></span>
+            <button @click="deleteFinancialItem(i)" class="delete-item-btn-small">×</button>
+          </div>
+        </template>
+      </div>
+    </div>
+  </div>
 
-      window.addEventListener('online', () => { this.isOnline = true; this.syncPendingData(); });
-      window.addEventListener('offline', () => this.isOnline = false);
-      document.addEventListener('click', e => {
-        if (!e.target.closest('.dropdown') && !e.target.closest('.clickable')) {
-          this.showCitySelector = this.showWeekSelector = false;
-        }
-      });
+  <div class="dropdown" :class="{'show': showCitySelector}" :style="`top: ${dropdownPosition.top}px; left: ${dropdownPosition.left}px;`">
+    <div class="dropdown-content">
+      <template x-for="cityItem in cityOptions" :key="cityItem.id || cityItem.name">
+        <div class="dropdown-item" @click="selectCity(cityItem)" x-text="cityItem.name"></div>
+      </template>
+    </div>
+  </div>
 
-      this.pendingSync = JSON.parse(localStorage.getItem('planner_pending_sync') || '[]');
-      this.currentWeek = DateTimeUtils.getCurrentIsoWeek();
-      this.dateRange = DateTimeUtils.getWeekDateRange(DateTimeUtils.parseISOWeek(this.currentWeek));
-      
-      await this.loadWeek(this.currentWeek, true); 
-
-      // Only set interval if defaults were successfully loaded and no critical error occurred
-      if (appDefaults && !DefaultDataManager.error) {
-          setInterval(() => { if (!isInitializing && this.hasSignificantChanges()) this.saveData(); }, 30000);
-      }
-      if (this.isOnline) this.syncPendingData();
-      console.log("App init finished.");
-    },
-
-    applyDefaults() {
-      if (!appDefaults || DefaultDataManager.error) {
-        console.warn("applyDefaults: Defaults not available or error occurred during fetch. Applying minimal structure.");
-        // Set empty structures to prevent Alpine errors, but UI will be mostly blank or show loading/error states
-        this.plannerTitle = appDefaults?.planner_title_default || "Planner (Defaults Missing)";
-        this.uiConfig = appDefaults?.ui_config_default || {};
-        this.times = appDefaults?.times_default || [];
-        this.schedule = appDefaults?.schedule_default || [];
-        this.tasks = Array(appDefaults?.tasks_default_count || 0).fill(null).map((_,i) => ({ id: generateId('task_'), num: '', priority: '', tag: '', description: '', date: '', completed: '' }));
-        this.workoutPlan = appDefaults?.workout_plan_default || [];
-        this.meals = appDefaults?.meals_default || [];
-        this.groceryList = appDefaults?.grocery_list_default || [];
-        this.groceryBudget = ''; // Placeholder would come from ui_config or a specific default field
-        this.bodyMeasurements = appDefaults?.body_measurements_default || [];
-        this.financials = appDefaults?.financials_default || [];
-        return;
-      }
-      console.log("Applying defaults from fetched app_config.");
-      this.plannerTitle = DefaultDataManager.getPlannerTitle() || "Weekly Planner";
-      this.uiConfig = DefaultDataManager.getUiConfig() || {}; // Ensure uiConfig is at least an empty object
-      this.times = DefaultDataManager.getTimes() || [];
-      this.schedule = DefaultDataManager.getSchedule() || [];
-      this.tasks = Array(DefaultDataManager.getTasksCount()).fill(null).map((_,i) => ({ id: generateId('task_'), num: '', priority: '', tag: '', description: '', date: '', completed: '' }));
-      this.workoutPlan = DefaultDataManager.getWorkoutPlan() || [];
-      this.meals = DefaultDataManager.getMeals() || [];
-      this.groceryList = DefaultDataManager.getGroceryList() || [];
-      this.groceryBudget = ''; // Actual budget value is weekly; placeholder might be in uiConfig or appDefaults
-      this.bodyMeasurements = DefaultDataManager.getBodyMeasurements() || [];
-      this.financials = DefaultDataManager.getFinancials() || [];
-    },
-
-    populateFieldsFromSaved(savedData) {
-      console.log("Populating fields from saved data:", savedData);
-      // Fallback to appDefaults (which might be null/empty if DB failed)
-      const fallbackTitle = appDefaults?.planner_title_default || "Weekly Planner";
-      const fallbackUiConfig = appDefaults?.ui_config_default || {};
-      const fallbackTimes = appDefaults?.times_default || [];
-      // ... and so on for other sections
-
-      this.plannerTitle = savedData.planner_title || fallbackTitle;
-      this.uiConfig = deepCopy(savedData.ui_config || fallbackUiConfig);
-      this.times = deepCopy(savedData.times_display || fallbackTimes);
-      
-      const fallbackSchedule = appDefaults?.schedule_default || [];
-      const savedSchedule = deepCopy(savedData.schedule_data || fallbackSchedule);
-      (savedSchedule || []).forEach(s => (s.activities || []).forEach(a => {
-          if (!a.id) a.id = generateId('act_');
-          if (!a.streaks) a.streaks = { mon:0, tue:0, wed:0, thu:0, fri:0, sat:0, sun:0, current:0, longest:0 };
-      }));
-      this.schedule = savedSchedule;
-
-      const fallbackTaskCount = appDefaults?.tasks_default_count || 0;
-      const taskCount = (savedData.tasks_data?.length) ? savedData.tasks_data.length : fallbackTaskCount;
-      this.tasks = Array(taskCount).fill(null).map((_, i) => {
-          const sTask = savedData.tasks_data?.[i];
-          return {
-              id: sTask?.id || generateId('task_'),
-              num: this.validateValue(sTask?.num), priority: this.validateValue(sTask?.priority),
-              tag: this.validateValue(sTask?.tag), description: this.validateValue(sTask?.description),
-              date: this.validateValue(sTask?.date), completed: this.validateValue(sTask?.completed)
-          };
-      });
-      
-      const fallbackWorkoutPlan = appDefaults?.workout_plan_default || [];
-      const savedWorkoutPlan = deepCopy(savedData.workout_plan_data || fallbackWorkoutPlan);
-      (savedWorkoutPlan || []).forEach(d => (d.exercises || []).forEach(ex => { if(!ex.id) ex.id = generateId('ex_');}));
-      this.workoutPlan = savedWorkoutPlan;
-
-      const fallbackMeals = appDefaults?.meals_default || [];
-      const savedMeals = deepCopy(savedData.meals_data || fallbackMeals);
-      (savedMeals || []).forEach(m => { if(!m.id) m.id = generateId('meal_');});
-      this.meals = savedMeals;
-      
-      this.groceryBudget = this.validateValue(savedData.grocery_budget || '');
-      
-      const fallbackGroceryList = appDefaults?.grocery_list_default || [];
-      const savedGroceryList = deepCopy(savedData.grocery_list_data || fallbackGroceryList);
-      (savedGroceryList || []).forEach(cat => {if(!cat.id) cat.id = generateId('gcat_');});
-      this.groceryList = savedGroceryList;
-      
-      const fallbackBodyMeasurements = appDefaults?.body_measurements_default || [];
-      const savedBodyMeasurements = deepCopy(savedData.body_measurements_data || fallbackBodyMeasurements);
-      (savedBodyMeasurements || []).forEach(bm => {if(!bm.id) bm.id = generateId('bm_');});
-      this.bodyMeasurements = savedBodyMeasurements;
-
-      const fallbackFinancials = appDefaults?.financials_default || [];
-      const savedFinancials = deepCopy(savedData.financials_data || fallbackFinancials);
-      (savedFinancials || []).forEach(f => {if(!f.id) f.id = generateId('fin_');});
-      this.financials = savedFinancials;
-
-      this.city = savedData.city_name || this.city;
-      lastSavedState = JSON.stringify(this.getCurrentDataStateForPersistence());
-    },
-    
-    async loadWeek(isoWeek, isInitLoad = false) {
-      if (!appDefaults && isInitLoad) { 
-          console.log("loadWeek: appDefaults not ready, fetching (this should ideally have happened in init)...");
-          await DefaultDataManager.fetch();
-          if(DefaultDataManager.error) {
-              this.showErrorMessage(`CRITICAL: ${DefaultDataManager.error}. Cannot load week.`);
-              if(isInitLoad) isInitializing = false;
-              return;
-          }
-          this.cityOptions = await CityOptionsManager.fetch();
-          if (this.cityOptions.length > 0 && this.cityOptions.find(co => co.name === this.city) === undefined) {
-                this.city = this.cityOptions[0]?.name || "Error City";
-           }
-      }
-      if (!appDefaults) { // This check is vital if called outside init or if init's fetch failed.
-          this.showErrorMessage("Critical error: App defaults are not loaded. Week load aborted.");
-          if(isInitLoad) isInitializing = false;
-          return;
-      }
-
-      console.log(`Loading week: ${isoWeek}, isInitLoad: ${isInitLoad}`);
-      if (!/^\d{4}-W(0[1-9]|[1-4][0-9]|5[0-3])$/.test(isoWeek)) {
-        this.showErrorMessage("Invalid week format"); if(isInitLoad) isInitializing = false; return;
-      }
-      this.showWeekSelector = false; this.currentWeek = isoWeek;
-      this.dateRange = DateTimeUtils.getWeekDateRange(DateTimeUtils.parseISOWeek(isoWeek));
-      let record = null;
-
-      if (this.isOnline) {
-        try { record = await pb.collection('planners').getFirstListItem(`week_id="${isoWeek}"`); }
-        catch (error) { if (error.status !== 404) console.error("Pocketbase load error:", error); }
-      }
-      if (!record) {
-        const localData = localStorage.getItem(`planner_${isoWeek}`);
-        if (localData) try { record = JSON.parse(localData); } catch(e) { console.error(`Error parsing local data for ${isoWeek}:`, e); record = null;}
-      }
-
-      if (record) { this.populateFieldsFromSaved(record); }
-      else { this.applyDefaults(); }
-
-      this.calculateScores();
-      // Fetch prayer times if no time values are set (either from saved or defaults)
-      if (this.times.every(t => !t.value)) { 
-        await this.fetchAndSetPrayerTimes();
-      }
-      if (isInitLoad) { isInitializing = false; console.log("Initial load process finished."); }
-    },
-    
-    // ... [getCurrentDataStateForPersistence, saveData, hasSignificantChanges, sync logic, CRUD operations for lists] ...
-    // These methods would be largely the same as the previous full script, 
-    // just ensure they use the now centrally managed DefaultDataManager for any default values needed
-    // during add operations, and that field names in getCurrentDataStateForPersistence match PB schema.
-    // For brevity, I'll skip re-pasting all of them but they should be here from the previous version.
-    // Ensure methods like addNewTask, deleteMeal, etc., use DefaultDataManager if they need to construct
-    // new items based on a default template structure not fully defined by simple prompts.
-
-    // Example:
-    addNewTask() {
-        // If a task had a more complex default structure from app_config:
-        // const defaultTaskStructure = DefaultDataManager.getTaskTemplate();
-        // this.tasks.push({ ...defaultTaskStructure, id: generateId('task_') });
-        this.tasks.push({ id: generateId('task_'), num: '', priority: '', tag: '', description: '', date: '', completed: '' });
-        this.saveData();
-    },
-    // ... (All other methods: editInline, toggleTaskCompletion, showErrorMessage, validateValue,
-    //      validateTextInput, validateNumberInput, calculateScores,
-    //      fetchAndSetPrayerTimes, getDevicePrayerTimes, fetchPrayerTimesForCoords, setPrayerTimesDisplay,
-    //      fetchSavedWeeks, confirmLoadWeek, confirmDeleteWeek, selectCity,
-    //      all add/delete methods for other sections)
-    // Ensure these are all present from the previous "do all!" response.
-    // The key change is that any reference to hardcoded defaults in these functions
-    // should now go through `DefaultDataManager.get...()` methods.
-    // For example, if `addNewActivityToSection` needs default day structures:
-    addNewActivityToSection(sIdxMapped) { 
-        const name = prompt("New activity name for " + (this.schedule[sIdxMapped]?.name || 'section') + ":");
-        if (name?.trim() && this.schedule[sIdxMapped]) {
-            // Get default day structure from appDefaults if needed, or define minimal here
-            let defaultDays = {};
-            const defaultScheduleItem = (DefaultDataManager.getSchedule() || [])[0]?.activities[0]?.days; // Example path
-            if (defaultScheduleItem) {
-                defaultDays = deepCopy(defaultScheduleItem);
-                for (const day in defaultDays) defaultDays[day].value = ''; // Clear values
-            } else { // Minimal fallback if complex default not found
-                 ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'].forEach(d => defaultDays[d] = { value: '', max: 1 });
-            }
-
-            this.schedule[sIdxMapped].activities.push({
-                id: generateId('act_'), name: name.trim(),
-                days: defaultDays,
-                score: 0, maxScore: (appDefaults?.schedule_default?.[0]?.activities?.[0]?.maxScore || 7), 
-                streaks: { mon:0, tue:0, wed:0, thu:0, fri:0, sat:0, sun:0, current:0, longest:0 }});
-            this.saveData();
-        }
-    },
-    // Ensure all other add/delete methods follow this pattern of potentially getting defaults.
-    // The rest of the methods from the previous full script should be here. I'll just list them for brevity.
-    deleteTask(taskIndex) { if (taskIndex >= 0 && taskIndex < this.tasks.length) { this.tasks.splice(taskIndex, 1); this.saveData();}},
-    addNewMeal() { const name = prompt("New meal name:"); if (name?.trim()) { this.meals.push({ id: generateId('meal_'), name: name.trim(), ingredients: (appDefaults?.meals_default?.[0]?.ingredients || '') }); this.saveData();}},
-    deleteMeal(mealIndex) { if (mealIndex >= 0 && mealIndex < this.meals.length) { this.meals.splice(mealIndex, 1); this.saveData();}},
-    deleteActivity(sIdxMapped, activityId) { if (this.schedule[sIdxMapped]?.activities) { const actIdx = this.schedule[sIdxMapped].activities.findIndex(a => a.id === activityId); if (actIdx > -1) { this.schedule[sIdxMapped].activities.splice(actIdx, 1); this.saveData(); }}},
-    addNewExerciseToWorkoutDay(dayIdx) { const name = prompt("New exercise name for " + (this.workoutPlan[dayIdx]?.name || 'day') + ":"); if (name?.trim() && this.workoutPlan[dayIdx]) { this.workoutPlan[dayIdx].exercises.push({ id: generateId('ex_'), prefix: '• ', name: name.trim(), weight: '', sets: '', reps: '', defaultWeight: (appDefaults?.workout_plan_default?.[0]?.exercises?.[0]?.defaultWeight || '10'), defaultSets: '3', defaultReps: '10' }); this.saveData();}},
-    deleteExerciseFromWorkoutDay(dayIdx, exerciseId) { if (this.workoutPlan[dayIdx]?.exercises) { const exIdx = this.workoutPlan[dayIdx].exercises.findIndex(ex => ex.id === exerciseId); if (exIdx > -1) { this.workoutPlan[dayIdx].exercises.splice(exIdx, 1); this.saveData(); }}},
-    addNewGroceryCategory() { const name = prompt("New grocery category name:"); if (name?.trim()) { this.groceryList.push({ id: generateId('gcat_'), name: name.trim(), items: (appDefaults?.grocery_list_default?.[0]?.items || '') }); this.saveData(); }},
-    deleteGroceryCategory(index) { if (index >= 0 && index < this.groceryList.length) { this.groceryList.splice(index, 1); this.saveData();}},
-    addNewBodyMeasurement() { const name = prompt("New measurement name:"); if (name?.trim()) { this.bodyMeasurements.push({ id: generateId('bm_'), name: name.trim(), value: '', placeholder: (appDefaults?.body_measurements_default?.[0]?.placeholder || '0') }); this.saveData(); }},
-    deleteBodyMeasurement(index) { if (index >= 0 && index < this.bodyMeasurements.length) { this.bodyMeasurements.splice(index, 1); this.saveData();}},
-    addNewFinancialItem() { const name = prompt("New financial item name:"); if (name?.trim()) { this.financials.push({ id: generateId('fin_'), name: name.trim(), value: '', placeholder: (appDefaults?.financials_default?.[0]?.placeholder || '0'), account: '' }); this.saveData(); }},
-    deleteFinancialItem(index) { if (index >= 0 && index < this.financials.length) { this.financials.splice(index, 1); this.saveData();}}
-
-  }; // End of Alpine component return object
-} // End of plannerApp function
-
-// No longer needed as defaults come from DB:
-// function getDefaultUiConfigFallback() { ... }
+  <div class="dropdown" :class="{'show': showWeekSelector}" :style="`top: ${dropdownPosition.top}px; left: ${dropdownPosition.left}px;`">
+    <div class="dropdown-content">
+      <template x-if="savedWeeks.length > 0">
+        <template x-for="week in savedWeeks" :key="week.iso_week">
+          <div class="flex between center dropdown-item" :class="{'current': week.isCurrent}">
+            <span @click="confirmLoadWeek(week.iso_week)" x-text="`${week.iso_week} (${week.dateRange})`"></span>
+            <span @click="confirmDeleteWeek(week.iso_week)" class="delete-week-btn">×</span>
+          </div>
+        </template>
+      </template>
+      <template x-if="savedWeeks.length === 0">
+        <div class="dropdown-item-empty">No saved schedules found</div>
+      </template>
+    </div>
+  </div>
+</body>
+</html>
