@@ -92,18 +92,26 @@
             <th style="width:5mm" class="editable" @dblclick="editInline($event, 'taskHeader', 1, uiConfig.taskHeaders?.[1])" x-text="uiConfig.taskHeaders?.[1]"></th>
             <th style="width:5mm" class="editable" @dblclick="editInline($event, 'taskHeader', 2, uiConfig.taskHeaders?.[2])" x-text="uiConfig.taskHeaders?.[2]"></th>
             <th style="text-align:left" class="editable" @dblclick="editInline($event, 'taskHeader', 3, uiConfig.taskHeaders?.[3])" x-text="uiConfig.taskHeaders?.[3]"></th>
-            <th style="width:10mm" class="editable" @dblclick="editInline($event, 'taskHeader', 4, uiConfig.taskHeaders?.[4])" x-text="uiConfig.taskHeaders?.[4]"></th>
-            <th style="width:5mm" class="editable" @dblclick="editInline($event, 'taskHeader', 5, uiConfig.taskHeaders?.[5])" x-text="uiConfig.taskHeaders?.[5]"></th>
+            <th style="width:12mm" class="editable" @dblclick="editInline($event, 'taskHeader', 4, uiConfig.taskHeaders?.[4])" x-text="uiConfig.taskHeaders?.[4]"></th>
+            <th style="width:12mm" class="editable" @dblclick="editInline($event, 'taskHeader', 5, uiConfig.taskHeaders?.[5])" x-text="uiConfig.taskHeaders?.[5]"></th>
+            <th style="width:12mm" class="editable" @dblclick="editInline($event, 'taskHeader', 6, uiConfig.taskHeaders?.[6])" x-text="uiConfig.taskHeaders?.[6]"></th>
+            <th style="width:8mm" class="editable" @dblclick="editInline($event, 'taskHeader', 7, uiConfig.taskHeaders?.[7])" x-text="uiConfig.taskHeaders?.[7]"></th>
+            <th style="width:5mm" class="editable" @dblclick="editInline($event, 'taskHeader', 8, uiConfig.taskHeaders?.[8])" x-text="uiConfig.taskHeaders?.[8]"></th>
           </tr>
         </thead>
         <tbody>
           <template x-for="(task, i) in tasks" :key="task.id || i">
-            <tr :class="{'task-completed': task.completed === '✓'}">
+            <tr :class="{'task-completed': task.completed === '✓', 'task-delayed': getTaskDelay(task) > 0, 'task-early': getTaskDelay(task) < 0}">
               <td><input type="text" class="mini-input" x-model="task.num" :placeholder="i + 1" @change="validateTextInput($event); saveData();"></td>
               <td><input type="text" class="mini-input" x-model="task.priority" placeholder="A" @change="validateTextInput($event); saveData();"></td>
               <td><input type="text" class="mini-input" x-model="task.tag" placeholder="W" @change="validateTextInput($event); saveData();"></td>
               <td><input type="text" class="mini-input task-description-input" x-model="task.description" placeholder="Task description" @change="validateTextInput($event); saveData();"></td>
-              <td><input type="text" class="mini-input" x-model="task.date" :placeholder="formatShortDate(i)" @change="validateTextInput($event); saveData();"></td>
+              <td><input type="date" class="mini-input date-input" x-model="task.startDate" @change="calculateTaskDelay(task); saveData();"></td>
+              <td><input type="date" class="mini-input date-input" x-model="task.expectedDate" @change="calculateTaskDelay(task); saveData();"></td>
+              <td><input type="date" class="mini-input date-input" x-model="task.actualDate" @change="calculateTaskDelay(task); saveData();"></td>
+              <td class="dc delay-cell" :class="{'delay-negative': getTaskDelay(task) < 0, 'delay-positive': getTaskDelay(task) > 0, 'delay-zero': getTaskDelay(task) === 0}">
+                <span x-text="formatDelay(getTaskDelay(task))"></span>
+              </td>
               <td><input type="text" class="mini-input" x-model="task.completed" @click.prevent="toggleTaskCompletion(task)" :class="{'completed-task': task.completed === '✓'}" placeholder="☐"></td>
             </tr>
           </template>
