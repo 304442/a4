@@ -164,169 +164,6 @@
 }
             </pre>
 
-            <h3>📧 Email Field</h3>
-            <pre style="background:#f8f8f8;padding:8px;border-radius:3px;margin:5px 0;">
-{
-  "name": "email",
-  "type": "email",
-  "required": true,
-  "presentable": true,
-  "exceptDomains": ["tempmail.com"],     // optional: array of blocked domains
-  "onlyDomains": ["company.com"]         // optional: array of allowed domains only
-}
-            </pre>
-
-            <h3>🌐 URL Field</h3>
-            <pre style="background:#f8f8f8;padding:8px;border-radius:3px;margin:5px 0;">
-{
-  "name": "website",
-  "type": "url",
-  "required": false,
-  "presentable": true
-  // No additional properties for URL fields
-}
-            </pre>
-
-            <h3>📅 Date Fields</h3>
-            <pre style="background:#f8f8f8;padding:8px;border-radius:3px;margin:5px 0;">
-// Simple date
-{
-  "name": "birth_date",
-  "type": "date",
-  "required": false,
-  "presentable": true
-}
-
-// Date with time
-{
-  "name": "event_time",
-  "type": "datetime",
-  "required": true,
-  "presentable": true
-}
-
-// Auto-date (created timestamp)
-{
-  "name": "created_at",
-  "type": "autodate",
-  "required": false,
-  "presentable": false,
-  "onCreate": true,        // Set on record creation
-  "onUpdate": false        // Don't update on record update
-}
-
-// Auto-date (updated timestamp)
-{
-  "name": "updated_at",
-  "type": "autodate",
-  "required": false,
-  "presentable": false,
-  "onCreate": true,        // Set on record creation
-  "onUpdate": true         // Update on record update
-}
-            </pre>
-
-            <h3>📋 Select Field</h3>
-            <pre style="background:#f8f8f8;padding:8px;border-radius:3px;margin:5px 0;">
-// Single select
-{
-  "name": "status",
-  "type": "select",
-  "required": true,
-  "presentable": true,
-  "maxSelect": 1,                    // REQUIRED: number (1 for single select)
-  "values": ["active", "inactive"]   // REQUIRED: array of string options
-}
-
-// Multiple select
-{
-  "name": "tags",
-  "type": "select",
-  "required": false,
-  "presentable": true,
-  "maxSelect": 5,                    // REQUIRED: number (max selections)
-  "values": ["urgent", "feature", "bug", "enhancement"]
-}
-            </pre>
-
-            <h3>📁 File Field</h3>
-            <pre style="background:#f8f8f8;padding:8px;border-radius:3px;margin:5px 0;">
-// Single file
-{
-  "name": "avatar",
-  "type": "file",
-  "required": false,
-  "presentable": true,
-  "maxSelect": 1,                    // REQUIRED: number (max files)
-  "maxSize": 5242880,                // optional: number (bytes, 5MB = 5242880)
-  "mimeTypes": [                     // optional: array of allowed MIME types
-    "image/jpeg",
-    "image/png",
-    "image/gif",
-    "image/webp"
-  ]
-}
-
-// Multiple files
-{
-  "name": "attachments",
-  "type": "file",
-  "required": false,
-  "presentable": true,
-  "maxSelect": 10,
-  "maxSize": 10485760,               // 10MB per file
-  "mimeTypes": [
-    "image/jpeg",
-    "image/png",
-    "application/pdf",
-    "text/plain",
-    "application/msword"
-  ]
-}
-            </pre>
-
-            <h3>🔗 Relation Field</h3>
-            <pre style="background:#f8f8f8;padding:8px;border-radius:3px;margin:5px 0;">
-// One-to-One relation
-{
-  "name": "user_id",
-  "type": "relation",
-  "required": true,
-  "presentable": true,
-  "collectionId": "actual_collection_uuid",    // REQUIRED: string (target collection ID)
-  "cascadeDelete": false,                      // REQUIRED: boolean
-  "minSelect": 1,                             // REQUIRED: number | null
-  "maxSelect": 1,                             // REQUIRED: number | null
-  "displayFields": ["email", "name"]          // REQUIRED: array of field names to display
-}
-
-// One-to-Many (optional)
-{
-  "name": "category_id",
-  "type": "relation",
-  "required": false,
-  "presentable": true,
-  "collectionId": "categories_collection_uuid",
-  "cascadeDelete": false,
-  "minSelect": null,                          // null = optional
-  "maxSelect": 1,
-  "displayFields": ["name", "slug"]
-}
-
-// Many-to-Many
-{
-  "name": "tags",
-  "type": "relation",
-  "required": false,
-  "presentable": true,
-  "collectionId": "tags_collection_uuid",
-  "cascadeDelete": false,
-  "minSelect": null,
-  "maxSelect": null,                          // null = unlimited
-  "displayFields": ["name", "color"]
-}
-            </pre>
-
             <h3>🗃️ JSON Field</h3>
             <pre style="background:#f8f8f8;padding:8px;border-radius:3px;margin:5px 0;">
 {
@@ -336,18 +173,6 @@
   "presentable": true
   // Stores any valid JSON data structure
   // Use for complex data, configurations, arrays, objects
-}
-            </pre>
-
-            <h3>📝 Editor Field (Rich Text)</h3>
-            <pre style="background:#f8f8f8;padding:8px;border-radius:3px;margin:5px 0;">
-{
-  "name": "content",
-  "type": "editor",
-  "required": false,
-  "presentable": true
-  // Rich text editor with HTML support
-  // Use for long-form content, articles, descriptions
 }
             </pre>
 
@@ -368,148 +193,6 @@ null   // null = ADMIN ONLY (only admin users can perform action)
   "createRule": "",    // Anyone can create records
   "updateRule": "",    // Anyone can update records
   "deleteRule": ""     // Anyone can delete records
-}
-            </pre>
-
-            <h3>Admin Only Rules</h3>
-            <pre style="background:#f8f8f8;padding:8px;border-radius:3px;margin:5px 0;">
-{
-  "listRule": null,    // Only admins can list records
-  "viewRule": null,    // Only admins can view records
-  "createRule": null,  // Only admins can create records
-  "updateRule": null,  // Only admins can update records
-  "deleteRule": null   // Only admins can delete records
-}
-            </pre>
-
-            <h3>Authenticated User Rules</h3>
-            <pre style="background:#f8f8f8;padding:8px;border-radius:3px;margin:5px 0;">
-{
-  "listRule": "@request.auth.id != ''",      // Only logged-in users
-  "viewRule": "@request.auth.id != ''",      
-  "createRule": "@request.auth.id != ''",    
-  "updateRule": "@request.auth.id != ''",    
-  "deleteRule": "@request.auth.id != ''"     
-}
-            </pre>
-
-            <h3>Owner-Only Rules</h3>
-            <pre style="background:#f8f8f8;padding:8px;border-radius:3px;margin:5px 0;">
-// Assuming records have a "user" field pointing to the owner
-{
-  "listRule": "user = @request.auth.id",     // List own records only
-  "viewRule": "user = @request.auth.id",     // View own records only
-  "createRule": "@request.auth.id != ''",    // Any auth user can create
-  "updateRule": "user = @request.auth.id",   // Update own records only
-  "deleteRule": "user = @request.auth.id"    // Delete own records only
-}
-            </pre>
-
-            <h3>Complex Rule Examples</h3>
-            <pre style="background:#f8f8f8;padding:8px;border-radius:3px;margin:5px 0;">
-// Public read, authenticated write
-{
-  "listRule": "",                            // Public can read
-  "viewRule": "",                            
-  "createRule": "@request.auth.id != ''",    // Must be logged in to create
-  "updateRule": "user = @request.auth.id",   // Owner only update
-  "deleteRule": "user = @request.auth.id"    // Owner only delete
-}
-
-// Public or owner access
-{
-  "listRule": "public = true || user = @request.auth.id",
-  "viewRule": "public = true || user = @request.auth.id",
-  "createRule": "@request.auth.id != ''",
-  "updateRule": "user = @request.auth.id",
-  "deleteRule": "user = @request.auth.id"
-}
-
-// Verified users only
-{
-  "listRule": "@request.auth.verified = true",
-  "viewRule": "@request.auth.verified = true",
-  "createRule": "@request.auth.verified = true",
-  "updateRule": "@request.auth.verified = true && user = @request.auth.id",
-  "deleteRule": "@request.auth.verified = true && user = @request.auth.id"
-}
-
-// Role-based access
-{
-  "listRule": "@request.auth.role = 'admin' || @request.auth.role = 'editor'",
-  "viewRule": "@request.auth.role = 'admin' || @request.auth.role = 'editor'",
-  "createRule": "@request.auth.role = 'editor'",
-  "updateRule": "@request.auth.role = 'admin' || user = @request.auth.id",
-  "deleteRule": "@request.auth.role = 'admin'"
-}
-            </pre>
-
-            <h2>❌ CRITICAL ERRORS TO AVOID</h2>
-
-            <h3>🚫 NEVER Use These Patterns (DEPRECATED)</h3>
-            <pre style="background:#ffebee;padding:8px;border-radius:3px;margin:5px 0;color:#c62828;">
-// ❌ WRONG: Nested options structure (old PocketBase version)
-{
-  "name": "title",
-  "type": "text",
-  "required": true,
-  "options": {              // ❌ DON'T USE "options" wrapper
-    "max": 100,
-    "min": 1
-  }
-}
-
-// ❌ WRONG: Schema key instead of fields
-{
-  "name": "posts",
-  "schema": [...]           // ❌ DON'T USE "schema" key
-}
-
-// ❌ WRONG: Invalid field names
-{
-  "name": "field name",     // ❌ No spaces
-  "name": "field-name",     // ❌ No hyphens
-  "name": "123field",       // ❌ Can't start with number
-  "name": "id",             // ❌ Reserved name
-}
-
-// ❌ WRONG: Missing required properties
-{
-  "name": "title"           // ❌ Missing type, required, presentable
-}
-            </pre>
-
-            <h3>✅ CORRECT Patterns (Current PocketBase)</h3>
-            <pre style="background:#e8f5e9;padding:8px;border-radius:3px;margin:5px 0;color:#2e7d32;">
-// ✅ CORRECT: Direct properties
-{
-  "name": "title",
-  "type": "text",
-  "required": true,
-  "presentable": true,
-  "max": 100,               // ✅ Direct property
-  "min": 1                  // ✅ Direct property
-}
-
-// ✅ CORRECT: Fields key
-{
-  "name": "posts",
-  "fields": [...]           // ✅ Use "fields" key
-}
-
-// ✅ CORRECT: Valid field names
-{
-  "name": "field_name",     // ✅ Underscores OK
-  "name": "fieldName",      // ✅ camelCase OK
-  "name": "field123",       // ✅ Numbers at end OK
-}
-
-// ✅ CORRECT: All required properties
-{
-  "name": "title",          // ✅ Required
-  "type": "text",           // ✅ Required
-  "required": true,         // ✅ Required
-  "presentable": true       // ✅ Required
 }
             </pre>
 
@@ -852,6 +535,20 @@ const resetAll = async () => {
 // Enhanced Weekly Planner Collections
 const DEFAULT_COLLECTIONS = [
     {
+        name: "cities",
+        type: "base",
+        listRule: "",
+        viewRule: "",
+        createRule: "",
+        updateRule: "",
+        deleteRule: "",
+        fields: [
+            { name: "name", type: "text", required: true, presentable: true, max: 100 },
+            { name: "latitude", type: "number", required: true, presentable: true },
+            { name: "longitude", type: "number", required: true, presentable: true }
+        ]
+    },
+    {
         name: "templates",
         type: "base",
         listRule: "",
@@ -893,6 +590,13 @@ const DEFAULT_COLLECTIONS = [
 ];
 
 const DEFAULT_SEEDS = {
+    cities: [
+        { name: 'London', latitude: 51.5074, longitude: -0.1278 },
+        { name: 'Cairo', latitude: 30.0444, longitude: 31.2357 },
+        { name: 'Cape Town', latitude: -33.9249, longitude: 18.4241 },
+        { name: 'Amsterdam', latitude: 52.3676, longitude: 4.9041 },
+        { name: 'Current Location', latitude: null, longitude: null }
+    ],
     templates: [
         {
             name: "enhanced-weekly-v2",
@@ -908,6 +612,7 @@ const DEFAULT_SEEDS = {
                         max_cols: Array(7).fill('MAX'),
                         tasks: ['№', '🔥', '🏷️', '✏️ Task/Project/Note', '📅 Start', '🎯 Due', '✅ Done', '⏰ Delay', '✓']
                     },
+                    task_column_widths: ['4mm', '4mm', '4mm', '130mm', '8mm', '8mm', '8mm', '6mm', '4mm'],
                     sections: {
                         tasks: 'TASKS & PROJECT MANAGEMENT',
                         workout: 'WORKOUT PLAN',
@@ -1017,7 +722,7 @@ const DEFAULT_SEEDS = {
                     }
                 ],
                 tasks: {
-                    count: 15,
+                    count: 40,
                     fields: ['num', 'priority', 'tag', 'description', 'start_date', 'expected_date', 'actual_date', 'completed']
                 },
                 workout: [
