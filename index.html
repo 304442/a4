@@ -10,7 +10,6 @@
   <link rel="stylesheet" href="styles.css">
 </head>
 <body x-data="plannerApp()" x-init="init()">
-  <!-- Status Indicators -->
   <div id="save-status" :class="'status-' + saveStatus" x-text="saveStatus === 'saving' ? 'Saving...' : (saveStatus === 'error' ? 'Error!' : 'Saved')"></div>
   <div id="sync-status" :class="pendingSync.length > 0 ? 'status-pending' : 'status-synced'" x-show="pendingSync.length > 0 || !isOnline">
     <span x-text="isOnline ? (pendingSync.length > 0 ? 'Pending: ' + pendingSync.length : '') : 'Offline'"></span>
@@ -18,12 +17,11 @@
   <div id="notification" :class="{ 'show': showNotification }" x-text="notificationMessage"></div>
   
   <div class="card">
-    <!-- Header Section -->
-    <div class="flex flex-between flex-center mb-1">
+    <div class="flex between center mb-1">
       <h1 class="text-sm bold editable" @dblclick="editField($event, 'plannerTitle', plannerTitle)" x-text="plannerTitle"></h1>
-      <div class="flex flex-center text-xs">
+      <div class="flex center text-xs">
         <template x-for="(time, i) in times" :key="i">
-          <div class="flex flex-center">
+          <div class="flex center">
             <span class="editable" @dblclick="editField($event, 'timeLabel', time.label, i)" x-text="time.label + ':'"></span>
             <input type="text" class="mini-input time-value-input" x-model="time.value" @change="saveData()">
           </div>
@@ -36,12 +34,11 @@
       </div>
     </div>
 
-    <!-- Main Schedule Table -->
     <table>
       <thead>
         <tr>
-          <th class="col-xl editable" @dblclick="editField($event, 'header', uiConfig.mainTableHeaders?.[0], 'main', 0)" x-text="uiConfig.mainTableHeaders?.[0]"></th>
-          <th class="col-xl editable" @dblclick="editField($event, 'header', uiConfig.mainTableHeaders?.[1], 'main', 1)" x-text="uiConfig.mainTableHeaders?.[1]"></th>
+          <th style="width:18mm" class="editable" @dblclick="editField($event, 'header', uiConfig.mainTableHeaders?.[0], 'main', 0)" x-text="uiConfig.mainTableHeaders?.[0]"></th>
+          <th style="width:18mm" class="editable" @dblclick="editField($event, 'header', uiConfig.mainTableHeaders?.[1], 'main', 1)" x-text="uiConfig.mainTableHeaders?.[1]"></th>
           <th class="ac editable" @dblclick="editField($event, 'header', uiConfig.mainTableHeaders?.[2], 'main', 2)" x-text="uiConfig.mainTableHeaders?.[2]"></th>
           <template x-for="(dayKey, i) in ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN']" :key="dayKey">
             <th class="dc editable" :class="{'current-day': i === (currentDay || 7) - 1}" @dblclick="editField($event, 'header', uiConfig.dayHeaders?.[i], 'day', i)" x-text="uiConfig.dayHeaders?.[i]"></th>
@@ -87,128 +84,115 @@
       </tbody>
     </table>
 
-    <!-- Dynamic Sections - Driven by PocketBase Settings -->
-    <template x-for="sectionKey in Object.keys(uiConfig.sectionTitles || {})" :key="sectionKey">
-      <div class="section" x-show="shouldShowSection(sectionKey)">
-        <h3 class="section-title editable" @dblclick="editField($event, 'sectionTitle', uiConfig.sectionTitles[sectionKey], sectionKey)" x-text="uiConfig.sectionTitles[sectionKey]"></h3>
-        
-        <!-- Tasks Section -->
-        <template x-if="sectionKey === 'tasks'">
-          <table>
-            <thead>
-              <tr>
-                <template x-for="(header, i) in uiConfig.taskHeaders" :key="i">
-                  <th :style="getTaskColumnStyle(i)" class="editable" @dblclick="editField($event, 'header', header, 'task', i)" x-text="header"></th>
-                </template>
-              </tr>
-            </thead>
-            <tbody>
-              <template x-for="(task, i) in tasks" :key="task.id || i">
-                <tr :class="getTaskRowClass(task)">
-                  <td><input type="text" class="mini-input" x-model="task.num" :placeholder="i + 1" @change="saveData()"></td>
-                  <td><input type="text" class="mini-input" x-model="task.priority" placeholder="A" @change="saveData()"></td>
-                  <td><input type="text" class="mini-input" x-model="task.tag" placeholder="W" @change="saveData()"></td>
-                  <td><input type="text" class="mini-input task-description-input" x-model="task.description" placeholder="Task description" @change="saveData()"></td>
-                  <td><input type="date" class="mini-input date-input" x-model="task.startDate" @change="calculateTaskDelay(task); saveData();"></td>
-                  <td><input type="date" class="mini-input date-input" x-model="task.expectedDate" @change="calculateTaskDelay(task); saveData();"></td>
-                  <td><input type="date" class="mini-input date-input" x-model="task.actualDate" @change="calculateTaskDelay(task); saveData();"></td>
-                  <td class="dc delay-cell" :class="getDelayClass(task)">
-                    <span x-text="formatDelay(getTaskDelay(task))"></span>
-                  </td>
-                  <td><input type="text" class="mini-input" x-model="task.completed" @click.prevent="toggleTaskCompletion(task)" :class="{'completed-task': task.completed === '✓'}" placeholder="☐"></td>
-                </tr>
-              </template>
-            </tbody>
-          </table>
-        </template>
+    <div class="section">
+      <h3 class="section-title editable" @dblclick="editField($event, 'sectionTitle', uiConfig.sectionTitles?.tasks, 'tasks')" x-text="uiConfig.sectionTitles?.tasks"></h3>
+      <table>
+        <thead>
+          <tr>
+            <template x-for="(header, i) in uiConfig.taskHeaders" :key="i">
+              <th :style="getTaskColumnStyle(i)" class="editable" @dblclick="editField($event, 'header', header, 'task', i)" x-text="header"></th>
+            </template>
+          </tr>
+        </thead>
+        <tbody>
+          <template x-for="(task, i) in tasks" :key="task.id || i">
+            <tr :class="getTaskRowClass(task)">
+              <td><input type="text" class="mini-input" x-model="task.num" :placeholder="i + 1" @change="saveData()"></td>
+              <td><input type="text" class="mini-input" x-model="task.priority" placeholder="A" @change="saveData()"></td>
+              <td><input type="text" class="mini-input" x-model="task.tag" placeholder="W" @change="saveData()"></td>
+              <td><input type="text" class="mini-input task-description-input" x-model="task.description" placeholder="Task description" @change="saveData()"></td>
+              <td><input type="date" class="mini-input date-input" x-model="task.startDate" @change="calculateTaskDelay(task); saveData();"></td>
+              <td><input type="date" class="mini-input date-input" x-model="task.expectedDate" @change="calculateTaskDelay(task); saveData();"></td>
+              <td><input type="date" class="mini-input date-input" x-model="task.actualDate" @change="calculateTaskDelay(task); saveData();"></td>
+              <td class="dc delay-cell" :class="getDelayClass(task)">
+                <span x-text="formatDelay(getTaskDelay(task))"></span>
+              </td>
+              <td><input type="text" class="mini-input" x-model="task.completed" @click.prevent="toggleTaskCompletion(task)" :class="{'completed-task': task.completed === '✓'}" placeholder="☐"></td>
+            </tr>
+          </template>
+        </tbody>
+      </table>
+    </div>
 
-        <!-- Workout Section -->
-        <template x-if="sectionKey === 'workout'">
-          <div class="grid-3">
-            <template x-for="(day, dayIdx) in workoutPlan" :key="day.id || dayIdx">
-              <div class="p-1 workout-day-card">
-                <p class="bold text-center mb-1 editable workout-day-name" @dblclick="editField($event, 'workoutDayName', day.name, dayIdx)" x-text="day.name"></p>
-                <template x-for="(ex, exIdx) in day.exercises" :key="ex.id || exIdx">
-                  <div class="exercise">
-                    <div class="exercise-name editable" :title="ex.prefix + ex.name" @dblclick="editField($event, 'exerciseName', ex.name, {dayIdx, exIdx})">
-                      <span class="editable" @dblclick.stop="editField($event, 'exercisePrefix', ex.prefix, {dayIdx, exIdx})" x-text="ex.prefix"></span>
-                      <span x-text="ex.name"></span>:
-                    </div>
-                    <div class="exercise-inputs">
-                      <input type="number" class="mini-input" x-model.number="ex.weight" @input="saveData();" :placeholder="ex.defaultWeight">
-                      <span class="exercise-unit">kg,</span>
-                      <input type="number" class="mini-input sets" x-model.number="ex.sets" @input="saveData();" :placeholder="ex.defaultSets">
-                      <span class="exercise-unit">×</span>
-                      <input type="number" class="mini-input reps" x-model.number="ex.reps" @input="saveData();" :placeholder="ex.defaultReps">
-                    </div>
-                  </div>
-                </template>
+    <div class="section">
+      <h3 class="section-title editable" @dblclick="editField($event, 'sectionTitle', uiConfig.sectionTitles?.workout, 'workout')" x-text="uiConfig.sectionTitles?.workout"></h3>
+      <div class="grid">
+        <template x-for="(day, dayIdx) in workoutPlan" :key="day.id || dayIdx">
+          <div class="p-1 workout-day-card">
+            <p class="bold text-center mb-1 editable workout-day-name" @dblclick="editField($event, 'workoutDayName', day.name, dayIdx)" x-text="day.name"></p>
+            <template x-for="(ex, exIdx) in day.exercises" :key="ex.id || exIdx">
+              <div class="exercise">
+                <div class="exercise-name editable" :title="ex.prefix + ex.name" @dblclick="editField($event, 'exerciseName', ex.name, {dayIdx, exIdx})">
+                  <span class="editable" @dblclick.stop="editField($event, 'exercisePrefix', ex.prefix, {dayIdx, exIdx})" x-text="ex.prefix"></span>
+                  <span x-text="ex.name"></span>:
+                </div>
+                <div class="exercise-inputs">
+                  <input type="number" class="mini-input" x-model.number="ex.weight" @input="saveData();" :placeholder="ex.defaultWeight">
+                  <span class="exercise-unit">kg,</span>
+                  <input type="number" class="mini-input sets" x-model.number="ex.sets" @input="saveData();" :placeholder="ex.defaultSets">
+                  <span class="exercise-unit">×</span>
+                  <input type="number" class="mini-input reps" x-model.number="ex.reps" @input="saveData();" :placeholder="ex.defaultReps">
+                </div>
               </div>
             </template>
           </div>
         </template>
-
-        <!-- Meals Section -->
-        <template x-if="sectionKey === 'meals'">
-          <ul class="list text-xs">
-            <template x-for="(meal, i) in meals" :key="meal.id || i">
-              <li class="list-item">
-                <span class="bold editable" @dblclick="editField($event, 'mealName', meal.name, i)" x-text="meal.name + ':'"></span>
-                <span class="editable" @dblclick="editField($event, 'mealIngredients', meal.ingredients, i)" x-text="meal.ingredients"></span>
-              </li>
-            </template>
-          </ul>
-        </template>
-
-        <!-- Grocery Section -->
-        <template x-if="sectionKey === 'grocery'">
-          <div>
-            <h3 class="section-title inline-title editable" @dblclick="editField($event, 'sectionTitle', uiConfig.sectionTitles?.grocery, 'grocery')">
-              <span x-text="uiConfig.sectionTitles?.grocery"></span>
-              <input type="text" class="mini-input inline-input" x-model="groceryBudget" placeholder="£120" @change="saveData();">
-            </h3>
-            <ul class="list text-xs">
-              <template x-for="(cat, i) in groceryList" :key="cat.id || i">
-                <li class="list-item">
-                  <span class="bold editable" @dblclick="editField($event, 'groceryCategoryName', cat.name, i)" x-text="cat.name + ':'"></span>
-                  <span class="editable" @dblclick="editField($event, 'groceryCategoryItems', cat.items, i)" x-text="cat.items"></span>
-                </li>
-              </template>
-            </ul>
-          </div>
-        </template>
-
-        <!-- Measurements Section -->
-        <template x-if="sectionKey === 'measurements'">
-          <h3 class="section-title inline-title editable" @dblclick="editField($event, 'sectionTitle', uiConfig.sectionTitles?.measurements, 'measurements')">
-            <span x-text="uiConfig.sectionTitles?.measurements"></span>
-            <template x-for="(m, i) in bodyMeasurements" :key="m.id || i">
-              <span class="inline-measurement">
-                <span class="editable measurement-label" @dblclick="editField($event, 'measurementName', m.name, i)" x-text="m.name + ':'"></span>
-                <input type="text" class="mini-input inline-input" x-model="m.value" :placeholder="m.placeholder" @change="saveData();">
-              </span>
-            </template>
-          </h3>
-        </template>
-
-        <!-- Financials Section -->
-        <template x-if="sectionKey === 'financials'">
-          <h3 class="section-title inline-title editable" @dblclick="editField($event, 'sectionTitle', uiConfig.sectionTitles?.financials, 'financials')">
-            <span x-text="uiConfig.sectionTitles?.financials"></span>
-            <template x-for="(item, i) in financials" :key="item.id || i">
-              <span class="inline-financial">
-                <span class="editable financial-label" @dblclick="editField($event, 'financialName', item.name, i)" x-text="item.name + ':'"></span>
-                £<input type="text" class="mini-input inline-input" x-model="item.value" :placeholder="item.placeholder" @change="saveData();">
-                <span class="editable" @dblclick="editField($event, 'financialAccount', item.account, i)" x-text="item.account"></span>
-              </span>
-            </template>
-          </h3>
-        </template>
       </div>
-    </template>
+    </div>
+
+    <div class="section">
+      <h3 class="section-title editable" @dblclick="editField($event, 'sectionTitle', uiConfig.sectionTitles?.meals, 'meals')" x-text="uiConfig.sectionTitles?.meals"></h3>
+      <ul class="list text-xs">
+        <template x-for="(meal, i) in meals" :key="meal.id || i">
+          <li class="list-item">
+            <span class="bold editable" @dblclick="editField($event, 'mealName', meal.name, i)" x-text="meal.name + ':'"></span>
+            <span class="editable" @dblclick="editField($event, 'mealIngredients', meal.ingredients, i)" x-text="meal.ingredients"></span>
+          </li>
+        </template>
+      </ul>
+    </div>
+
+    <div class="section">
+      <h3 class="section-title inline-title editable" @dblclick="editField($event, 'sectionTitle', uiConfig.sectionTitles?.grocery, 'grocery')">
+        <span x-text="uiConfig.sectionTitles?.grocery"></span>
+        <input type="text" class="mini-input inline-input" x-model="groceryBudget" placeholder="£120" @change="saveData();">
+      </h3>
+      <ul class="list text-xs">
+        <template x-for="(cat, i) in groceryList" :key="cat.id || i">
+          <li class="list-item">
+            <span class="bold editable" @dblclick="editField($event, 'groceryCategoryName', cat.name, i)" x-text="cat.name + ':'"></span>
+            <span class="editable" @dblclick="editField($event, 'groceryCategoryItems', cat.items, i)" x-text="cat.items"></span>
+          </li>
+        </template>
+      </ul>
+    </div>
+
+    <div class="section">
+      <h3 class="section-title inline-title editable" @dblclick="editField($event, 'sectionTitle', uiConfig.sectionTitles?.measurements, 'measurements')">
+        <span x-text="uiConfig.sectionTitles?.measurements"></span>
+        <template x-for="(m, i) in bodyMeasurements" :key="m.id || i">
+          <span class="inline-measurement">
+            <span class="editable measurement-label" @dblclick="editField($event, 'measurementName', m.name, i)" x-text="m.name + ':'"></span>
+            <input type="text" class="mini-input inline-input" x-model="m.value" :placeholder="m.placeholder" @change="saveData();">
+          </span>
+        </template>
+      </h3>
+    </div>
+
+    <div class="section">
+      <h3 class="section-title inline-title editable" @dblclick="editField($event, 'sectionTitle', uiConfig.sectionTitles?.financials, 'financials')">
+        <span x-text="uiConfig.sectionTitles?.financials"></span>
+        <template x-for="(item, i) in financials" :key="item.id || i">
+          <span class="inline-financial">
+            <span class="editable financial-label" @dblclick="editField($event, 'financialName', item.name, i)" x-text="item.name + ':'"></span>
+            £<input type="text" class="mini-input inline-input" x-model="item.value" :placeholder="item.placeholder" @change="saveData();">
+            <span class="editable" @dblclick="editField($event, 'financialAccount', item.account, i)" x-text="item.account"></span>
+          </span>
+        </template>
+      </h3>
+    </div>
   </div>
 
-  <!-- Dynamic Dropdowns - Data from PocketBase -->
   <div class="dropdown" :class="{'show': showCitySelector}" :style="getDropdownStyle()">
     <div class="dropdown-content">
       <template x-for="cityItem in cityOptions" :key="cityItem.name">
@@ -221,7 +205,7 @@
     <div class="dropdown-content">
       <template x-if="savedWeeks.length > 0">
         <template x-for="week in savedWeeks" :key="week.iso_week">
-          <div class="flex flex-between flex-center dropdown-item" :class="{'current': week.isCurrent}">
+          <div class="flex between center dropdown-item" :class="{'current': week.isCurrent}">
             <span @click="confirmLoadWeek(week.iso_week)" x-text="`${week.iso_week} (${week.dateRange})`"></span>
             <span @click="confirmDeleteWeek(week.iso_week)" class="delete-week-btn">×</span>
           </div>
@@ -232,14 +216,5 @@
       </template>
     </div>
   </div>
-
-  <!-- Helper Methods -->
-  <script>
-    // Single source of truth helper - everything driven by PocketBase settings
-    window.shouldShowSection = function(sectionKey) {
-      // All sections are shown by default, controlled by settings
-      return true;
-    };
-  </script>
 </body>
 </html>
