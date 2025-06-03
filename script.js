@@ -1,112 +1,66 @@
-// Optimized Planner App - Consolidated & Compressed
-const plannerApp = () => {
+function plannerApp() {
   const pb = new PocketBase('/');
   pb.autoCancellation(false);
-  
-  // Centralized constants
-  const CONSTANTS = {
-    DAYS: ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'],
-    DAY_HEADERS: ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'],
-    SYSTEM_FIELDS: ['id', 'created', 'updated', 'collectionId', 'collectionName', 'expand'],
-    PRAYER_MAP: {Q: 'qiyam', F: 'Fajr', D: 'Dhuhr', A: 'Asr', M: 'Maghrib', I: 'Isha'},
-    DEFAULTS: {
-      CITIES: [
-        {name: 'London', latitude: 51.5074, longitude: -0.1278},
-        {name: 'Cairo', latitude: 30.0444, longitude: 31.2357},
-        {name: 'Current Location', latitude: null, longitude: null}
-      ],
-      LAYOUT: {task_rows: 15, workout_days: 3, meal_items: 8, grocery_categories: 6, measurements_count: 6, financials_count: 4},
-      COLORS: {current_day_bg: "#fff8e1", score_low: "#f8d7da", score_medium: "#fff3cd", score_high: "#d4edda"},
-      CONFIG: {default_city: "London", auto_save_interval: 30000, prayer_time_method: 2}
-    }
-  };
-
-  // Utility functions - consolidated
-  const utils = {
-    id: (() => {let c = 0; return () => `id_${Date.now()}_${c++}`;})(),
-    validate: (val, type) => val != null && typeof val === type,
-    safeGet: (obj, path, def) => path.split('.').reduce((o, k) => o?.[k], obj) ?? def,
-    formatTime: str => {
-      if (!str) return "";
-      const [h, m] = str.split(" ")[0].split(":");
-      const hour = +h, min = +m;
-      return isNaN(hour) || isNaN(min) ? "" : `${hour % 12 || 12}:${min.toString().padStart(2,'0')}${hour >= 12 ? "PM" : "AM"}`;
-    },
-    formatDate: date => `${(date.getUTCMonth() + 1).toString().padStart(2, '0')}/${date.getUTCDate().toString().padStart(2, '0')}`,
-    getCurrentIsoWeek: () => {
-      const now = new Date();
-      const date = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
-      date.setUTCDate(date.getUTCDate() + 4 - (date.getUTCDay() || 7));
-      const yearStart = new Date(Date.UTC(date.getUTCFullYear(), 0, 1));
-      const weekNumber = Math.ceil((((date - yearStart) / 86400000) + 1) / 7);
-      return `${date.getUTCFullYear()}-W${weekNumber.toString().padStart(2, '0')}`;
-    },
-    parseISOWeek: iso => {
-      const [year, weekPart] = iso.split('-');
-      const week = parseInt(weekPart.substring(1));
-      const date = new Date(Date.UTC(+year, 0, 1 + (week - 1) * 7));
-      date.setUTCDate(date.getUTCDate() - (date.getUTCDay() || 7) + 1);
-      return date;
-    },
-    getWeekDateRange: date => {
-      const start = new Date(date), end = new Date(start);
-      end.setUTCDate(start.getUTCDate() + 6);
-      return `${utils.formatDate(start)}-${utils.formatDate(end)}`;
-    }
-  };
-
-  // State management - consolidated
-  let state = {
-    isInitializing: true,
-    lastSavedState: null,
-    saveTimeout: null,
-    notificationTimeout: null
-  };
+  let isInitializing = true;
+  let lastSavedState = null;
+  let uniqueIdCounter = 0;
+  const generateId = () => `id_${Date.now()}_${uniqueIdCounter++}`;
 
   return {
-    // Core state
-    currentWeek: utils.getCurrentIsoWeek(),
-    dateRange: '', city: 'London', saveStatus: 'saved',
-    showNotification: false, notificationMessage: '', isOnline: navigator.onLine,
-    pendingSync: [], showCitySelector: false, showWeekSelector: false, 
-    dropdownPosition: {top: 0, left: 0}, currentDay: new Date().getDay(),
-    plannerTitle: 'Weekly Planner', uiConfig: {}, times: [], schedule: [], 
-    tasks: [], workoutPlan: [], meals: [], groceryBudget: '', groceryList: [],
-    bodyMeasurements: [], financials: [], currentTemplate: null, currentTemplateId: null,
-    savedWeeks: [], settings: {}, cityOptions: [], layoutConfig: {}, 
-    colorConfig: {}, defaultConfig: {}, featuresConfig: {},
+    // State
+    currentWeek: '', dateRange: '', city: 'London', saveStatus: 'saved', saveTimeout: null,
+    showNotification: false, notificationMessage: '', notificationTimeout: null, isOnline: navigator.onLine,
+    pendingSync: [], showCitySelector: false, showWeekSelector: false, dropdownPosition: { top: 0, left: 0 },
+    currentDay: (new Date()).getDay(), plannerTitle: 'Weekly Planner',
+    uiConfig: {}, times: [], schedule: [], tasks: [], workoutPlan: [], meals: [],
+    groceryBudget: '', groceryList: [], bodyMeasurements: [], financials: [],
+    currentTemplate: null, currentTemplateId: null, savedWeeks: [], 
+    // Settings state
+    settings: {}, cityOptions: [], layoutConfig: {}, colorConfig: {}, defaultConfig: {}, featuresConfig: {},
 
     // Initialization
     async init() {
       this.setupEventListeners();
       this.pendingSync = JSON.parse(localStorage.getItem('planner_pending_sync') || '[]');
-      this.dateRange = utils.getWeekDateRange(utils.parseISOWeek(this.currentWeek));
+      this.currentWeek = this.getCurrentIsoWeek();
+      this.dateRange = this.getWeekDateRange(this.parseISOWeek(this.currentWeek));
       await this.loadSettings();
       await this.loadWeek(this.currentWeek, true);
-      setInterval(() => { if (!state.isInitializing && this.hasSignificantChanges()) this.saveData(); }, 30000);
+      setInterval(() => { if (!isInitializing && this.hasSignificantChanges()) this.saveData(); }, 30000);
       if (this.isOnline) this.syncPendingData();
     },
 
     setupEventListeners() {
-      const handlers = {
-        online: () => { this.isOnline = true; this.syncPendingData(); },
-        offline: () => this.isOnline = false,
-        click: e => { if (!e.target.closest('.dropdown,.clickable')) this.showCitySelector = this.showWeekSelector = false; }
-      };
-      Object.entries(handlers).forEach(([event, handler]) => 
-        (event === 'click' ? document : window).addEventListener(event, handler));
+      window.addEventListener('online', () => { this.isOnline = true; this.syncPendingData(); });
+      window.addEventListener('offline', () => this.isOnline = false);
+      document.addEventListener('click', e => { 
+        if (!e.target.closest('.dropdown,.clickable')) {
+          this.showCitySelector = this.showWeekSelector = false; 
+        }
+      });
     },
 
-    // Settings management - consolidated
+    // Settings Management
     async loadSettings() {
       try {
-        const records = await pb.collection('settings').getFullList();
-        this.settings = records.reduce((acc, {category, key, value}) => {
-          if (!acc[category]) acc[category] = {};
-          acc[category][key] = value;
-          return acc;
-        }, {});
-        this.refreshSettingsConfig();
+        const settingsRecords = await pb.collection('settings').getFullList();
+        
+        // Organize settings by category
+        settingsRecords.forEach(setting => {
+          if (!this.settings[setting.category]) {
+            this.settings[setting.category] = {};
+          }
+          this.settings[setting.category][setting.key] = setting.value;
+        });
+
+        // Extract specific setting groups for easy access
+        this.cityOptions = this.settings.locations?.cities || this.getDefaultCities();
+        this.layoutConfig = this.settings.ui?.layout || this.getDefaultLayout();
+        this.colorConfig = this.settings.ui?.colors || this.getDefaultColors();
+        this.defaultConfig = this.settings.defaults?.planner || this.getDefaultPlannerConfig();
+        this.featuresConfig = this.settings.features?.enabled || this.getDefaultFeatures();
+
+        console.log('Settings loaded successfully');
       } catch (error) {
         console.log('Settings fetch failed, using defaults:', error.message);
         this.loadDefaultSettings();
@@ -114,35 +68,127 @@ const plannerApp = () => {
     },
 
     loadDefaultSettings() {
-      Object.assign(this, {
-        cityOptions: CONSTANTS.DEFAULTS.CITIES,
-        layoutConfig: CONSTANTS.DEFAULTS.LAYOUT,
-        colorConfig: CONSTANTS.DEFAULTS.COLORS,
-        defaultConfig: CONSTANTS.DEFAULTS.CONFIG,
-        featuresConfig: {prayer_times: true, geolocation: true, offline_sync: true, streak_tracking: true}
-      });
+      this.cityOptions = this.getDefaultCities();
+      this.layoutConfig = this.getDefaultLayout();
+      this.colorConfig = this.getDefaultColors();
+      this.defaultConfig = this.getDefaultPlannerConfig();
+      this.featuresConfig = this.getDefaultFeatures();
+    },
+
+    getDefaultCities() {
+      return [
+        { name: 'London', latitude: 51.5074, longitude: -0.1278 },
+        { name: 'Cairo', latitude: 30.0444, longitude: 31.2357 },
+        { name: 'Cape Town', latitude: -33.9249, longitude: 18.4241 },
+        { name: 'Amsterdam', latitude: 52.3676, longitude: 4.9041 },
+        { name: 'New York', latitude: 40.7128, longitude: -74.0060 },
+        { name: 'Tokyo', latitude: 35.6762, longitude: 139.6503 },
+        { name: 'Current Location', latitude: null, longitude: null }
+      ];
+    },
+
+    getDefaultLayout() {
+      return {
+        task_rows: 15,
+        workout_days: 3,
+        meal_items: 8,
+        grocery_categories: 6,
+        measurements_count: 6,
+        financials_count: 4,
+        prayer_times_count: 6
+      };
+    },
+
+    getDefaultColors() {
+      return {
+        current_day_bg: "#fff8e1",
+        score_low: "#f8d7da",
+        score_medium: "#fff3cd",
+        score_high: "#d4edda",
+        progress_low: "#dc3545",
+        progress_medium: "#ffc107",
+        progress_high: "#28a745",
+        task_completed: "#d4edda",
+        task_delayed: "#f8d7da",
+        task_early: "#d1ecf1"
+      };
+    },
+
+    getDefaultPlannerConfig() {
+      return {
+        default_city: "London",
+        default_currency: "£",
+        default_weight_unit: "kg",
+        default_distance_unit: "km",
+        auto_save_interval: 30000,
+        prayer_time_method: 2
+      };
+    },
+
+    getDefaultFeatures() {
+      return {
+        prayer_times: true,
+        geolocation: true,
+        offline_sync: true,
+        auto_backup: true,
+        streak_tracking: true,
+        progress_bars: true,
+        task_delay_tracking: true,
+        workout_tracking: true
+      };
+    },
+
+    async updateSetting(category, key, value) {
+      try {
+        // Find existing setting
+        const existing = await pb.collection('settings').getFirstListItem(
+          `category="${category}" && key="${key}"`
+        );
+        await pb.collection('settings').update(existing.id, { value });
+      } catch (error) {
+        if (error.status === 404) {
+          // Create new setting
+          await pb.collection('settings').create({
+            category,
+            key,
+            value,
+            description: `${category}.${key} setting`,
+            is_default: false
+          });
+        } else {
+          throw error;
+        }
+      }
+      
+      // Update local settings
+      if (!this.settings[category]) this.settings[category] = {};
+      this.settings[category][key] = value;
+      
+      // Update specific config objects
+      this.refreshSettingsConfig();
     },
 
     refreshSettingsConfig() {
-      Object.assign(this, {
-        cityOptions: utils.safeGet(this.settings, 'locations.cities', CONSTANTS.DEFAULTS.CITIES),
-        layoutConfig: utils.safeGet(this.settings, 'ui.layout', CONSTANTS.DEFAULTS.LAYOUT),
-        colorConfig: utils.safeGet(this.settings, 'ui.colors', CONSTANTS.DEFAULTS.COLORS),
-        defaultConfig: utils.safeGet(this.settings, 'defaults.planner', CONSTANTS.DEFAULTS.CONFIG),
-        featuresConfig: utils.safeGet(this.settings, 'features.enabled', {prayer_times: true, geolocation: true, offline_sync: true, streak_tracking: true})
-      });
+      this.cityOptions = this.settings.locations?.cities || this.getDefaultCities();
+      this.layoutConfig = this.settings.ui?.layout || this.getDefaultLayout();
+      this.colorConfig = this.settings.ui?.colors || this.getDefaultColors();
+      this.defaultConfig = this.settings.defaults?.planner || this.getDefaultPlannerConfig();
+      this.featuresConfig = this.settings.features?.enabled || this.getDefaultFeatures();
     },
 
-    // Template management - consolidated
-    async fetchTemplate(name = "default") {
-      const cacheKey = `template_${name}`;
+    // PocketBase template fetching
+    async fetchTemplate(templateName = "default") {
+      const cacheKey = `template_${templateName}`;
       const cached = localStorage.getItem(cacheKey);
       if (cached) {
         const template = JSON.parse(cached);
-        if (template.id !== 'fallback') return template;
+        if (template.id && template.id !== 'fallback') {
+          return template;
+        }
         localStorage.removeItem(cacheKey);
       }
-      const filter = name === "default" ? 'is_default=true' : `name="${name}"`;
+
+      const filter = templateName === "default" ? 'is_default=true' : `name="${templateName}"`;
       const template = await pb.collection('templates').getFirstListItem(filter);
       localStorage.setItem(cacheKey, JSON.stringify(template));
       return template;
@@ -156,24 +202,25 @@ const plannerApp = () => {
       this.plannerTitle = s.ui?.title_default || 'Weekly Planner';
       this.uiConfig = {
         mainTableHeaders: s.ui?.headers?.main_table || [],
-        dayHeaders: s.ui?.headers?.days || CONSTANTS.DAY_HEADERS,
-        maxHeaders: s.ui?.headers?.max_cols || Array(7).fill('MAX'),
+        dayHeaders: s.ui?.headers?.days || [],
+        maxHeaders: s.ui?.headers?.max_cols || [],
         taskHeaders: s.ui?.headers?.tasks || [],
         sectionTitles: s.ui?.sections || {}
       };
 
       this.times = [...(s.prayer_times || [])];
-      this.schedule = this.buildScheduleFromTemplate(s.schedule || []);
+      this.schedule = this.buildScheduleFromTemplate(s.schedule);
       
+      // Use layout settings for task count
       const taskCount = this.layoutConfig?.task_rows || s.tasks?.count || 15;
       this.tasks = Array(taskCount).fill().map(() => ({
-        id: utils.id(), num: '', priority: '', tag: '', description: '', 
+        id: generateId(), num: '', priority: '', tag: '', description: '', 
         startDate: '', expectedDate: '', actualDate: '', completed: ''
       }));
 
       this.workoutPlan = this.buildWorkoutFromTemplate(s.workout || []);
       this.meals = this.ensureIds([...(s.meals || [])]);
-      this.groceryBudget = s.grocery?.budget_default || '£120';
+      this.groceryBudget = s.grocery?.budget_default || this.defaultConfig?.default_currency + '120' || '£120';
       this.groceryList = this.ensureIds([...(s.grocery?.categories || [])]);
       this.bodyMeasurements = this.ensureIds([...(s.measurements || [])]);
       this.financials = this.ensureIds([...(s.financials || [])]);
@@ -182,35 +229,41 @@ const plannerApp = () => {
 
     buildScheduleFromTemplate(templateSchedule) {
       return templateSchedule.map(section => ({
-        id: utils.id(), 
+        id: generateId(), 
         name: section.name,
         activities: (section.activities || []).map(activity => ({
-          id: utils.id(), 
+          id: generateId(), 
           name: activity.name,
           days: this.createDaysStructure(activity.days, activity.max_per_day || 1),
           score: 0, 
           maxScore: activity.max_score || 0,
-          streaks: {current: 0, longest: 0}
+          streaks: { current: 0, longest: 0 }
         }))
       }));
     },
 
     createDaysStructure(specificDays, maxPerDay) {
-      const targetDays = specificDays?.length > 0 ? 
-        specificDays.filter(day => CONSTANTS.DAYS.includes(day.toLowerCase())) : 
-        CONSTANTS.DAYS;
+      const allDays = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
+      const days = {};
+      const targetDays = specificDays && Array.isArray(specificDays) && specificDays.length > 0 
+        ? specificDays.filter(day => allDays.includes(day.toLowerCase())) 
+        : allDays;
       
-      return targetDays.reduce((days, day) => {
-        days[day] = {value: '', max: Math.max(0, +maxPerDay || 1)};
-        return days;
-      }, {});
+      targetDays.forEach(day => { 
+        days[day] = { value: '', max: Math.max(0, parseInt(maxPerDay) || 1) }; 
+      });
+      return days;
     },
 
     buildWorkoutFromTemplate(templateWorkout) {
       return templateWorkout.map(day => ({
-        id: utils.id(), name: day.name,
+        id: generateId(), name: day.name,
         exercises: this.ensureIds((day.exercises || []).map(ex => ({
-          prefix: '• ', name: ex.name, weight: '', sets: '', reps: '',
+          prefix: '• ', 
+          name: ex.name, 
+          weight: '', 
+          sets: '', 
+          reps: '',
           defaultWeight: ex.default_weight?.toString() || '',
           defaultSets: ex.default_sets?.toString() || '',
           defaultReps: ex.default_reps?.toString() || ''
@@ -218,18 +271,24 @@ const plannerApp = () => {
       }));
     },
 
-    ensureIds: items => items.map(item => ({...item, id: item.id || utils.id()})),
+    ensureIds(items) {
+      return items.map(item => ({ ...item, id: item.id || generateId() }));
+    },
 
-    // Data loading - consolidated
+    // Data Loading
     async loadWeek(isoWeek, isInitLoad = false) {
       this.showWeekSelector = false; 
       this.currentWeek = isoWeek; 
-      this.dateRange = utils.getWeekDateRange(utils.parseISOWeek(isoWeek));
+      this.dateRange = this.getWeekDateRange(this.parseISOWeek(isoWeek));
 
-      const plannerRecord = await this.fetchPlannerRecord(isoWeek);
-      const template = plannerRecord?.template_id ? 
-        await this.fetchTemplateById(plannerRecord.template_id) : 
-        await this.fetchTemplate("default");
+      let plannerRecord = await this.fetchPlannerRecord(isoWeek);
+      let template;
+
+      if (plannerRecord?.template_id) {
+        template = await this.fetchTemplateById(plannerRecord.template_id);
+      } else {
+        template = await this.fetchTemplate("default");
+      }
 
       this.applyTemplateStructure(template);
       if (plannerRecord) this.overlayUserData(plannerRecord);
@@ -239,78 +298,84 @@ const plannerApp = () => {
         await this.getPrayerTimes();
       }
       
-      state.lastSavedState = JSON.stringify(this.getCurrentUserData());
-      if (isInitLoad) state.isInitializing = false;
+      lastSavedState = JSON.stringify(this.getCurrentUserData());
+      if (isInitLoad) isInitializing = false;
     },
 
     async fetchPlannerRecord(isoWeek) {
       if (this.isOnline) {
         try {
-          return await pb.collection('planners').getFirstListItem(`week_id="${isoWeek}"`);
+          const record = await pb.collection('planners').getFirstListItem(`week_id="${isoWeek}"`);
+          return record;
         } catch (error) {
-          return error.status === 404 ? null : Promise.reject(error);
+          if (error.status === 404) {
+            return null;
+          }
+          throw error;
         }
       }
       const local = localStorage.getItem(`planner_${isoWeek}`);
       return local ? JSON.parse(local) : null;
     },
 
-    fetchTemplateById: id => pb.collection('templates').getOne(id),
-
-    // Data overlay - consolidated
-    overlayUserData(record) {
-      const overlays = {
-        title: v => this.plannerTitle = v,
-        city: v => this.city = v,
-        prayer_times: v => this.overlayArray(this.times, v),
-        schedule_data: v => this.overlayScheduleData(v),
-        tasks_data: v => this.overlayArray(this.tasks, v),
-        workout_data: v => this.overlayWorkoutData(v),
-        meals_data: v => this.overlayArray(this.meals, v),
-        grocery_data: v => this.overlayGroceryData(v),
-        measurements_data: v => this.overlayArray(this.bodyMeasurements, v),
-        financials_data: v => this.overlayArray(this.financials, v)
-      };
-      Object.entries(record).forEach(([key, value]) => overlays[key]?.(value));
+    async fetchTemplateById(templateId) {
+      return await pb.collection('templates').getOne(templateId);
     },
 
-    overlayArray: (target, source) => source?.forEach((item, i) => target[i] && Object.assign(target[i], item)),
+    overlayUserData(record) {
+      if (record.title) this.plannerTitle = record.title;
+      if (record.city) this.city = record.city;
+      if (record.prayer_times) this.overlayArray(this.times, record.prayer_times);
+      if (record.schedule_data) this.overlayScheduleData(record.schedule_data);
+      if (record.tasks_data) this.overlayArray(this.tasks, record.tasks_data);
+      if (record.workout_data) this.overlayWorkoutData(record.workout_data);
+      if (record.meals_data) this.overlayArray(this.meals, record.meals_data);
+      if (record.grocery_data) this.overlayGroceryData(record.grocery_data);
+      if (record.measurements_data) this.overlayArray(this.bodyMeasurements, record.measurements_data);
+      if (record.financials_data) this.overlayArray(this.financials, record.financials_data);
+    },
+
+    overlayArray(target, source) {
+      source.forEach((item, i) => {
+        if (target[i]) Object.assign(target[i], item);
+      });
+    },
 
     overlayScheduleData(scheduleData) {
-      scheduleData?.forEach(savedSection => {
+      scheduleData.forEach(savedSection => {
         const section = this.schedule.find(s => s.name === savedSection.name);
-        if (!section) return;
-        
-        savedSection.activities?.forEach(savedActivity => {
-          const activity = section.activities.find(a => a.name === savedActivity.name);
-          if (!activity) return;
-          
-          if (savedActivity.days) {
-            Object.keys(activity.days).forEach(day => {
-              if (savedActivity.days[day]) activity.days[day].value = savedActivity.days[day].value || '';
-            });
-          }
-          Object.assign(activity, {
-            score: savedActivity.score || 0,
-            streaks: savedActivity.streaks || {current: 0, longest: 0}
+        if (section) {
+          savedSection.activities?.forEach(savedActivity => {
+            const activity = section.activities.find(a => a.name === savedActivity.name);
+            if (activity) {
+              if (savedActivity.days) {
+                Object.keys(activity.days).forEach(day => {
+                  if (savedActivity.days[day]) {
+                    activity.days[day].value = savedActivity.days[day].value || '';
+                  }
+                });
+              }
+              activity.score = savedActivity.score || 0;
+              activity.streaks = savedActivity.streaks || { current: 0, longest: 0 };
+            }
           });
-        });
+        }
       });
     },
 
     overlayWorkoutData(workoutData) {
-      workoutData?.forEach(savedDay => {
+      workoutData.forEach(savedDay => {
         const day = this.workoutPlan.find(d => d.name === savedDay.name);
-        if (!day) return;
-        
-        savedDay.exercises?.forEach(savedEx => {
-          const exercise = day.exercises.find(ex => ex.name === savedEx.name);
-          if (exercise) Object.assign(exercise, {
-            weight: savedEx.weight || '',
-            sets: savedEx.sets || '',
-            reps: savedEx.reps || ''
+        if (day) {
+          savedDay.exercises?.forEach(savedEx => {
+            const exercise = day.exercises.find(ex => ex.name === savedEx.name);
+            if (exercise) {
+              exercise.weight = savedEx.weight || '';
+              exercise.sets = savedEx.sets || '';
+              exercise.reps = savedEx.reps || '';
+            }
           });
-        });
+        }
       });
     },
 
@@ -319,7 +384,7 @@ const plannerApp = () => {
       if (groceryData.categories) this.overlayArray(this.groceryList, groceryData.categories);
     },
 
-    // Data extraction - consolidated
+    // User Data Extraction
     getCurrentUserData() {
       return {
         week_id: this.currentWeek,
@@ -338,30 +403,40 @@ const plannerApp = () => {
       };
     },
 
-    extractScheduleData: () => this.schedule.map(section => ({
-      name: section.name,
-      activities: section.activities.map(activity => ({
-        name: activity.name,
-        days: Object.keys(activity.days).reduce((acc, day) => {
-          if (activity.days[day].value) acc[day] = {value: activity.days[day].value};
-          return acc;
-        }, {}),
-        score: activity.score,
-        streaks: activity.streaks
-      })).filter(activity => Object.keys(activity.days).length > 0 || activity.score > 0)
-    })).filter(section => section.activities.length > 0),
+    extractScheduleData() {
+      return this.schedule.map(section => ({
+        name: section.name,
+        activities: section.activities.map(activity => ({
+          name: activity.name,
+          days: Object.keys(activity.days).reduce((acc, day) => {
+            if (activity.days[day].value) acc[day] = { value: activity.days[day].value };
+            return acc;
+          }, {}),
+          score: activity.score,
+          streaks: activity.streaks
+        })).filter(activity => Object.keys(activity.days).length > 0 || activity.score > 0)
+      })).filter(section => section.activities.length > 0);
+    },
 
-    extractUserTasks: () => this.tasks.filter(task => 
-      ['num', 'priority', 'tag', 'description', 'startDate', 'expectedDate', 'actualDate', 'completed']
-        .some(field => task[field])),
+    extractUserTasks() {
+      return this.tasks.filter(task => 
+        task.num || task.priority || task.tag || task.description || 
+        task.startDate || task.expectedDate || task.actualDate || task.completed
+      );
+    },
 
-    extractWorkoutData: () => this.workoutPlan.map(day => ({
-      name: day.name,
-      exercises: day.exercises.filter(ex => ex.weight || ex.sets || ex.reps)
-        .map(ex => ({name: ex.name, weight: ex.weight, sets: ex.sets, reps: ex.reps}))
-    })).filter(day => day.exercises.length > 0),
+    extractWorkoutData() {
+      return this.workoutPlan.map(day => ({
+        name: day.name,
+        exercises: day.exercises.filter(ex => ex.weight || ex.sets || ex.reps).map(ex => ({
+          name: ex.name, weight: ex.weight, sets: ex.sets, reps: ex.reps
+        }))
+      })).filter(day => day.exercises.length > 0);
+    },
 
-    extractUserItems: (items, fields) => items.filter(item => fields.some(field => item[field])),
+    extractUserItems(items, fields) {
+      return items.filter(item => fields.some(field => item[field]));
+    },
 
     extractGroceryData() {
       const categories = this.extractUserItems(this.groceryList, ['name', 'items']);
@@ -371,17 +446,15 @@ const plannerApp = () => {
       };
     },
 
-    // Editing - consolidated
+    // Editing
     editField(event, type, currentValue = '', ...args) {
       const element = event.currentTarget;
       const isTextarea = ['mealIngredients', 'groceryCategoryItems'].includes(type);
       const input = document.createElement(isTextarea ? 'textarea' : 'input');
       
-      Object.assign(input, {
-        type: 'text',
-        value: currentValue,
-        className: isTextarea ? 'inline-edit-textarea' : 'inline-edit-input'
-      });
+      input.type = 'text';
+      input.value = currentValue;
+      input.className = isTextarea ? 'inline-edit-textarea' : 'inline-edit-input';
       if (isTextarea) input.rows = 3;
 
       const originalText = element.innerText;
@@ -391,18 +464,23 @@ const plannerApp = () => {
       input.select();
 
       const save = () => {
-        this.updateField(type, input.value, ...args);
-        this.cleanup(element, input, input.value || originalText);
+        const newValue = input.value;
+        this.updateField(type, newValue, ...args);
+        this.cleanup(element, input, newValue || originalText);
         this.saveData();
       };
 
-      const cancel = () => this.cleanup(element, input, originalText);
+      const cancel = () => {
+        this.cleanup(element, input, originalText);
+      };
 
-      input.addEventListener('blur', save);
-      input.addEventListener('keydown', e => {
+      const handleKey = (e) => {
         if (e.key === 'Enter' && !isTextarea) { e.preventDefault(); save(); }
         else if (e.key === 'Escape') cancel();
-      });
+      };
+
+      input.addEventListener('blur', save);
+      input.addEventListener('keydown', handleKey);
     },
 
     cleanup(element, input, text) {
@@ -410,82 +488,85 @@ const plannerApp = () => {
       element.innerText = text;
     },
 
-    // Field updates - consolidated with handlers map
     updateField(type, value, ...args) {
       const handlers = {
         plannerTitle: () => this.plannerTitle = value,
-        timeLabel: i => this.times[i] && (this.times[i].label = value),
-        sectionTitle: section => this.uiConfig.sectionTitles?.[section] && (this.uiConfig.sectionTitles[section] = value),
+        timeLabel: (i) => { if (this.times[i]) this.times[i].label = value; },
+        sectionTitle: (section) => { if (this.uiConfig.sectionTitles?.[section]) this.uiConfig.sectionTitles[section] = value; },
         header: (headerType, index) => {
-          const map = {main: 'mainTableHeaders', day: 'dayHeaders', max: 'maxHeaders', task: 'taskHeaders'};
-          this.uiConfig[map[headerType]]?.[index] !== undefined && (this.uiConfig[map[headerType]][index] = value);
+          const map = { main: 'mainTableHeaders', day: 'dayHeaders', max: 'maxHeaders', task: 'taskHeaders' };
+          if (this.uiConfig[map[headerType]]?.[index] !== undefined) this.uiConfig[map[headerType]][index] = value;
         },
-        sectionName: sIdx => {
-          const section = this.schedule[this.schedule.length - 1 - sIdx];
-          if (section) section.name = value;
+        sectionName: (sIdx) => {
+          const mappedIdx = this.schedule.length - 1 - sIdx;
+          if (this.schedule[mappedIdx]) this.schedule[mappedIdx].name = value;
         },
-        activityPrefix: indices => this.updateActivityName(indices, value, true),
-        activityName: indices => this.updateActivityName(indices, value, false),
-        maxValue: indices => {
+        activityPrefix: (indices) => this.updateActivityName(indices, value, true),
+        activityName: (indices) => this.updateActivityName(indices, value, false),
+        maxValue: (indices) => {
           const activity = this.getScheduleActivity(indices);
-          activity?.days[indices.day] && (activity.days[indices.day].max = +value || 0);
+          if (activity?.days[indices.day]) activity.days[indices.day].max = parseInt(value) || 0;
         },
-        maxScore: indices => {
+        maxScore: (indices) => {
           const activity = this.getScheduleActivity(indices);
-          if (activity) activity.maxScore = +value || 0;
+          if (activity) activity.maxScore = parseInt(value) || 0;
         },
-        workoutDayName: i => this.workoutPlan[i] && (this.workoutPlan[i].name = value),
-        exercisePrefix: indices => {
+        workoutDayName: (i) => { if (this.workoutPlan[i]) this.workoutPlan[i].name = value; },
+        exercisePrefix: (indices) => { 
           const ex = this.workoutPlan[indices.dayIdx]?.exercises[indices.exIdx];
           if (ex) ex.prefix = value;
         },
-        exerciseName: indices => {
+        exerciseName: (indices) => {
           const ex = this.workoutPlan[indices.dayIdx]?.exercises[indices.exIdx];
           if (ex) ex.name = value;
-        }
+        },
+        mealName: (i) => { if (this.meals[i]) this.meals[i].name = value; },
+        mealIngredients: (i) => { if (this.meals[i]) this.meals[i].ingredients = value; },
+        groceryCategoryName: (i) => { if (this.groceryList[i]) this.groceryList[i].name = value; },
+        groceryCategoryItems: (i) => { if (this.groceryList[i]) this.groceryList[i].items = value; },
+        measurementName: (i) => { if (this.bodyMeasurements[i]) this.bodyMeasurements[i].name = value; },
+        financialName: (i) => { if (this.financials[i]) this.financials[i].name = value; },
+        financialAccount: (i) => { if (this.financials[i]) this.financials[i].account = value; }
       };
 
-      // Generic field updates for arrays
-      ['meal', 'groceryCategory', 'measurement', 'financial'].forEach(prefix => {
-        ['Name', 'Ingredients', 'Items', 'Account'].forEach(suffix => {
-          const key = prefix + suffix;
-          if (type === key.toLowerCase()) {
-            const arrayMap = {
-              meal: this.meals, groceryCategory: this.groceryList,
-              measurement: this.bodyMeasurements, financial: this.financials
-            };
-            const fieldMap = {Name: 'name', Ingredients: 'ingredients', Items: 'items', Account: 'account'};
-            const array = arrayMap[prefix];
-            const field = fieldMap[suffix];
-            if (array?.[args[0]]) array[args[0]][field] = value;
-          }
-        });
-      });
-
-      handlers[type]?.(...args);
+      const handler = handlers[type];
+      if (handler) handler(...args);
     },
 
     updateActivityName(indices, value, isPrefix) {
       const activity = this.getScheduleActivity(indices);
-      if (!activity) return;
-      
-      const parts = activity.name.split(':');
-      activity.name = isPrefix ? 
-        value + (parts.length > 1 ? ':' + parts.slice(1).join(':').trimStart() : '') :
-        (parts.length > 1 ? parts[0].trim() + ': ' : '') + value;
+      if (activity) {
+        const parts = activity.name.split(':');
+        if (isPrefix) {
+          activity.name = value + (parts.length > 1 ? ':' + parts.slice(1).join(':').trimStart() : '');
+        } else {
+          activity.name = (parts.length > 1 ? parts[0].trim() + ': ' : '') + value;
+        }
+      }
     },
 
-    getScheduleActivity: indices => this.schedule[this.schedule.length - 1 - indices.sIdx]?.activities[indices.aIdx],
+    getScheduleActivity(indices) {
+      const sIdxMapped = this.schedule.length - 1 - indices.sIdx;
+      return this.schedule[sIdxMapped]?.activities[indices.aIdx];
+    },
 
-    // Task management - consolidated
-    getTaskDelay: task => {
+    // Project Management
+    getTaskDelay(task) {
       if (!task.expectedDate || !task.actualDate) return 0;
-      return Math.ceil((new Date(task.actualDate) - new Date(task.expectedDate)) / (1000 * 60 * 60 * 24));
+      const expected = new Date(task.expectedDate);
+      const actual = new Date(task.actualDate);
+      return Math.ceil((actual - expected) / (1000 * 60 * 60 * 24));
     },
 
-    calculateTaskDelay: task => task._delay = this.getTaskDelay(task),
+    calculateTaskDelay(task) {
+      task._delay = this.getTaskDelay(task);
+      return task._delay;
+    },
 
-    formatDelay: days => days === 0 ? '⏰' : days > 0 ? `+${days}d` : `${days}d`,
+    formatDelay(days) {
+      if (days === 0) return '⏰';
+      return days > 0 ? `+${days}d` : `${days}d`;
+    },
 
     toggleTaskCompletion(task) { 
       task.completed = task.completed === '✓' ? '☐' : '✓'; 
@@ -496,11 +577,13 @@ const plannerApp = () => {
       this.saveData(); 
     },
 
-    // UI helpers - consolidated
-    getScoreClass: activity => {
+    // UI Helpers
+    getScoreClass(activity) {
       if (activity.maxScore <= 0) return '';
       const ratio = activity.score / activity.maxScore;
-      return ratio < 0.33 ? 'score-low' : ratio < 0.66 ? 'score-medium' : 'score-high';
+      if (ratio < 0.33) return 'score-low';
+      if (ratio < 0.66) return 'score-medium';
+      return 'score-high';
     },
 
     getTaskRowClass(task) {
@@ -512,28 +595,37 @@ const plannerApp = () => {
       return classes.join(' ');
     },
 
-    getDelayClass: task => {
+    getDelayClass(task) {
       const delay = this.getTaskDelay(task);
-      return delay < 0 ? 'delay-negative' : delay > 0 ? 'delay-positive' : 'delay-zero';
+      if (delay < 0) return 'delay-negative';
+      if (delay > 0) return 'delay-positive';
+      return 'delay-zero';
     },
 
-    getProgressStyle: activity => activity.maxScore <= 0 ? 'width: 0%' : 
-      `width: ${Math.min(100, (activity.score / activity.maxScore) * 100)}%`,
+    getProgressStyle(activity) {
+      if (activity.maxScore <= 0) return 'width: 0%';
+      const percentage = Math.min(100, (activity.score / activity.maxScore) * 100);
+      return `width: ${percentage}%`;
+    },
 
-    getProgressClass: activity => {
+    getProgressClass(activity) {
       if (activity.maxScore <= 0) return '';
       const ratio = activity.score / activity.maxScore;
-      return ratio < 0.33 ? 'progress-low' : ratio < 0.66 ? 'progress-medium' : 'progress-high';
+      if (ratio < 0.33) return 'progress-low';
+      if (ratio < 0.66) return 'progress-medium';
+      return 'progress-high';
     },
 
-    getTaskColumnStyle: i => {
+    getTaskColumnStyle(i) {
       const widths = this.currentTemplate?.structure?.ui?.task_column_widths || [];
       return widths[i] ? `width:${widths[i]}` : 'text-align:left';
     },
 
-    getDropdownStyle: () => `top: ${this.dropdownPosition.top}px; left: ${this.dropdownPosition.left}px;`,
+    getDropdownStyle() {
+      return `top: ${this.dropdownPosition.top}px; left: ${this.dropdownPosition.left}px;`;
+    },
 
-    // Selectors - consolidated
+    // Selectors
     toggleSelector(event, type) {
       const prop = `show${type.charAt(0).toUpperCase() + type.slice(1)}Selector`;
       const other = type === 'city' ? 'showWeekSelector' : 'showCitySelector';
@@ -560,14 +652,15 @@ const plannerApp = () => {
       this.saveData();
     },
 
-    // Prayer times - consolidated
+    // Prayer Times
     async getPrayerTimes() {
       if (!this.featuresConfig?.prayer_times || !this.featuresConfig?.geolocation) return;
       
       try {
         const position = await new Promise((resolve, reject) =>
-          navigator.geolocation.getCurrentPosition(resolve, reject, {timeout: 5000, maximumAge: 60000}));
-        const {latitude, longitude} = position.coords;
+          navigator.geolocation.getCurrentPosition(resolve, reject, {timeout: 5000, maximumAge: 60000})
+        );
+        const { latitude, longitude } = position.coords;
         
         const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=10&accept-language=en`);
         const data = await response.json();
@@ -596,9 +689,8 @@ const plannerApp = () => {
         const method = this.defaultConfig?.prayer_time_method || 2;
         const response = await fetch(`https://api.aladhan.com/v1/calendar/${today.getFullYear()}/${today.getMonth()+1}?latitude=${lat}&longitude=${lon}&method=${method}`);
         const data = await response.json();
-        const timings = data.data[today.getDate()-1].timings;
-        localStorage.setItem(cacheKey, JSON.stringify(timings));
-        this.setPrayerTimes(timings);
+        localStorage.setItem(cacheKey, JSON.stringify(data.data[today.getDate()-1].timings));
+        this.setPrayerTimes(data.data[today.getDate()-1].timings);
       } catch (error) {
         console.log('Prayer times fetch failed:', error.message);
       }
@@ -610,29 +702,38 @@ const plannerApp = () => {
       
       let changed = false;
       this.times.forEach(time => {
-        const newTime = utils.formatTime(prayerMap[time.label]);
+        const newTime = this.formatTime(prayerMap[time.label]);
         if (time.value !== newTime) {
           time.value = newTime;
           changed = true;
         }
       });
       
-      if (changed && !state.isInitializing) this.saveData();
+      if (changed && !isInitializing) this.saveData();
+    },
+
+    formatTime(timeStr) {
+      if (!timeStr) return "";
+      const [hourStr, minStr] = timeStr.split(" ")[0].split(":");
+      const hour = parseInt(hourStr), min = parseInt(minStr);
+      if (isNaN(hour) || isNaN(min)) return "";
+      return `${hour % 12 || 12}:${min.toString().padStart(2,'0')}${hour >= 12 ? "PM" : "AM"}`;
     },
 
     calculateQiyamTime(fajrTime) {
       if (!fajrTime) return "";
       const [hourStr, minStr] = fajrTime.split(" ")[0].split(":");
-      let hour = +hourStr, min = +minStr;
+      let hour = parseInt(hourStr), min = parseInt(minStr);
       if (isNaN(hour) || isNaN(min)) return "";
       hour = hour - 1;
       if (hour < 0) hour = 23;
       return `${hour}:${min.toString().padStart(2,'0')}`;
     },
 
-    // Score calculations - optimized
+    // Calculations
     calculateScores() {
-      const dailyTotals = CONSTANTS.DAYS.reduce((acc, day) => (acc[day] = 0, acc), {});
+      const dailyTotals = {mon:0, tue:0, wed:0, thu:0, fri:0, sat:0, sun:0};
+      const dayKeys = Object.keys(dailyTotals);
 
       this.schedule.forEach(section => {
         if (section.name === 'TOTAL') return;
@@ -642,7 +743,7 @@ const plannerApp = () => {
           
           Object.entries(activity.days || {}).forEach(([day, data]) => {
             if (!data) return;
-            const value = +data.value || 0;
+            const value = parseInt(data.value) || 0;
             if (value > 0 && (data.max || 0) > 0) {
               dailyTotals[day] += value;
               activityScore += value;
@@ -659,8 +760,8 @@ const plannerApp = () => {
             let currentStreak = 0;
             for (let i = 0; i < 7; i++) {
               const dayIndex = (todayIndex - i + 7) % 7;
-              const dayKey = CONSTANTS.DAYS[dayIndex];
-              if (activity.days[dayKey] && +activity.days[dayKey].value > 0 && (activity.days[dayKey].max || 0) > 0) {
+              const dayKey = dayKeys[dayIndex];
+              if (activity.days[dayKey] && parseInt(activity.days[dayKey].value) > 0 && (activity.days[dayKey].max || 0) > 0) {
                 currentStreak++;
               } else {
                 break;
@@ -688,14 +789,16 @@ const plannerApp = () => {
           }
         });
         
-        Object.assign(totalActivity, {score: grandTotalScore, maxScore: grandMaxScore});
+        totalActivity.score = grandTotalScore;
+        totalActivity.maxScore = grandMaxScore;
       }
     },
 
     validateAndSave(event) {
       const input = event.target;
-      const min = +input.min, max = +input.max;
-      let value = +input.value;
+      const min = parseFloat(input.min);
+      const max = parseFloat(input.max);
+      let value = parseFloat(input.value);
       
       if (isNaN(value)) value = 0;
       if (!isNaN(min) && value < min) value = min;
@@ -706,15 +809,15 @@ const plannerApp = () => {
       this.saveData();
     },
 
-    // Data management - consolidated
+    // Data Management
     saveData() {
-      if (state.isInitializing) return;
+      if (isInitializing) return;
       
-      clearTimeout(state.saveTimeout);
+      clearTimeout(this.saveTimeout);
       this.saveStatus = 'saving';
       
       const saveInterval = this.defaultConfig?.auto_save_interval || 500;
-      state.saveTimeout = setTimeout(async () => {
+      this.saveTimeout = setTimeout(async () => {
         this.calculateScores();
         const userData = this.getCurrentUserData();
         
@@ -724,7 +827,8 @@ const plannerApp = () => {
           try {
             await this.saveToPocketbase(this.currentWeek, userData);
             this.pendingSync = this.pendingSync.filter(item => 
-              !(item.weekId === this.currentWeek && item.operation !== 'delete'));
+              !(item.weekId === this.currentWeek && item.operation !== 'delete')
+            );
           } catch (error) {
             console.log('PocketBase save failed:', error.message);
             this.addToPendingSync(this.currentWeek, userData);
@@ -734,18 +838,23 @@ const plannerApp = () => {
         }
         
         localStorage.setItem('planner_pending_sync', JSON.stringify(this.pendingSync));
-        state.lastSavedState = JSON.stringify(userData);
+        lastSavedState = JSON.stringify(userData);
         this.saveStatus = 'saved';
       }, saveInterval);
     },
 
-    hasSignificantChanges: () => !state.lastSavedState || JSON.stringify(this.getCurrentUserData()) !== state.lastSavedState,
+    hasSignificantChanges() {
+      if (!lastSavedState) return true;
+      const current = this.getCurrentUserData();
+      return JSON.stringify(current) !== lastSavedState;
+    },
 
     addToPendingSync(weekId, data, operation = 'save') {
       if (!this.featuresConfig?.offline_sync) return;
       
       this.pendingSync = this.pendingSync.filter(item => 
-        !(item.weekId === weekId && item.operation === operation));
+        !(item.weekId === weekId && item.operation === operation)
+      );
       this.pendingSync.push({
         weekId, data: data ? JSON.parse(JSON.stringify(data)) : null,
         operation, timestamp: new Date().toISOString()
@@ -753,7 +862,35 @@ const plannerApp = () => {
       localStorage.setItem('planner_pending_sync', JSON.stringify(this.pendingSync));
     },
 
-    // PocketBase operations - consolidated
+    async syncPendingData() {
+      if (!this.isOnline || this.pendingSync.length === 0 || !this.featuresConfig?.offline_sync) return;
+      
+      const itemsToSync = [...this.pendingSync];
+      this.pendingSync = [];
+      
+      for (const item of itemsToSync) {
+        try {
+          if (item.operation === 'delete') {
+            await this.deleteFromPocketbase(item.weekId);
+          } else {
+            await this.saveToPocketbase(item.weekId, item.data);
+          }
+          
+          const remaining = JSON.parse(localStorage.getItem('planner_pending_sync') || '[]');
+          localStorage.setItem('planner_pending_sync', 
+            JSON.stringify(remaining.filter(i => i.timestamp !== item.timestamp))
+          );
+        } catch (error) {
+          console.log('Sync failed:', error.message);
+          this.pendingSync.push(item);
+        }
+      }
+      
+      if (this.pendingSync.length > 0) {
+        localStorage.setItem('planner_pending_sync', JSON.stringify(this.pendingSync));
+      }
+    },
+
     async saveToPocketbase(weekId, userData) {
       try {
         const existing = await pb.collection('planners').getFirstListItem(`week_id="${weekId}"`);
@@ -776,42 +913,14 @@ const plannerApp = () => {
       }
     },
 
-    async syncPendingData() {
-      if (!this.isOnline || !this.pendingSync.length || !this.featuresConfig?.offline_sync) return;
-      
-      const itemsToSync = [...this.pendingSync];
-      this.pendingSync = [];
-      
-      for (const item of itemsToSync) {
-        try {
-          if (item.operation === 'delete') {
-            await this.deleteFromPocketbase(item.weekId);
-          } else {
-            await this.saveToPocketbase(item.weekId, item.data);
-          }
-          
-          const remaining = JSON.parse(localStorage.getItem('planner_pending_sync') || '[]');
-          localStorage.setItem('planner_pending_sync', 
-            JSON.stringify(remaining.filter(i => i.timestamp !== item.timestamp)));
-        } catch (error) {
-          console.log('Sync failed:', error.message);
-          this.pendingSync.push(item);
-        }
-      }
-      
-      if (this.pendingSync.length > 0) {
-        localStorage.setItem('planner_pending_sync', JSON.stringify(this.pendingSync));
-      }
-    },
-
-    // Week management - consolidated
+    // Week Management
     async fetchSavedWeeks() {
       const weekMap = new Map();
-      const currentIso = this.currentWeek;
+      const currentIso = this.getCurrentIsoWeek();
       
       const addWeek = (iso, dateRange, source, isCurrent) => {
         const existing = weekMap.get(iso);
-        const newDateRange = dateRange || utils.getWeekDateRange(utils.parseISOWeek(iso));
+        const newDateRange = dateRange || this.getWeekDateRange(this.parseISOWeek(iso));
         
         if (!existing || (source === 'pocketbase' && existing.source !== 'pocketbase') || 
             (source === 'local' && existing.source === 'current')) {
@@ -821,7 +930,7 @@ const plannerApp = () => {
         }
       };
       
-      addWeek(currentIso, utils.getWeekDateRange(utils.parseISOWeek(currentIso)), 'current', true);
+      addWeek(currentIso, this.getWeekDateRange(this.parseISOWeek(currentIso)), 'current', true);
       
       if (this.isOnline) {
         try {
@@ -829,7 +938,8 @@ const plannerApp = () => {
             sort: '-week_id', fields: 'week_id,date_range'
           });
           records.forEach(record => 
-            addWeek(record.week_id, record.date_range, 'pocketbase', record.week_id === currentIso));
+            addWeek(record.week_id, record.date_range, 'pocketbase', record.week_id === currentIso)
+          );
         } catch (error) {
           console.log('Fetch saved weeks failed:', error.message);
         }
@@ -837,9 +947,9 @@ const plannerApp = () => {
       
       for (let i = 0; i < localStorage.length; i++) {
         const key = localStorage.key(i);
-        if (key?.startsWith('planner_') && !key.includes('pending_sync') && !key.startsWith('planner_template_')) {
+        if (key.startsWith('planner_') && !key.includes('pending_sync') && !key.startsWith('planner_template_')) {
           const iso = key.replace('planner_', '');
-          const data = JSON.parse(localStorage.getItem(key) || '{}');
+          const data = JSON.parse(localStorage.getItem(key));
           addWeek(iso, data.date_range, 'local', iso === currentIso);
         }
       }
@@ -853,12 +963,16 @@ const plannerApp = () => {
 
     confirmLoadWeek(isoWeek) {
       if (this.hasSignificantChanges() && isoWeek !== this.currentWeek && 
-          !confirm("Unsaved changes. Load anyway?")) return;
+          !confirm("Unsaved changes. Load anyway?")) {
+        return;
+      }
       this.loadWeek(isoWeek);
     },
 
     confirmDeleteWeek(isoWeek) {
-      if (confirm(`Delete schedule for ${isoWeek}?`)) this.deleteWeek(isoWeek);
+      if (confirm(`Delete schedule for ${isoWeek}?`)) {
+        this.deleteWeek(isoWeek);
+      }
     },
 
     async deleteWeek(isoWeek) {
@@ -877,16 +991,45 @@ const plannerApp = () => {
       this.savedWeeks = this.savedWeeks.filter(w => w.iso_week !== isoWeek);
       
       if (this.currentWeek === isoWeek) {
-        this.currentWeek = utils.getCurrentIsoWeek();
+        this.currentWeek = this.getCurrentIsoWeek();
         await this.loadWeek(this.currentWeek);
       }
+    },
+
+    // Utilities
+    getCurrentIsoWeek() {
+      const now = new Date();
+      const date = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
+      date.setUTCDate(date.getUTCDate() + 4 - (date.getUTCDay() || 7));
+      const yearStart = new Date(Date.UTC(date.getUTCFullYear(), 0, 1));
+      const weekNumber = Math.ceil((((date - yearStart) / 86400000) + 1) / 7);
+      return `${date.getUTCFullYear()}-W${weekNumber.toString().padStart(2, '0')}`;
+    },
+
+    parseISOWeek(isoString) {
+      const [year, weekPart] = isoString.split('-');
+      const week = parseInt(weekPart.substring(1));
+      const date = new Date(Date.UTC(parseInt(year), 0, 1 + (week - 1) * 7));
+      date.setUTCDate(date.getUTCDate() - (date.getUTCDay() || 7) + 1);
+      return date;
+    },
+
+    getWeekDateRange(date) {
+      const start = new Date(date);
+      const end = new Date(start);
+      end.setUTCDate(start.getUTCDate() + 6);
+      return `${this.formatDate(start)}-${this.formatDate(end)}`;
+    },
+
+    formatDate(date) {
+      return `${(date.getUTCMonth() + 1).toString().padStart(2, '0')}/${date.getUTCDate().toString().padStart(2, '0')}`;
     },
 
     showMessage(message) {
       this.notificationMessage = message;
       this.showNotification = true;
-      clearTimeout(state.notificationTimeout);
-      state.notificationTimeout = setTimeout(() => this.showNotification = false, 3000);
+      clearTimeout(this.notificationTimeout);
+      this.notificationTimeout = setTimeout(() => this.showNotification = false, 3000);
     }
   };
-};
+}
