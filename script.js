@@ -14,14 +14,7 @@ function plannerApp() {
     currentDay: (new Date()).getDay(), plannerTitle: 'Weekly Planner',
     uiConfig: {}, times: [], schedule: [], tasks: [], workoutPlan: [], meals: [],
     groceryBudget: '', groceryList: [], bodyMeasurements: [], financials: [],
-    currentTemplate: null, currentTemplateId: null, savedWeeks: [],
-    cityOptions: [
-      { name: 'London', lat: 51.5074, lon: -0.1278 }, 
-      { name: 'Cairo', lat: 30.0444, lon: 31.2357 }, 
-      { name: 'Cape Town', lat: -33.9249, lon: 18.4241 }, 
-      { name: 'Amsterdam', lat: 52.3676, lon: 4.9041 }, 
-      { name: 'Current Location', lat: null, lon: null }
-    ],
+    currentTemplate: null, currentTemplateId: null, savedWeeks: [], cityOptions: [],
 
     // Initialization
     async init() {
@@ -29,6 +22,7 @@ function plannerApp() {
       this.pendingSync = JSON.parse(localStorage.getItem('planner_pending_sync') || '[]');
       this.currentWeek = this.getCurrentIsoWeek();
       this.dateRange = this.getWeekDateRange(this.parseISOWeek(this.currentWeek));
+      await this.loadCityOptions();
       await this.loadWeek(this.currentWeek, true);
       setInterval(() => { if (!isInitializing && this.hasSignificantChanges()) this.saveData(); }, 30000);
       if (this.isOnline) this.syncPendingData();
@@ -44,54 +38,42 @@ function plannerApp() {
       });
     },
 
-    // Template Management
+    // PocketBase-only template fetching
     async fetchTemplate(templateName = "default") {
       const cacheKey = `template_${templateName}`;
-      try {
-        const cached = localStorage.getItem(cacheKey);
-        if (cached) return JSON.parse(cached);
-      } catch (e) { 
-        console.error("Cache error", e); 
-        localStorage.removeItem(cacheKey); 
+      const cached = localStorage.getItem(cacheKey);
+      if (cached) {
+        const template = JSON.parse(cached);
+        if (template.id && template.id !== 'fallback') {
+          return template;
+        }
+        localStorage.removeItem(cacheKey);
       }
 
-      if (!this.isOnline) {
-        this.showMessage(`Offline: Using fallback template`);
-        return this.getFallbackTemplate();
-      }
-
-      try {
-        const filter = templateName === "default" ? 'is_default=true' : `name="${templateName}"`;
-        const template = await pb.collection('templates').getFirstListItem(filter);
-        localStorage.setItem(cacheKey, JSON.stringify(template));
-        return template;
-      } catch (error) {
-        console.error(`Template fetch error:`, error);
-        this.showMessage(`Template error: Using fallback`);
-        return this.getFallbackTemplate();
-      }
+      const filter = templateName === "default" ? 'is_default=true' : `name="${templateName}"`;
+      const template = await pb.collection('templates').getFirstListItem(filter);
+      localStorage.setItem(cacheKey, JSON.stringify(template));
+      return template;
     },
 
-    getFallbackTemplate() {
-      return {
-        id: 'fallback', name: 'fallback',
-        structure: {
-          ui: {
-            title_default: "Weekly Planner",
-            headers: { 
-              main_table: ['T', 'D', 'ACTIVITY', 'S', 'M', '🔥'], 
-              days: ['M', 'T', 'W', 'T', 'F', 'S', 'S'], 
-              max_cols: Array(7).fill('MAX'), 
-              tasks: ['#', 'P', 'T', 'Task', 'Start', 'Expected', 'Actual', 'Delay', '✓'] 
-            },
-            sections: { tasks: 'TASKS & PROJECT MANAGEMENT', workout: 'WORKOUT', meals: 'MEALS', grocery: 'GROCERY', measurements: 'BODY', financials: 'FINANCIAL' }
-          },
-          prayer_times: [{ label: 'Q', value: '' },{ label: 'F', value: '' },{ label: 'D', value: '' },{ label: 'A', value: '' },{ label: 'M', value: '' },{ label: 'I', value: '' }],
-          schedule: [{ name: 'TOTAL', activities: [{ name: 'DAILY POINTS', max_per_day: 0, max_score: 0 }] }],
-          tasks: { count: 5, fields: ['num', 'priority', 'tag', 'description', 'start_date', 'expected_date', 'actual_date', 'completed'] },
-          workout: [], meals: [], grocery: { budget_default: '', categories: [] }, measurements: [], financials: [], city_default: "London"
-        }
-      };
+    async loadCityOptions() {
+      try {
+        const cities = await pb.collection('cities').getFullList();
+        this.cityOptions = cities.map(city => ({
+          name: city.name,
+          lat: city.latitude,
+          lon: city.longitude
+        }));
+      } catch (error) {
+        console.log('Cities fetch failed, using defaults:', error.message);
+        this.cityOptions = [
+          { name: 'London', lat: 51.5074, lon: -0.1278 },
+          { name: 'Cairo', lat: 30.0444, lon: 31.2357 },
+          { name: 'Cape Town', lat: -33.9249, lon: 18.4241 },
+          { name: 'Amsterdam', lat: 52.3676, lon: 4.9041 },
+          { name: 'Current Location', lat: null, lon: null }
+        ];
+      }
     },
 
     applyTemplateStructure(template) {
@@ -109,8 +91,9 @@ function plannerApp() {
       };
 
       this.times = [...(s.prayer_times || [])];
-      this.schedule = this.buildScheduleFromTemplate(s.schedule || []);
-      this.tasks = Array(s.tasks?.count || 10).fill().map(() => ({
+      this.schedule = this.buildScheduleFromTemplate(s.schedule);
+      
+      this.tasks = Array(s.tasks?.count || 1).fill().map(() => ({
         id: generateId(), num: '', priority: '', tag: '', description: '', 
         startDate: '', expectedDate: '', actualDate: '', completed: ''
       }));
@@ -126,11 +109,14 @@ function plannerApp() {
 
     buildScheduleFromTemplate(templateSchedule) {
       return templateSchedule.map(section => ({
-        id: generateId(), name: section.name,
+        id: generateId(), 
+        name: section.name,
         activities: (section.activities || []).map(activity => ({
-          id: generateId(), name: activity.name,
+          id: generateId(), 
+          name: activity.name,
           days: this.createDaysStructure(activity.days, activity.max_per_day || 1),
-          score: 0, maxScore: activity.max_score || 0,
+          score: 0, 
+          maxScore: activity.max_score || 0,
           streaks: { current: 0, longest: 0 }
         }))
       }));
@@ -139,8 +125,13 @@ function plannerApp() {
     createDaysStructure(specificDays, maxPerDay) {
       const allDays = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
       const days = {};
-      const targetDays = specificDays && Array.isArray(specificDays) ? specificDays : allDays;
-      targetDays.forEach(day => { days[day] = { value: '', max: maxPerDay }; });
+      const targetDays = specificDays && Array.isArray(specificDays) && specificDays.length > 0 
+        ? specificDays.filter(day => allDays.includes(day.toLowerCase())) 
+        : allDays;
+      
+      targetDays.forEach(day => { 
+        days[day] = { value: '', max: Math.max(0, parseInt(maxPerDay) || 1) }; 
+      });
       return days;
     },
 
@@ -148,7 +139,11 @@ function plannerApp() {
       return templateWorkout.map(day => ({
         id: generateId(), name: day.name,
         exercises: this.ensureIds((day.exercises || []).map(ex => ({
-          prefix: '• ', name: ex.name, weight: '', sets: '', reps: '',
+          prefix: '• ', 
+          name: ex.name, 
+          weight: '', 
+          sets: '', 
+          reps: '',
           defaultWeight: ex.default_weight?.toString() || '',
           defaultSets: ex.default_sets?.toString() || '',
           defaultReps: ex.default_reps?.toString() || ''
@@ -162,11 +157,6 @@ function plannerApp() {
 
     // Data Loading
     async loadWeek(isoWeek, isInitLoad = false) {
-      if (!/^\d{4}-W(0[1-9]|[1-4]\d|5[0-3])$/.test(isoWeek)) { 
-        this.showMessage("Invalid week format"); 
-        return; 
-      }
-
       this.showWeekSelector = false; 
       this.currentWeek = isoWeek; 
       this.dateRange = this.getWeekDateRange(this.parseISOWeek(isoWeek));
@@ -182,37 +172,33 @@ function plannerApp() {
 
       this.applyTemplateStructure(template);
       if (plannerRecord) this.overlayUserData(plannerRecord);
-
       this.calculateScores();
-      if (isInitLoad && !this.times.some(t => t.value)) await this.getPrayerTimes();
+      if (isInitLoad && !this.times.some(t => t.value)) {
+        await this.getPrayerTimes();
+      }
       lastSavedState = JSON.stringify(this.getCurrentUserData());
       if (isInitLoad) isInitializing = false;
     },
 
     async fetchPlannerRecord(isoWeek) {
       if (this.isOnline) {
-        try { 
-          return await pb.collection('planners').getFirstListItem(`week_id="${isoWeek}"`); 
-        } catch (e) { 
-          if (e.status !== 404) console.error("PB error:", e); 
+        try {
+          const record = await pb.collection('planners').getFirstListItem(`week_id="${isoWeek}"`);
+          return record;
+        } catch (error) {
+          // PocketBase returns 404 for both missing collection AND no matching records
+          if (error.status === 404) {
+            return null; // Treat as "no record found" - this is normal for new weeks
+          }
+          throw error; // Re-throw other errors (network issues, etc.)
         }
       }
-      
       const local = localStorage.getItem(`planner_${isoWeek}`);
-      if (local) {
-        try { return JSON.parse(local); } 
-        catch(e) { console.error("Parse error", e); }
-      }
-      return null;
+      return local ? JSON.parse(local) : null;
     },
 
     async fetchTemplateById(templateId) {
-      try {
-        return await pb.collection('templates').getOne(templateId);
-      } catch (e) {
-        console.error("Template by ID error:", e);
-        return await this.fetchTemplate("default");
-      }
+      return await pb.collection('templates').getOne(templateId);
     },
 
     overlayUserData(record) {
@@ -510,7 +496,7 @@ function plannerApp() {
     },
 
     getTaskColumnStyle(i) {
-      const widths = ['5mm', '5mm', '5mm', '', '12mm', '12mm', '12mm', '8mm', '5mm'];
+      const widths = this.currentTemplate?.structure?.ui?.task_column_widths || [];
       return widths[i] ? `width:${widths[i]}` : 'text-align:left';
     },
 
@@ -537,13 +523,12 @@ function plannerApp() {
     async selectCity(cityOption) {
       this.city = cityOption.name;
       this.showCitySelector = false;
-      try {
-        if (cityOption.lat === null) await this.getPrayerTimes();
-        else await this.fetchPrayerTimes(cityOption.lat, cityOption.lon);
-        this.saveData();
-      } catch (e) {
-        this.showMessage("Failed to load prayer times");
+      if (cityOption.lat === null) {
+        await this.getPrayerTimes();
+      } else {
+        await this.fetchPrayerTimes(cityOption.lat, cityOption.lon);
       }
+      this.saveData();
     },
 
     // Prayer Times
@@ -554,51 +539,34 @@ function plannerApp() {
         );
         const { latitude, longitude } = position.coords;
         
-        try {
-          const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=10&accept-language=en`);
-          const data = await response.json();
-          this.city = data.address?.city || data.address?.town || data.address?.village || "Current Location";
-        } catch (e) {
-          this.city = "Current Location";
-        }
+        const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=10&accept-language=en`);
+        const data = await response.json();
+        this.city = data.address?.city || data.address?.town || data.address?.village || "Current Location";
         
         await this.fetchPrayerTimes(latitude, longitude);
-      } catch (e) {
-        this.showMessage("Location access failed. Using London");
-        this.city = "London";
-        await this.fetchPrayerTimes(51.5074, -0.1278);
+      } catch (error) {
+        console.log('Geolocation failed:', error.message);
       }
     },
 
     async fetchPrayerTimes(lat, lon) {
-      const today = new Date();
-      const dateKey = `${today.getFullYear()}_${today.getMonth()+1}_${today.getDate()}`;
-      const cacheKey = `prayer_times_${dateKey}_${lat.toFixed(2)}_${lon.toFixed(2)}`;
-      
-      const cached = localStorage.getItem(cacheKey);
-      if (cached) {
-        try {
+      try {
+        const today = new Date();
+        const dateKey = `${today.getFullYear()}_${today.getMonth()+1}_${today.getDate()}`;
+        const cacheKey = `prayer_times_${dateKey}_${lat.toFixed(2)}_${lon.toFixed(2)}`;
+        
+        const cached = localStorage.getItem(cacheKey);
+        if (cached) {
           this.setPrayerTimes(JSON.parse(cached));
           return;
-        } catch (e) {
-          localStorage.removeItem(cacheKey);
         }
-      }
 
-      try {
         const response = await fetch(`https://api.aladhan.com/v1/calendar/${today.getFullYear()}/${today.getMonth()+1}?latitude=${lat}&longitude=${lon}&method=2`);
-        if (!response.ok) throw new Error(`API error: ${response.status}`);
-        
         const data = await response.json();
-        if (data.code === 200 && data.data?.[today.getDate()-1]?.timings) {
-          localStorage.setItem(cacheKey, JSON.stringify(data.data[today.getDate()-1].timings));
-          this.setPrayerTimes(data.data[today.getDate()-1].timings);
-        } else {
-          throw new Error("Invalid prayer time data");
-        }
-      } catch (e) {
-        this.showMessage("Prayer times fetch failed");
-        this.setPrayerTimes({Fajr:"05:30", Dhuhr:"12:30", Asr:"15:45", Maghrib:"18:30", Isha:"20:00"});
+        localStorage.setItem(cacheKey, JSON.stringify(data.data[today.getDate()-1].timings));
+        this.setPrayerTimes(data.data[today.getDate()-1].timings);
+      } catch (error) {
+        console.log('Prayer times fetch failed:', error.message);
       }
     },
 
@@ -660,7 +628,6 @@ function plannerApp() {
           activity.score = activityScore;
           activity.streaks = activity.streaks || {current: 0, longest: 0};
           
-          // Calculate current streak
           const todayIndex = this.currentDay === 0 ? 6 : this.currentDay - 1;
           let currentStreak = 0;
           for (let i = 0; i < 7; i++) {
@@ -677,7 +644,6 @@ function plannerApp() {
         });
       });
 
-      // Update TOTAL section
       const totalSection = this.schedule.find(s => s.name === 'TOTAL');
       if (totalSection?.activities?.[0]) {
         const totalActivity = totalSection.activities[0];
@@ -722,29 +688,28 @@ function plannerApp() {
       this.saveStatus = 'saving';
       
       this.saveTimeout = setTimeout(async () => {
-        try {
-          this.calculateScores();
-          const userData = this.getCurrentUserData();
-          
-          localStorage.setItem(`planner_${this.currentWeek}`, JSON.stringify(userData));
-          
-          if (this.isOnline) {
+        this.calculateScores();
+        const userData = this.getCurrentUserData();
+        
+        localStorage.setItem(`planner_${this.currentWeek}`, JSON.stringify(userData));
+        
+        if (this.isOnline) {
+          try {
             await this.saveToPocketbase(this.currentWeek, userData);
             this.pendingSync = this.pendingSync.filter(item => 
               !(item.weekId === this.currentWeek && item.operation !== 'delete')
             );
-          } else {
+          } catch (error) {
+            console.log('PocketBase save failed:', error.message);
             this.addToPendingSync(this.currentWeek, userData);
           }
-          
-          localStorage.setItem('planner_pending_sync', JSON.stringify(this.pendingSync));
-          lastSavedState = JSON.stringify(userData);
-          this.saveStatus = 'saved';
-        } catch (e) {
-          this.saveStatus = 'error';
-          this.showMessage("Save error: " + e.message);
-          setTimeout(() => this.saveStatus = 'saved', 3000);
+        } else {
+          this.addToPendingSync(this.currentWeek, userData);
         }
+        
+        localStorage.setItem('planner_pending_sync', JSON.stringify(this.pendingSync));
+        lastSavedState = JSON.stringify(userData);
+        this.saveStatus = 'saved';
       }, 500);
     },
 
@@ -783,7 +748,8 @@ function plannerApp() {
           localStorage.setItem('planner_pending_sync', 
             JSON.stringify(remaining.filter(i => i.timestamp !== item.timestamp))
           );
-        } catch (e) {
+        } catch (error) {
+          console.log('Sync failed:', error.message);
           this.pendingSync.push(item);
         }
       }
@@ -797,11 +763,11 @@ function plannerApp() {
       try {
         const existing = await pb.collection('planners').getFirstListItem(`week_id="${weekId}"`);
         await pb.collection('planners').update(existing.id, userData);
-      } catch (e) {
-        if (e.status === 404) {
+      } catch (error) {
+        if (error.status === 404) {
           await pb.collection('planners').create(userData);
         } else {
-          throw e;
+          throw error;
         }
       }
     },
@@ -810,8 +776,8 @@ function plannerApp() {
       try {
         const existing = await pb.collection('planners').getFirstListItem(`week_id="${weekId}"`);
         await pb.collection('planners').delete(existing.id);
-      } catch (e) {
-        if (e.status !== 404) throw e;
+      } catch (error) {
+        if (error.status !== 404) throw error;
       }
     },
 
@@ -842,8 +808,8 @@ function plannerApp() {
           records.forEach(record => 
             addWeek(record.week_id, record.date_range, 'pocketbase', record.week_id === currentIso)
           );
-        } catch (e) {
-          console.error("Fetch weeks error:", e);
+        } catch (error) {
+          console.log('Fetch saved weeks failed:', error.message);
         }
       }
       
@@ -851,12 +817,8 @@ function plannerApp() {
         const key = localStorage.key(i);
         if (key.startsWith('planner_') && !key.includes('pending_sync') && !key.startsWith('planner_template_')) {
           const iso = key.replace('planner_', '');
-          try {
-            const data = JSON.parse(localStorage.getItem(key));
-            addWeek(iso, data.date_range, 'local', iso === currentIso);
-          } catch (e) {
-            // Skip invalid entries
-          }
+          const data = JSON.parse(localStorage.getItem(key));
+          addWeek(iso, data.date_range, 'local', iso === currentIso);
         }
       }
       
@@ -887,8 +849,8 @@ function plannerApp() {
       if (this.isOnline) {
         try {
           await this.deleteFromPocketbase(isoWeek);
-        } catch (e) {
-          this.addToPendingSync(isoWeek, null, 'delete');
+        } catch (error) {
+          console.log('Delete failed:', error.message);
         }
       } else {
         this.addToPendingSync(isoWeek, null, 'delete');
@@ -913,7 +875,6 @@ function plannerApp() {
     },
 
     parseISOWeek(isoString) {
-      if (!/^\d{4}-W(0[1-9]|[1-4]\d|5[0-3])$/.test(isoString)) return new Date();
       const [year, weekPart] = isoString.split('-');
       const week = parseInt(weekPart.substring(1));
       const date = new Date(Date.UTC(parseInt(year), 0, 1 + (week - 1) * 7));
@@ -936,7 +897,7 @@ function plannerApp() {
       this.notificationMessage = message;
       this.showNotification = true;
       clearTimeout(this.notificationTimeout);
-      this.notificationTimeout = setTimeout(() => this.showNotification = false, 5000);
+      this.notificationTimeout = setTimeout(() => this.showNotification = false, 3000);
     }
   };
 }
