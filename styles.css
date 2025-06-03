@@ -8,7 +8,7 @@ body { display: flex; justify-content: flex-start; align-items: flex-start; min-
 /* Card Layout */
 .card { width: 210mm; height: 297mm; padding: 5mm; box-shadow: 0 4px 6px rgba(0,0,0,0.1); background-color: white; position: relative; margin: 0 auto; }
 
-/* Table Layout */
+/* Main Table Layout */
 .dc { width: 3.5mm; text-align: center; padding: 0; height: 3mm; }
 .ac { width: 88mm; text-align: left; padding-left: 1mm; height: 3mm; }
 table { table-layout: fixed; width: 200mm; border-collapse: collapse; }
@@ -20,6 +20,86 @@ tr.total td { background-color: #e6e6e6 !important; }
 td.dc, th.dc { border-right: 1px solid #e0e0e0; }
 td.dc:nth-child(4n+5), th.dc:nth-child(4n+5) { border-right: 1px solid #ccc; }
 .current-day { background-color: #fff8e1 !important; }
+
+/* Task Table Specific Styling with Proper Borders */
+.section table {
+  border-collapse: collapse;
+  width: 100%;
+  margin-top: 1mm;
+}
+
+/* Task Table Headers with Borders */
+.section table th {
+  background-color: #e6e6e6 !important;
+  border-right: 1px solid #ccc;
+  border-bottom: 1px solid #ccc;
+  font-weight: bold;
+  text-align: center;
+  padding: 1mm 0.5mm;
+}
+
+.section table th:last-child {
+  border-right: none;
+}
+
+/* Task Table Cells with Borders */
+.section table td {
+  border-right: 1px solid #e0e0e0;
+  border-bottom: 1px solid #f0f0f0;
+  padding: 0.5mm;
+  vertical-align: middle;
+}
+
+.section table td:last-child {
+  border-right: none;
+}
+
+/* Task Table Column Widths - SUPER WIDE TASK COLUMN */
+.section table th:nth-child(1), .section table td:nth-child(1) { 
+  width: 4mm; 
+  text-align: center; 
+}
+
+.section table th:nth-child(2), .section table td:nth-child(2) { 
+  width: 4mm; 
+  text-align: center; 
+}
+
+.section table th:nth-child(3), .section table td:nth-child(3) { 
+  width: 4mm; 
+  text-align: center; 
+}
+
+.section table th:nth-child(4), .section table td:nth-child(4) { 
+  width: 130mm; 
+  text-align: left;
+  padding-left: 1mm;
+}
+
+.section table th:nth-child(5), .section table td:nth-child(5) { 
+  width: 8mm; 
+  text-align: center; 
+}
+
+.section table th:nth-child(6), .section table td:nth-child(6) { 
+  width: 8mm; 
+  text-align: center; 
+}
+
+.section table th:nth-child(7), .section table td:nth-child(7) { 
+  width: 8mm; 
+  text-align: center; 
+}
+
+.section table th:nth-child(8), .section table td:nth-child(8) { 
+  width: 6mm; 
+  text-align: center; 
+}
+
+.section table th:nth-child(9), .section table td:nth-child(9) { 
+  width: 4mm; 
+  text-align: center; 
+}
 
 /* Input Styling */
 .mini-input { 
@@ -36,7 +116,7 @@ tr:has(.mini-input:focus) td { background-color: #f0f7ff !important; }
 .time-value-input { width: 9mm; }
 .task-description-input { text-align: left; }
 .date-input { 
-  width: 12mm; font-size: 6pt; background-color: #f8f9fa;
+  width: 8mm; font-size: 6pt; background-color: #f8f9fa;
   border: 1px solid #dee2e6; border-radius: 2px;
 }
 .date-input:focus {
@@ -46,7 +126,7 @@ tr:has(.mini-input:focus) td { background-color: #f0f7ff !important; }
 
 /* Inline Input Styling */
 .inline-input { 
-  width: 8mm; margin-left: 1mm; vertical-align: middle; 
+  width: 6mm; margin-left: 1mm; vertical-align: middle; 
   background-color: #f8f9fa; border: 1px solid #dee2e6; border-radius: 2px;
 }
 
@@ -103,7 +183,7 @@ tr:has(.mini-input:focus) td { background-color: #f0f7ff !important; }
   font-size: 12px; font-weight: bold; z-index: 1100; 
   background-color: #f8d7da; color: #721c24; display: none; 
 }
-#notification.show { display: block; animation: fadeOut 5s forwards; }
+#notification.show { display: block; animation: fadeOut 3s forwards; }
 @keyframes fadeOut { 0%, 70% { opacity: 1; } 100% { opacity: 0; } }
 
 /* Typography */
@@ -142,7 +222,7 @@ tr:has(.mini-input:focus) td { background-color: #f0f7ff !important; }
 .ml-1 { margin-left: 1mm; }
 .p-1 { padding: 1mm; }
 
-/* Table Borders */
+/* Main Schedule Table Borders */
 tr:first-child td { border-top: 1px solid #ccc; }
 td.bold:not(:empty) { border-left: 2px solid #aaa; }
 tr:has(td.bold:not(:empty)):not(:first-child) { border-top: 2px solid #f0f0f0; }
@@ -204,17 +284,6 @@ tr:has(.completed-task) td input:not(.completed-task) { text-decoration: line-th
   font-size: 7pt; padding: 0 1mm; outline: none; 
   box-shadow: inset 0 0 0 1px #4299e1; resize: vertical; 
 }
-
-/* Task Table Column Widths */
-.section table th:nth-child(1), .section table td:nth-child(1) { width: 5mm; }
-.section table th:nth-child(2), .section table td:nth-child(2) { width: 5mm; }
-.section table th:nth-child(3), .section table td:nth-child(3) { width: 5mm; }
-.section table th:nth-child(4), .section table td:nth-child(4) { width: 65mm; }
-.section table th:nth-child(5), .section table td:nth-child(5) { width: 12mm; }
-.section table th:nth-child(6), .section table td:nth-child(6) { width: 12mm; }
-.section table th:nth-child(7), .section table td:nth-child(7) { width: 12mm; }
-.section table th:nth-child(8), .section table td:nth-child(8) { width: 8mm; }
-.section table th:nth-child(9), .section table td:nth-child(9) { width: 5mm; }
 
 /* Print Styles */
 @media print {
