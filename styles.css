@@ -24,6 +24,57 @@ tr:has(.mini-input:focus) td { background-color: #f0f7ff !important; }
 .mini-input.grocery-budget-input { width:8mm; margin-left:1mm; vertical-align:middle; }
 .mini-input.measurement-value-input { width:8mm; }
 .mini-input.financial-value-input { width:8mm; }
+
+/* Enhanced Date Input Styling */
+.mini-input.date-input { 
+  width: 12mm; 
+  font-size: 6pt; 
+  text-align: center;
+  background-color: #f8f9fa;
+  border: 1px solid #dee2e6;
+  border-radius: 2px;
+}
+.mini-input.date-input:focus {
+  background-color: #fff !important;
+  border-color: #80bdff !important;
+  box-shadow: 0 0 0 0.2rem rgba(0,123,255,.25) !important;
+}
+
+/* Task Status Styling */
+.task-completed { 
+  background-color: #d4edda !important; 
+  opacity: 0.7;
+}
+.task-completed input { 
+  color: #6c757d; 
+  text-decoration: line-through; 
+}
+.task-delayed { 
+  background-color: #f8d7da !important; 
+}
+.task-early { 
+  background-color: #d1ecf1 !important; 
+}
+
+/* Delay Cell Styling */
+.delay-cell { 
+  font-size: 6pt; 
+  font-weight: bold; 
+  text-align: center;
+}
+.delay-negative { 
+  color: #155724; 
+  background-color: #d4edda !important; 
+} /* Early - Green */
+.delay-positive { 
+  color: #721c24; 
+  background-color: #f8d7da !important; 
+} /* Delayed - Red */
+.delay-zero { 
+  color: #856404; 
+  background-color: #fff3cd !important; 
+} /* On Time - Yellow */
+
 .section { margin-top: 2mm; }
 .list { padding-left: 2mm; margin-top: 0.5mm; list-style-type: disc; }
 .list-item { margin-bottom: 0.5mm; line-height: 1; }
@@ -74,8 +125,6 @@ tr:has(td.bold:not(:empty)):not(:first-child) { border-top: 2px solid #f0f0f0; }
 .form-label { font-weight: bold; margin-right: 1mm; cursor: pointer; }
 .form-label:hover { background-color: #f0f7ff; }
 .form-field { display: inline-flex; align-items: center; margin-right: 2mm; }
-.task-completed { background-color: #f8f8f8; }
-.task-completed input { color: #888; text-decoration: line-through; }
 .completed-task { background-color: #d4edda !important; color: #155724 !important; }
 tr:has(.completed-task) td { text-decoration: line-through; color: #6c757d; }
 tr:has(.completed-task) td input:not(.completed-task) { text-decoration: line-through; color: #6c757d; }
@@ -95,6 +144,18 @@ tr:has(.completed-task) td input:not(.completed-task) { text-decoration: line-th
 .editable:hover { background-color: #f0f7ff; }
 .inline-edit-input { width: 100%; height: 100%; border: none; background-color: #fff; font-size: 7pt; padding: 0 1mm; outline: none; box-shadow: inset 0 0 0 1px #4299e1; }
 .inline-edit-textarea { width: 100%; min-height: 3mm; border: none; background-color: #fff; font-size: 7pt; padding: 0 1mm; outline: none; box-shadow: inset 0 0 0 1px #4299e1; resize: vertical; }
+
+/* Project Management Table Adjustments */
+.section table th:nth-child(1), .section table td:nth-child(1) { width: 5mm; } /* # */
+.section table th:nth-child(2), .section table td:nth-child(2) { width: 5mm; } /* Priority */
+.section table th:nth-child(3), .section table td:nth-child(3) { width: 5mm; } /* Tag */
+.section table th:nth-child(4), .section table td:nth-child(4) { width: 65mm; } /* Task Description */
+.section table th:nth-child(5), .section table td:nth-child(5) { width: 12mm; } /* Start Date */
+.section table th:nth-child(6), .section table td:nth-child(6) { width: 12mm; } /* Expected Date */
+.section table th:nth-child(7), .section table td:nth-child(7) { width: 12mm; } /* Actual Date */
+.section table th:nth-child(8), .section table td:nth-child(8) { width: 8mm; } /* Delay */
+.section table th:nth-child(9), .section table td:nth-child(9) { width: 5mm; } /* Completed */
+
 @media print {
   html, body { width: 210mm; height: 297mm; background-color: white; margin: 0; padding: 0; }
   .card { box-shadow: none; }
