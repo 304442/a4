@@ -244,7 +244,7 @@ const PLANNER_SCHEMA = {
 };
 
 // Auto-populate from single source of truth
-let pb, url = '/', email = 'admin@example.com', pass = 'password123';
+let pb, url = '/', email = 'admin@example.com', pass = 'unifiedpassword';
 const collEditor = document.getElementById('collections');
 const seedEditor = document.getElementById('seeds');
 const output = document.getElementById('output');
@@ -294,7 +294,7 @@ const healthCheck = async () => {
   setProgress(10, 'Testing connection...');
   url = document.getElementById('url').value || '/';
   email = document.getElementById('email').value || 'admin@example.com';
-  pass = document.getElementById('pass').value || 'password123';
+  pass = document.getElementById('pass').value || 'unifiedpassword';
   
   try {
     pb = new PocketBase(url);
