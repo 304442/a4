@@ -16,10 +16,10 @@ function plannerApp() {
   const getMinimalFallbackTemplate = () => ({
     template_name: "fallback",
     plannerTitle_default: "Weekly Planner",
-    uiConfig_structure: { mainTableHeaders: ['T', 'D', 'ACTIVITY', 'S', 'M', '🔥'], dayHeaders: ['M', 'T', 'W', 'T', 'F', 'S', 'S'], maxHeaders: Array(7).fill('MAX'), taskHeaders: ['#', 'P', 'T', 'Task', 'D', '✓'], sectionTitles: { tasks: 'TASKS', workout: 'WORKOUT', meals: 'MEALS', grocery: 'GROCERY', measurements: 'BODY', financials: 'FINANCIAL' }},
+    uiConfig_structure: { mainTableHeaders: ['T', 'D', 'ACTIVITY', 'S', 'M', '🔥'], dayHeaders: ['M', 'T', 'W', 'T', 'F', 'S', 'S'], maxHeaders: Array(7).fill('MAX'), taskHeaders: ['#', 'P', 'T', 'Task', 'Start', 'Expected', 'Actual', 'Delay', '✓'], sectionTitles: { tasks: 'TASKS & PROJECT MANAGEMENT', workout: 'WORKOUT', meals: 'MEALS', grocery: 'GROCERY', measurements: 'BODY', financials: 'FINANCIAL' }},
     times_structure: [{ label: 'Q', value: '' },{ label: 'F', value: '' },{ label: 'D', value: '' },{ label: 'A', value: '' },{ label: 'M', value: '' },{ label: 'I', value: '' }],
     schedule_structure: ensureDeepIds([{ name: 'TOTAL', id: generateId(), activities: ensureIds([{ name: 'DAILY POINTS', days: { mon:{value:'0',max:0}, tue:{value:'0',max:0}, wed:{value:'0',max:0}, thu:{value:'0',max:0}, fri:{value:'0',max:0}, sat:{value:'0',max:0}, sun:{value:'0',max:0}}, score:0, maxScore:0, streaks:{current:0, longest:0}}]) }]),
-    tasks_structure: { count: 5, defaultFields: { num: '', priority: '', tag: '', description: '', date: '', completed: '' }},
+    tasks_structure: { count: 5, defaultFields: { num: '', priority: '', tag: '', description: '', startDate: '', expectedDate: '', actualDate: '', completed: '' }},
     workoutPlan_structure: [],
     meals_structure: [],
     groceryBudget_default: '',
@@ -74,7 +74,7 @@ function plannerApp() {
       this.times = JSON.parse(JSON.stringify(templateData.times_structure || []));
       this.schedule = ensureDeepIds(JSON.parse(JSON.stringify(templateData.schedule_structure || [])));
       const taskStructure = templateData.tasks_structure || { count: 10, defaultFields: {}};
-      this.tasks = Array(taskStructure.count).fill().map(() => ({ id: generateId(), ...taskStructure.defaultFields, num:'', priority:'', tag:'', description:'', date:'', completed:'' }));
+      this.tasks = Array(taskStructure.count).fill().map(() => ({ id: generateId(), ...taskStructure.defaultFields, num:'', priority:'', tag:'', description:'', startDate:'', expectedDate:'', actualDate:'', completed:'' }));
       this.workoutPlan = ensureDeepIds(JSON.parse(JSON.stringify(templateData.workoutPlan_structure || []))).map(day => ({...day, exercises: ensureIds(day.exercises||[])}));
       this.meals = ensureIds(JSON.parse(JSON.stringify(templateData.meals_structure || [])));
       this.groceryBudget = templateData.groceryBudget_default || '';
@@ -141,7 +141,40 @@ function plannerApp() {
       input.addEventListener('blur', cleanupAndSave); input.addEventListener('keydown', handleKey);
     },
 
-    toggleTaskCompletion(task) { task.completed = task.completed === '✓' ? '☐' : '✓'; this.saveData(); },
+    // Project Management Functions
+    getTaskDelay(task) {
+      if (!task.expectedDate || !task.actualDate) return 0;
+      const expected = new Date(task.expectedDate);
+      const actual = new Date(task.actualDate);
+      const diffTime = actual - expected;
+      return Math.ceil(diffTime / (1000 * 60 * 60 * 24)); // Convert to days
+    },
+
+    calculateTaskDelay(task) {
+      // This function is called when dates change to trigger reactivity
+      const delay = this.getTaskDelay(task);
+      task._delay = delay; // Store delay for reactivity
+      return delay;
+    },
+
+    formatDelay(days) {
+      if (days === 0) return '⏰';
+      if (days > 0) return `+${days}d`;
+      if (days < 0) return `${days}d`;
+      return '';
+    },
+
+    toggleTaskCompletion(task) { 
+      task.completed = task.completed === '✓' ? '☐' : '✓'; 
+      // Auto-set actual completion date when marking as complete
+      if (task.completed === '✓' && !task.actualDate) {
+        const today = new Date();
+        task.actualDate = today.toISOString().split('T')[0];
+        this.calculateTaskDelay(task);
+      }
+      this.saveData(); 
+    },
+
     showErrorMessage(message) { this.notificationMessage = message; this.showNotification = true; clearTimeout(this.notificationTimeout); this.notificationTimeout = setTimeout(() => this.showNotification = false, 5000); },
     validateValue(value, isNumber = false, min = null, max = null) { const sVal = String(value || ''); if (sVal.trim()==='') return ''; if(isNumber){ const num=parseFloat(sVal); if(isNaN(num)) return ''; if(min!==null && num<min) return min.toString(); if(max!==null && num>max) return max.toString(); return num.toString(); } return sVal; },
     getCurrentIsoWeek:() => { const n=new Date(),d=new Date(Date.UTC(n.getFullYear(),n.getMonth(),n.getDate())); d.setUTCDate(d.getUTCDate()+4-(d.getUTCDay()||7)); const ys=new Date(Date.UTC(d.getUTCFullYear(),0,1)); return `${d.getUTCFullYear()}-W${Math.ceil((((d-ys)/864e5)+1)/7).toString().padStart(2,'0')}`; },
@@ -221,11 +254,19 @@ function plannerApp() {
             return {
                 id: taskData.id || generateId(),
                 ...baseTaskStruct.defaultFields, ...taskData,
-                num: this.validateValue(taskData.num), priority: this.validateValue(taskData.priority),
-                tag: this.validateValue(taskData.tag), description: this.validateValue(taskData.description),
-                date: this.validateValue(taskData.date), completed: this.validateValue(taskData.completed)
+                num: this.validateValue(taskData.num), 
+                priority: this.validateValue(taskData.priority),
+                tag: this.validateValue(taskData.tag), 
+                description: this.validateValue(taskData.description),
+                startDate: this.validateValue(taskData.startDate),
+                expectedDate: this.validateValue(taskData.expectedDate),
+                actualDate: this.validateValue(taskData.actualDate),
+                completed: this.validateValue(taskData.completed)
             };
         });
+
+        // Calculate delays for all tasks after loading
+        this.tasks.forEach(task => this.calculateTaskDelay(task));
 
         this.workoutPlan = ensureDeepIds(JSON.parse(JSON.stringify(savedData.workoutPlan || baseTemplate.workoutPlan_structure || []))).map(d => ({...d, exercises: ensureIds(d.exercises||[])}));
         this.meals = ensureIds(JSON.parse(JSON.stringify(savedData.meals || baseTemplate.meals_structure || [])));
