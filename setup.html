@@ -3,1739 +3,680 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PB Setup: Enhanced Weekly Planner [BULLETPROOF]</title>
+    <title>Universal PocketBase Setup</title>
     <script src="https://unpkg.com/pocketbase@latest/dist/pocketbase.umd.js"></script>
     <style>
         *{margin:0;padding:0;box-sizing:border-box;}
-        body{font-family:sans-serif;font-size:12px;line-height:1.2;padding:5px;background:#f0f0f0;color:#333;}
-        .c{max-width:1200px;width:100%;background:white;padding:8px;border-radius:3px;box-shadow:0 1px 4px rgba(0,0,0,0.1);}
-        h1{color:#333;border-bottom:1px solid #ccc;padding-bottom:3px;margin-bottom:5px;font-size:14px;font-weight:600;}
-        h2{color:#555;border-bottom:1px solid #ddd;padding-bottom:2px;margin:8px 0 4px 0;font-size:13px;font-weight:500;}
-        h3{color:#666;margin:6px 0 3px 0;font-size:12px;font-weight:500;}
-        p{font-size:11px;margin-bottom:3px;} .warn{color:red;font-weight:bold;}
-        button{padding:4px 8px;background:#007bff;color:white;border:0;border-radius:2px;cursor:pointer;font-size:11px;margin-bottom:3px;margin-right:3px;}
+        body{font-family:monospace;font-size:11px;line-height:1.1;padding:4px;background:#f9f9f9;color:#333;}
+        .c{max-width:1400px;background:white;padding:6px;border-radius:2px;box-shadow:0 1px 3px rgba(0,0,0,0.1);}
+        h1{font-size:14px;font-weight:600;margin-bottom:4px;border-bottom:1px solid #ddd;padding-bottom:2px;}
+        h2{font-size:12px;font-weight:500;margin:6px 0 3px 0;color:#555;}
+        button{padding:3px 6px;background:#007bff;color:white;border:0;border-radius:2px;cursor:pointer;font-size:10px;margin:1px;}
         button:disabled{background:#ccc;} button:hover:not(:disabled){background:#0056b3;}
-        button.help{background:#28a745;} button.help:hover{background:#1e7e34;}
-        button.validate{background:#ffc107;color:#333;} button.validate:hover{background:#d39e00;}
-        button.danger{background:#dc3545;} button.danger:hover{background:#c82333;}
-        button.preflight{background:#6f42c1;} button.preflight:hover{background:#5a32a3;}
-        button.reset{background:#6c757d;} button.reset:hover{background:#545b62;}
-        button.export{background:#17a2b8;} button.export:hover{background:#138496;}
+        button.danger{background:#dc3545;} button.export{background:#17a2b8;} button.reset{background:#6c757d;}
         
-        .editor-section{background:#f8f9fa;border:1px solid #dee2e6;border-radius:3px;padding:6px;margin:4px 0;}
-        .editor-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;}
-        .editor-controls{display:flex;gap:2px;}
-        
-        textarea.editor{width:100%;min-height:200px;font-family:monospace;font-size:10px;border:1px solid #ccc;border-radius:2px;padding:4px;background:#fff;resize:vertical;}
-        textarea.editor:focus{outline:none;border-color:#007bff;box-shadow:0 0 3px rgba(0,123,255,0.25);}
-        
-        .validation-status{padding:4px;border-radius:2px;margin-top:3px;font-size:10px;}
-        .validation-valid{background:#d4edda;border:1px solid #c3e6cb;color:#155724;}
-        .validation-invalid{background:#f8d7da;border:1px solid #f5c6cb;color:#721c24;}
-        .validation-warning{background:#fff3cd;border:1px solid #ffeaa7;color:#856404;}
-        
-        .two-column{display:grid;grid-template-columns:1fr 1fr;gap:6px;}
-        
-        input{width:100%;padding:3px;border:1px solid #ccc;border-radius:2px;font-size:11px;}
+        .row{display:flex;gap:4px;margin:3px 0;} .col{flex:1;}
+        .editor{width:100%;min-height:150px;font-family:monospace;font-size:10px;border:1px solid #ccc;border-radius:2px;padding:3px;resize:vertical;}
+        .editor:focus{outline:none;border-color:#007bff;}
+        input{width:100%;padding:2px;border:1px solid #ccc;border-radius:2px;font-size:10px;}
         input:focus{outline:none;border-color:#007bff;}
-        label{display:block;margin-bottom:2px;font-weight:500;font-size:10px;}
+        label{display:block;font-weight:500;font-size:9px;margin-bottom:1px;}
         
-        #out{margin-top:6px;padding:4px;background:#222;color:#eee;border-radius:2px;white-space:pre-wrap;font-family:monospace;font-size:9px;max-height:35vh;overflow-y:auto;}
-        .ls{color:lime;font-weight:bold;} .le{color:salmon;font-weight:bold;} .li{color:cyan;} .lw{color:yellow;} .ld{color:gray;} .lg{color:#90EE90;}
-        .status-bar{background:#f8f9fa;border:1px solid #dee2e6;padding:4px;margin-bottom:4px;border-radius:2px;font-size:10px;}
-        .progress-bar{width:100%;height:3px;background:#e9ecef;border-radius:1px;overflow:hidden;margin:2px 0;}
-        .progress-fill{height:100%;background:#007bff;transition:width 0.3s ease;}
-        .critical-box{background:#f5c6cb;padding:6px;border-radius:3px;border-left:3px solid #dc3545;color:#721c24;margin:4px 0;font-size:11px;}
+        .status{padding:2px 4px;border-radius:2px;font-size:9px;margin-top:2px;}
+        .valid{background:#d4edda;color:#155724;} .invalid{background:#f8d7da;color:#721c24;} .warning{background:#fff3cd;color:#856404;}
         
-        .stats{display:flex;gap:8px;padding:4px;background:#e9ecef;border-radius:2px;margin:4px 0;font-size:10px;}
-        .stat{text-align:center;} .stat-value{font-weight:bold;font-size:12px;display:block;}
+        .stats{display:flex;gap:8px;padding:3px;background:#e9ecef;border-radius:2px;margin:3px 0;font-size:9px;}
+        .stat{text-align:center;} .stat-val{font-weight:bold;font-size:11px;display:block;}
         
-        .modal{display:none;position:fixed;z-index:1000;left:0;top:0;width:100%;height:100%;background-color:rgba(0,0,0,0.5);}
-        .modal-content{background-color:#fefefe;margin:1% auto;padding:10px;border:1px solid #888;width:95%;max-width:1000px;border-radius:3px;max-height:95vh;overflow-y:auto;}
-        .close{color:#aaa;float:right;font-size:20px;font-weight:bold;cursor:pointer;line-height:1;}
-        .close:hover,.close:focus{color:#000;text-decoration:none;}
-        .modal h2{font-size:16px;margin-bottom:8px;color:#333;} .modal h3{font-size:14px;margin:8px 0 4px 0;color:#555;}
-        .modal h4{font-size:12px;margin:6px 0 3px 0;color:#666;} .modal p{font-size:11px;margin-bottom:4px;}
-        .modal pre{background:#f8f9fa;padding:6px;border-radius:2px;overflow-x:auto;font-size:9px;margin:3px 0;}
-        .modal code{background:#f1f1f1;padding:1px 3px;border-radius:2px;font-family:monospace;font-size:10px;}
-        .help-section{margin:6px 0;} .help-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:4px 0;}
-        .help-item{background:#f8f9fa;padding:4px;border-radius:2px;border:1px solid #dee2e6;}
-        .help-warning{background:#fff3cd;padding:4px;border-radius:2px;color:#856404;font-size:10px;margin:3px 0;}
-        .help-info{background:#d1ecf1;padding:4px;border-radius:2px;color:#0c5460;font-size:10px;margin:3px 0;}
+        #out{margin-top:4px;padding:3px;background:#222;color:#eee;border-radius:2px;font-family:monospace;font-size:8px;max-height:200px;overflow-y:auto;}
+        .le{color:#ff6b6b;} .ls{color:#51cf66;} .lw{color:#ffd43b;} .li{color:#74c0fc;}
+        
+        .progress{width:100%;height:2px;background:#e9ecef;border-radius:1px;margin:2px 0;} .progress-fill{height:100%;background:#007bff;transition:width 0.3s;}
     </style>
 </head>
 <body>
     <div class="c">
-        <h1>🛡️ PB Enhanced Weekly Planner Setup [BULLETPROOF EDITOR]</h1>
-        <div class="status-bar" id="statusBar">🔧 System Ready | Edit collections and seed data below</div>
-        <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+        <h1>🚀 Universal PocketBase Setup</h1>
         
-        <div class="critical-box">
-            <strong>⚠️ CRITICAL:</strong> Change default admin credentials before production!<br>
-            <strong>📋 EDITOR:</strong> Modify collections and seed data below, then run setup
+        <div class="stats">
+            <div class="stat"><span class="stat-val" id="collCount">0</span>Collections</div>
+            <div class="stat"><span class="stat-val" id="fieldCount">0</span>Fields</div>
+            <div class="stat"><span class="stat-val" id="seedCount">0</span>Seeds</div>
+            <div class="stat"><span class="stat-val" id="healthStat">❓</span>Health</div>
         </div>
         
-        <div style="margin-bottom:4px;">
-            <button id="preflightCheck" class="preflight">🔍 Preflight Check</button>
-            <button id="runFullSetup" disabled>🚀 Run Full Setup</button>
-            <button id="runSchemaOnly" disabled>📋 Schema Only</button>
-            <button id="runSeedOnly" disabled>🌱 Seed Data Only</button>
-            <button id="validateSetup" class="validate" disabled>✅ Validate Setup</button>
-            <button id="emergencyReset" class="danger">🆘 Emergency Reset</button>
-            <button id="showHelp" class="help">📚 Help & Docs</button>
-        </div>
-
-        <div class="stats" id="configStats">
-            <div class="stat">
-                <span class="stat-value" id="collectionCount">2</span>
-                <span>Collections</span>
+        <div class="progress"><div class="progress-fill" id="progress" style="width:0%"></div></div>
+        
+        <div class="row">
+            <div class="col">
+                <label for="url">PocketBase URL:</label>
+                <input id="url" value="/" placeholder="http://localhost:8090">
             </div>
-            <div class="stat">
-                <span class="stat-value" id="fieldCount">17</span>
-                <span>Total Fields</span>
+            <div class="col">
+                <label for="email">Admin Email:</label>
+                <input id="email" value="admin@example.com">
             </div>
-            <div class="stat">
-                <span class="stat-value" id="seedRecordCount">1</span>
-                <span>Seed Records</span>
-            </div>
-            <div class="stat">
-                <span class="stat-value" id="validationStatus">✅</span>
-                <span>Validation</span>
-            </div>
-            <div class="stat">
-                <span class="stat-value" id="healthStatus">❓</span>
-                <span>PB Health</span>
+            <div class="col">
+                <label for="pass">Password:</label>
+                <input id="pass" type="password" value="password123">
             </div>
         </div>
-
-        <!-- Collections Editor -->
-        <div class="editor-section">
-            <div class="editor-header">
-                <h2>📋 Collections Schema Editor</h2>
-                <div class="editor-controls">
-                    <button id="validateCollections" class="validate">✅ Validate</button>
-                    <button id="formatCollections">🎨 Format JSON</button>
-                    <button id="resetCollections" class="reset">🔄 Reset</button>
-                    <button id="exportCollections" class="export">💾 Export</button>
-                </div>
-            </div>
-            <textarea id="collectionsEditor" class="editor" placeholder="Loading collections schema..."></textarea>
-            <div id="collectionsValidation" class="validation-status validation-valid">Ready to validate</div>
+        
+        <div class="row">
+            <button id="health">🔍 Health Check</button>
+            <button id="setup" disabled>🚀 Full Setup</button>
+            <button id="schema" disabled>📋 Schema Only</button>
+            <button id="seed" disabled>🌱 Seed Only</button>
+            <button id="validate" disabled>✅ Validate</button>
+            <button id="reset" class="danger">🗑️ Reset</button>
+            <button id="export" class="export">💾 Export</button>
+            <button id="import">📁 Import</button>
         </div>
-
-        <!-- Seed Data Editor -->
-        <div class="editor-section">
-            <div class="editor-header">
-                <h2>🌱 Seed Data Editor</h2>
-                <div class="editor-controls">
-                    <button id="validateSeedData" class="validate">✅ Validate</button>
-                    <button id="formatSeedData">🎨 Format JSON</button>
-                    <button id="resetSeedData" class="reset">🔄 Reset</button>
-                    <button id="exportSeedData" class="export">💾 Export</button>
-                </div>
+        
+        <div class="row">
+            <div class="col">
+                <h2>📋 Collections Schema</h2>
+                <textarea id="collections" class="editor" placeholder="Collections JSON..."></textarea>
+                <div id="collStatus" class="status valid">Ready</div>
             </div>
-            <textarea id="seedDataEditor" class="editor" placeholder="Loading seed data..."></textarea>
-            <div id="seedDataValidation" class="validation-status validation-valid">Ready to validate</div>
-        </div>
-
-        <!-- Admin Credentials Editor -->
-        <div class="two-column">
-            <div class="editor-section">
-                <div class="editor-header">
-                    <h2>🔑 Admin Credentials</h2>
-                </div>
-                <div style="margin-bottom:4px;">
-                    <label for="adminEmailEditor">Email:</label>
-                    <input type="email" id="adminEmailEditor" value="admin@example.com">
-                </div>
-                <div>
-                    <label for="adminPasswordEditor">Password:</label>
-                    <input type="password" id="adminPasswordEditor" value="unifiedpassword">
-                </div>
-                <div id="credentialsValidation" class="validation-status validation-warning">⚠️ Using default credentials</div>
-            </div>
-
-            <div class="editor-section">
-                <div class="editor-header">
-                    <h2>🌐 PocketBase URL</h2>
-                </div>
-                <div>
-                    <label for="pbUrlEditor">Base URL:</label>
-                    <input type="url" id="pbUrlEditor" value="/">
-                </div>
-                <div id="urlValidation" class="validation-status validation-valid">✅ Valid URL format</div>
+            <div class="col">
+                <h2>🌱 Seed Data</h2>
+                <textarea id="seeds" class="editor" placeholder="Seed data JSON..."></textarea>
+                <div id="seedStatus" class="status valid">Ready</div>
             </div>
         </div>
-
-        <!-- Live Preview -->
-        <div class="editor-section">
-            <div class="editor-header">
-                <h2>👁️ Live Setup Preview</h2>
-                <div class="editor-controls">
-                    <button id="refreshPreview">🔄 Refresh</button>
-                    <button id="exportConfig" class="export">💾 Export All</button>
-                    <button id="importConfig">📁 Import</button>
-                </div>
-            </div>
-            <div id="setupPreview" style="font-family:monospace;font-size:9px;background:#f8f9fa;padding:4px;border:1px solid #dee2e6;border-radius:2px;max-height:120px;overflow-y:auto;">
-                Loading preview...
-            </div>
-        </div>
-
+        
         <div id="out"></div>
     </div>
 
-    <!-- Enhanced Help Modal -->
-    <div id="helpModal" class="modal">
-        <div class="modal-content">
-            <span class="close">&times;</span>
-            <h2>📚 PocketBase Setup Editor - Complete Documentation</h2>
-            
-            <div class="help-section">
-                <h3>🎯 Quick Start Guide</h3>
-                <ol style="font-size:11px;padding-left:15px;">
-                    <li><strong>Health Check:</strong> Click "Preflight Check" to validate PocketBase connection</li>
-                    <li><strong>Edit Collections:</strong> Modify field definitions, types, validation rules</li>
-                    <li><strong>Edit Seed Data:</strong> Customize default template data</li>
-                    <li><strong>Validate:</strong> Check for errors before running setup</li>
-                    <li><strong>Run Setup:</strong> Execute the bulletproof installation</li>
-                </ol>
-            </div>
-
-            <div class="help-section">
-                <h3>🔍 PocketBase Health Check</h3>
-                <div class="help-info">
-                    <strong>API Endpoint:</strong> <code>GET /api/health</code><br>
-                    <strong>Response:</strong> <code>{"status": 200, "message": "API is healthy.", "data": {"canBackup": false}}</code><br>
-                    <strong>Validation:</strong> Checks server status, backup capability, and connection health
-                </div>
-                
-                <h4>Health Check Process:</h4>
-                <ol style="font-size:10px;padding-left:15px;">
-                    <li>Tests basic connectivity to PocketBase server</li>
-                    <li>Validates API health endpoint response structure</li>
-                    <li>Checks if server can perform backup operations</li>
-                    <li>Verifies admin authentication capabilities</li>
-                    <li>Validates current configuration before setup</li>
-                </ol>
-            </div>
-
-            <div class="help-section">
-                <h3>📋 Collection Schema Reference</h3>
-                <pre style="font-size:9px;">
-{
-  "name": "collection_name",     // Required: alphanumeric + underscore only
-  "type": "base",               // base | auth | view
-  "listRule": "",               // API access rule (empty = public, null = admin only)
-  "viewRule": "",               // API access rule for viewing records
-  "createRule": "",             // API access rule for creating records
-  "updateRule": "",             // API access rule for updating records
-  "deleteRule": "",             // API access rule for deleting records
-  "fields": [                   // Array of field definitions
-    {
-      "name": "field_name",      // Required: valid field name
-      "type": "text",            // Required: valid field type
-      "required": true,          // Boolean: is field required
-      "presentable": true,       // Boolean: show in admin UI
-      "max": 100,               // Type-specific validation
-      "pattern": "^[a-z]+$"     // Type-specific validation
-    }
-  ]
-}
-                </pre>
-            </div>
-
-            <div class="help-section">
-                <h3>🔧 Field Types & Properties</h3>
-                <div class="help-grid">
-                    <div class="help-item">
-                        <h4>Text Field</h4>
-                        <pre style="font-size:8px;">
-{
-  "name": "title",
-  "type": "text",
-  "required": true,
-  "max": 100,
-  "min": 1,
-  "pattern": "^[a-zA-Z0-9_\\-\\s]+$"
-}
-                        </pre>
-                    </div>
-                    <div class="help-item">
-                        <h4>Number Field</h4>
-                        <pre style="font-size:8px;">
-{
-  "name": "price",
-  "type": "number", 
-  "required": true,
-  "min": 0,
-  "max": 999999,
-  "noDecimal": false
-}
-                        </pre>
-                    </div>
-                    <div class="help-item">
-                        <h4>Boolean Field</h4>
-                        <pre style="font-size:8px;">
-{
-  "name": "is_active",
-  "type": "bool",
-  "required": false,
-  "presentable": true
-}
-                        </pre>
-                    </div>
-                    <div class="help-item">
-                        <h4>JSON Field</h4>
-                        <pre style="font-size:8px;">
-{
-  "name": "metadata",
-  "type": "json",
-  "required": false,
-  "presentable": true
-}
-                        </pre>
-                    </div>
-                    <div class="help-item">
-                        <h4>Select Field</h4>
-                        <pre style="font-size:8px;">
-{
-  "name": "status",
-  "type": "select",
-  "required": true,
-  "maxSelect": 1,
-  "values": ["active", "inactive"]
-}
-                        </pre>
-                    </div>
-                    <div class="help-item">
-                        <h4>Relation Field</h4>
-                        <pre style="font-size:8px;">
-{
-  "name": "user_id",
-  "type": "relation",
-  "required": true,
-  "collectionId": "target_collection_id",
-  "cascadeDelete": false,
-  "minSelect": 1,
-  "maxSelect": 1,
-  "displayFields": ["name", "email"]
-}
-                        </pre>
-                    </div>
-                </div>
-            </div>
-
-            <div class="help-section">
-                <h3>🚫 Common Validation Errors</h3>
-                <div class="help-warning">
-                    <strong>❌ Invalid field names:</strong> Use only letters, numbers, underscores. Start with letter.<br>
-                    <strong>❌ Nested options:</strong> Don't use <code>"options": {}</code> wrapper - use direct properties.<br>
-                    <strong>❌ Invalid JSON:</strong> Check for trailing commas, missing quotes, unescaped characters.<br>
-                    <strong>❌ Required validation:</strong> Ensure required fields have values in seed data.<br>
-                    <strong>❌ Relation errors:</strong> Target collection must exist, valid collectionId required.<br>
-                    <strong>❌ Type mismatches:</strong> Field type must match validation rules and seed data.
-                </div>
-            </div>
-
-            <div class="help-section">
-                <h3>🔐 API Rules Reference</h3>
-                <div class="help-grid">
-                    <div class="help-item">
-                        <h4>Public Access</h4>
-                        <pre style="font-size:8px;">
-listRule: "",
-viewRule: "",
-createRule: "",
-updateRule: "",
-deleteRule: ""
-                        </pre>
-                    </div>
-                    <div class="help-item">
-                        <h4>Admin Only</h4>
-                        <pre style="font-size:8px;">
-listRule: null,
-viewRule: null,
-createRule: null,
-updateRule: null,
-deleteRule: null
-                        </pre>
-                    </div>
-                    <div class="help-item">
-                        <h4>Authenticated Users</h4>
-                        <pre style="font-size:8px;">
-listRule: "@request.auth.id != ''",
-viewRule: "@request.auth.id != ''",
-createRule: "@request.auth.id != ''",
-updateRule: "@request.auth.id != ''",
-deleteRule: "@request.auth.id != ''"
-                        </pre>
-                    </div>
-                    <div class="help-item">
-                        <h4>Owner Only</h4>
-                        <pre style="font-size:8px;">
-listRule: "user = @request.auth.id",
-viewRule: "user = @request.auth.id",
-createRule: "@request.auth.id != ''",
-updateRule: "user = @request.auth.id",
-deleteRule: "user = @request.auth.id"
-                        </pre>
-                    </div>
-                </div>
-            </div>
-
-            <div class="help-section">
-                <h3>🛡️ Bulletproof Validation Process</h3>
-                <ol style="font-size:10px;padding-left:15px;">
-                    <li><strong>Health Check:</strong> Validates PocketBase server connectivity and API health</li>
-                    <li><strong>Schema Validation:</strong> Checks field names, types, validation rules</li>
-                    <li><strong>Data Validation:</strong> Ensures seed data matches schema requirements</li>
-                    <li><strong>Relation Validation:</strong> Verifies target collections exist for relations</li>
-                    <li><strong>JSON Validation:</strong> Validates all JSON structures and syntax</li>
-                    <li><strong>Security Validation:</strong> Checks for production security requirements</li>
-                    <li><strong>Integrity Check:</strong> Comprehensive post-setup validation</li>
-                </ol>
-            </div>
-
-            <div class="help-section">
-                <h3>⚡ Performance Tips</h3>
-                <div class="help-info">
-                    <strong>Field Selection:</strong> Use <code>presentable: false</code> for large JSON fields<br>
-                    <strong>Indexing:</strong> Mark frequently queried fields as <code>presentable: true</code><br>
-                    <strong>Validation:</strong> Use appropriate <code>max</code> limits to prevent large data<br>
-                    <strong>Relations:</strong> Limit <code>displayFields</code> to essential fields only
-                </div>
-            </div>
-
-            <div class="help-section">
-                <h3>🔄 Advanced Operations</h3>
-                <div style="font-size:10px;">
-                    <strong>Export/Import:</strong> Save and restore complete configurations<br>
-                    <strong>Format JSON:</strong> Pretty-print JSON for readability<br>
-                    <strong>Reset Defaults:</strong> Restore original templates and configurations<br>
-                    <strong>Emergency Reset:</strong> Complete database cleanup and fresh start<br>
-                    <strong>Live Preview:</strong> Real-time view of what will be created<br>
-                    <strong>Real-time Validation:</strong> Instant feedback on configuration changes
-                </div>
-            </div>
-        </div>
-    </div>
-
 <script>
-    // Global variables
-    let pbUrl = '/';
-    let ADM_E = 'admin@example.com';
-    let ADM_P = 'unifiedpassword';
-    
-    const outputDiv = document.getElementById('out');
-    const runFullSetupButton = document.getElementById('runFullSetup');
-    const runSchemaOnlyButton = document.getElementById('runSchemaOnly');
-    const runSeedOnlyButton = document.getElementById('runSeedOnly');
-    const validateSetupButton = document.getElementById('validateSetup');
-    const preflightCheckButton = document.getElementById('preflightCheck');
-    const emergencyResetButton = document.getElementById('emergencyReset');
-    const showHelpButton = document.getElementById('showHelp');
-    const statusBar = document.getElementById('statusBar');
-    const progressFill = document.getElementById('progressFill');
-    
-    // Editor elements
-    const collectionsEditor = document.getElementById('collectionsEditor');
-    const seedDataEditor = document.getElementById('seedDataEditor');
-    const adminEmailEditor = document.getElementById('adminEmailEditor');
-    const adminPasswordEditor = document.getElementById('adminPasswordEditor');
-    const pbUrlEditor = document.getElementById('pbUrlEditor');
-    const setupPreview = document.getElementById('setupPreview');
-    
-    // Validation displays
-    const collectionsValidation = document.getElementById('collectionsValidation');
-    const seedDataValidation = document.getElementById('seedDataValidation');
-    const credentialsValidation = document.getElementById('credentialsValidation');
-    const urlValidation = document.getElementById('urlValidation');
-    
-    // Stats displays
-    const collectionCount = document.getElementById('collectionCount');
-    const fieldCount = document.getElementById('fieldCount');
-    const seedRecordCount = document.getElementById('seedRecordCount');
-    const validationStatus = document.getElementById('validationStatus');
-    const healthStatus = document.getElementById('healthStatus');
+// Globals
+let pb, url = '/', email = 'admin@example.com', pass = 'password123';
+const out = document.getElementById('out');
+const progress = document.getElementById('progress');
+const collCount = document.getElementById('collCount');
+const fieldCount = document.getElementById('fieldCount');
+const seedCount = document.getElementById('seedCount');
+const healthStat = document.getElementById('healthStat');
+const collEditor = document.getElementById('collections');
+const seedEditor = document.getElementById('seeds');
+const collStatus = document.getElementById('collStatus');
+const seedStatus = document.getElementById('seedStatus');
 
-    // Progress tracking
-    let currentProgress = 0;
-    const updateProgress = (percent, status) => {
-        currentProgress = Math.max(currentProgress, percent);
-        progressFill.style.width = currentProgress + '%';
-        statusBar.textContent = status;
-    };
+// Logging
+const log = (msg, type = 'i') => {
+    const p = document.createElement('p');
+    p.className = `l${type[0]}`;
+    p.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
+    out.appendChild(p);
+    out.scrollTop = out.scrollHeight;
+};
 
-    // Enhanced logging
-    const log = (message, type = 'i', data = null, context = null) => {
-        const timestamp = `[${new Date().toLocaleTimeString([], { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' })}] `;
-        const p = document.createElement('p');
-        p.className = `l${type[0]}`;
-        let logMessage = timestamp + message.replace(/</g, '&lt;').replace(/>/g, '&gt;');
-        
-        if (context) {
-            logMessage += ` [Context: ${context}]`;
-        }
-        
-        if (data) {
-            logMessage += `\n<pre class="ld">${JSON.stringify(data, null, 2).replace(/</g, '&lt;').replace(/>/g, '&gt;')}</pre>`;
-        }
-        
-        p.innerHTML = logMessage;
-        outputDiv.appendChild(p);
-        outputDiv.scrollTop = outputDiv.scrollHeight;
-        
-        const consoleMessage = timestamp + message.replace(/<[^>]*>?/gm, '');
-        if (type === 'e') console.error(consoleMessage, data || '');
-        else if (type === 'w') console.warn(consoleMessage, data || '');
-        else if (type === 'd') console.debug(consoleMessage, data || '');
-        else console.log(consoleMessage, data || '');
-    };
+// Progress
+const setProgress = (pct, status = '') => {
+    progress.style.width = pct + '%';
+    if (status) log(status);
+};
 
-    // ===========================================
-    // ENHANCED POCKETBASE VALIDATOR WITH HEALTH CHECK
-    // ===========================================
-
-    class PocketBaseValidator {
-        static validateFieldName(name) {
-            const errors = [];
-            if (!name || typeof name !== 'string') {
-                errors.push('Field name must be a non-empty string');
-            }
-            if (name && !/^[a-zA-Z][a-zA-Z0-9_]*$/.test(name)) {
-                errors.push(`Field name "${name}" must start with letter and contain only letters, numbers, underscores`);
-            }
-            if (name && name.length > 50) {
-                errors.push(`Field name "${name}" exceeds 50 character limit`);
-            }
-            const reserved = ['id', 'created', 'updated', 'collectionId', 'collectionName', 'expand'];
-            if (name && reserved.includes(name)) {
-                errors.push(`Field name "${name}" is reserved and cannot be used`);
-            }
-            return errors;
-        }
-
-        static validateFieldDefinition(field, context = '') {
-            const errors = [];
-            const fieldContext = context ? `${context}.${field.name || 'unnamed'}` : field.name || 'unnamed';
-            
-            if (!field || typeof field !== 'object') {
-                errors.push(`${fieldContext}: Field must be an object`);
-                return errors;
-            }
-
-            const nameErrors = this.validateFieldName(field.name);
-            errors.push(...nameErrors.map(e => `${fieldContext}: ${e}`));
-
-            const validTypes = ['text', 'number', 'bool', 'email', 'url', 'date', 'datetime', 'autodate', 'select', 'file', 'relation', 'json', 'editor'];
-            if (!field.type || !validTypes.includes(field.type)) {
-                errors.push(`${fieldContext}: Invalid field type "${field.type}". Must be one of: ${validTypes.join(', ')}`);
-            }
-
-            if (field.options && typeof field.options === 'object') {
-                errors.push(`${fieldContext}: Found deprecated "options" structure. Use direct properties instead`);
-            }
-
-            if (field.type === 'text') {
-                if (field.max !== undefined && (typeof field.max !== 'number' || field.max < 1)) {
-                    errors.push(`${fieldContext}: max must be a positive number`);
-                }
-                if (field.min !== undefined && (typeof field.min !== 'number' || field.min < 0)) {
-                    errors.push(`${fieldContext}: min must be a non-negative number`);
-                }
-                if (field.pattern !== undefined && typeof field.pattern !== 'string') {
-                    errors.push(`${fieldContext}: pattern must be a string`);
-                }
-            }
-
-            if (field.type === 'select') {
-                if (!Array.isArray(field.values)) {
-                    errors.push(`${fieldContext}: select field must have values array`);
-                }
-                if (field.maxSelect !== undefined && (typeof field.maxSelect !== 'number' || field.maxSelect < 1)) {
-                    errors.push(`${fieldContext}: maxSelect must be a positive number`);
-                }
-            }
-
-            if (field.type === 'relation') {
-                if (!field.collectionId) {
-                    errors.push(`${fieldContext}: relation field must have collectionId`);
-                }
-                if (field.displayFields !== undefined && !Array.isArray(field.displayFields)) {
-                    errors.push(`${fieldContext}: displayFields must be an array`);
-                }
-            }
-
-            if (field.required !== undefined && typeof field.required !== 'boolean') {
-                errors.push(`${fieldContext}: required must be a boolean`);
-            }
-            if (field.presentable !== undefined && typeof field.presentable !== 'boolean') {
-                errors.push(`${fieldContext}: presentable must be a boolean`);
-            }
-
-            return errors;
-        }
-
-        static validateCollectionDefinition(collection) {
-            const errors = [];
-            const collectionName = collection.name || 'unnamed';
-
-            if (!collection || typeof collection !== 'object') {
-                errors.push('Collection must be an object');
-                return errors;
-            }
-
-            if (!collection.name || typeof collection.name !== 'string') {
-                errors.push('Collection name is required and must be a string');
-            } else {
-                if (!/^[a-zA-Z][a-zA-Z0-9_]*$/.test(collection.name)) {
-                    errors.push(`Collection name "${collection.name}" must start with letter and contain only letters, numbers, underscores`);
-                }
-                if (collection.name.length > 50) {
-                    errors.push(`Collection name "${collection.name}" exceeds 50 character limit`);
-                }
-            }
-
-            const validTypes = ['base', 'auth', 'view'];
-            if (!collection.type || !validTypes.includes(collection.type)) {
-                errors.push(`Collection type must be one of: ${validTypes.join(', ')}`);
-            }
-
-            const ruleFields = ['listRule', 'viewRule', 'createRule', 'updateRule', 'deleteRule'];
-            ruleFields.forEach(rule => {
-                if (collection[rule] !== undefined && collection[rule] !== null && typeof collection[rule] !== 'string') {
-                    errors.push(`${rule} must be null or string`);
-                }
-            });
-
-            if (!Array.isArray(collection.fields)) {
-                errors.push('Collection fields must be an array');
-            } else {
-                collection.fields.forEach((field, index) => {
-                    const fieldErrors = this.validateFieldDefinition(field, `${collectionName}.fields[${index}]`);
-                    errors.push(...fieldErrors);
-                });
-
-                const fieldNames = collection.fields.map(f => f.name).filter(Boolean);
-                const duplicates = fieldNames.filter((name, index) => fieldNames.indexOf(name) !== index);
-                if (duplicates.length > 0) {
-                    errors.push(`Duplicate field names in ${collectionName}: ${duplicates.join(', ')}`);
-                }
-            }
-
-            if (collection.schema) {
-                errors.push(`Collection "${collectionName}" uses deprecated "schema" key. Use "fields" instead`);
-            }
-
-            return errors;
-        }
-
-        static validateRecordData(data, collectionName, requiredFields = []) {
-            const errors = [];
-            
-            if (!data || typeof data !== 'object') {
-                errors.push('Record data must be an object');
-                return errors;
-            }
-
-            requiredFields.forEach(fieldName => {
-                if (data[fieldName] === undefined || data[fieldName] === null || data[fieldName] === '') {
-                    errors.push(`Required field "${fieldName}" is missing or empty`);
-                }
-            });
-
-            Object.entries(data).forEach(([key, value]) => {
-                if (key.endsWith('_data') || key === 'structure') {
-                    if (value !== null && value !== undefined) {
-                        try {
-                            if (typeof value === 'string') {
-                                JSON.parse(value);
-                            } else if (typeof value === 'object') {
-                                JSON.stringify(value);
-                            }
-                        } catch (e) {
-                            errors.push(`Invalid JSON in field "${key}": ${e.message}`);
-                        }
-                    }
-                }
-            });
-
-            return errors;
-        }
-
-        static validateApiHealthResponse(response) {
-            const errors = [];
-            
-            if (!response || typeof response !== 'object') {
-                errors.push('Health response must be an object');
-                return errors;
-            }
-
-            // Based on PocketBase API Health documentation
-            const expectedStructure = {
-                status: 'number',
-                message: 'string',
-                data: 'object'
-            };
-
-            Object.entries(expectedStructure).forEach(([key, type]) => {
-                if (!(key in response)) {
-                    errors.push(`Health response missing required property: ${key}`);
-                } else if (typeof response[key] !== type) {
-                    errors.push(`Health response property "${key}" must be ${type}, got ${typeof response[key]}`);
-                }
-            });
-
-            if (response.status !== undefined && response.status !== 200) {
-                errors.push(`Expected health status 200, got ${response.status}`);
-            }
-
-            if (response.data && typeof response.data === 'object') {
-                if ('canBackup' in response.data && typeof response.data.canBackup !== 'boolean') {
-                    errors.push('Health data.canBackup must be boolean');
-                }
-            }
-
-            return errors;
-        }
+// Validation
+const validateJSON = (str, name) => {
+    try {
+        const data = JSON.parse(str);
+        return { valid: true, data };
+    } catch (e) {
+        return { valid: false, error: e.message };
     }
+};
 
-    class PocketBaseGuard {
-        constructor(pb) {
-            this.pb = pb;
-            this.healthData = null;
-        }
-
-        async validateConnection() {
-            try {
-                log('🔍 Validating PocketBase connection...', 'i', null, 'CONNECTION_CHECK');
-                
-                // Enhanced health check based on API documentation
-                const response = await fetch(this.pb.baseURL + '/api/health');
-                if (!response.ok) {
-                    throw new Error(`Health check failed: ${response.status} ${response.statusText}`);
-                }
-                
-                const healthData = await response.json();
-                
-                // Validate health response structure
-                const healthErrors = PocketBaseValidator.validateApiHealthResponse(healthData);
-                if (healthErrors.length > 0) {
-                    log('⚠️ Health response validation warnings', 'w', healthErrors, 'CONNECTION_CHECK');
-                }
-                
-                this.healthData = healthData;
-                
-                // Update health status in UI
-                if (healthData.status === 200) {
-                    healthStatus.textContent = '✅';
-                    healthStatus.title = `Healthy | Backup: ${healthData.data?.canBackup ? 'Yes' : 'No'}`;
-                } else {
-                    healthStatus.textContent = '⚠️';
-                    healthStatus.title = `Status: ${healthData.status}`;
-                }
-                
-                log('✓ PocketBase server is healthy', 's', {
-                    status: healthData.status,
-                    message: healthData.message,
-                    canBackup: healthData.data?.canBackup,
-                    endpoint: '/api/health'
-                }, 'CONNECTION_CHECK');
-                
-                return true;
-            } catch (error) {
-                healthStatus.textContent = '❌';
-                healthStatus.title = 'Connection failed';
-                log('✗ PocketBase connection failed', 'e', { error: error.message }, 'CONNECTION_CHECK');
-                return false;
-            }
-        }
-
-        async validateAdminAuth() {
-            try {
-                log('🔍 Validating admin authentication...', 'i', null, 'AUTH_CHECK');
-                await this.pb.admins.authWithPassword(ADM_E, ADM_P);
-                if (!this.pb.authStore.isValid) {
-                    throw new Error('Authentication succeeded but auth store is invalid');
-                }
-                log('✓ Admin authentication successful', 's', { email: ADM_E }, 'AUTH_CHECK');
-                return true;
-            } catch (error) {
-                log('✗ Admin authentication failed', 'e', { 
-                    email: ADM_E, 
-                    error: error.message,
-                    statusCode: error.status || 'unknown'
-                }, 'AUTH_CHECK');
-                return false;
-            }
-        }
-
-        async validateCollectionSchema(collections) {
-            log('🔍 Validating collection schemas...', 'i', null, 'SCHEMA_VALIDATION');
-            
-            if (!Array.isArray(collections)) {
-                log('✗ Collections must be an array', 'e', null, 'SCHEMA_VALIDATION');
-                return false;
-            }
-
-            let isValid = true;
-            const allErrors = [];
-
-            collections.forEach((collection, index) => {
-                const errors = PocketBaseValidator.validateCollectionDefinition(collection);
-                if (errors.length > 0) {
-                    isValid = false;
-                    allErrors.push(...errors);
-                    log(`✗ Collection ${index} (${collection.name || 'unnamed'}) validation failed`, 'e', errors, 'SCHEMA_VALIDATION');
-                } else {
-                    log(`✓ Collection "${collection.name}" schema valid`, 's', null, 'SCHEMA_VALIDATION');
-                }
-            });
-
-            if (!isValid) {
-                log('✗ Schema validation failed', 'e', { totalErrors: allErrors.length, errors: allErrors }, 'SCHEMA_VALIDATION');
-            } else {
-                log('✓ All collection schemas valid', 's', null, 'SCHEMA_VALIDATION');
-            }
-
-            return isValid;
-        }
-
-        async safeCollectionImport(collections) {
-            try {
-                log('🔍 Performing safe collection import...', 'i', null, 'COLLECTION_IMPORT');
-                
-                if (!await this.validateCollectionSchema(collections)) {
-                    throw new Error('Schema validation failed');
-                }
-
-                await this.pb.collections.import(collections, false);
-                log('✓ Collection import completed successfully', 's', null, 'COLLECTION_IMPORT');
-                return true;
-            } catch (error) {
-                log('✗ Collection import failed', 'e', { 
-                    error: error.message,
-                    response: error.response?.data || 'No response data'
-                }, 'COLLECTION_IMPORT');
-                return false;
-            }
-        }
-
-        async safeRelationFieldAdd(collectionName, fieldName, targetCollectionId, insertPosition = 1, displayFields = ["name"]) {
-            try {
-                log(`🔍 Adding relation field "${fieldName}" to "${collectionName}"...`, 'i', null, 'RELATION_FIELD');
-                
-                const collection = await this.pb.collections.getOne(collectionName);
-                const fieldExists = collection.fields.some(f => f.name === fieldName);
-                if (fieldExists) {
-                    log(`Field "${fieldName}" already exists in "${collectionName}"`, 'w', null, 'RELATION_FIELD');
-                    return true;
-                }
-
-                const relationField = {
-                    name: fieldName,
-                    type: "relation",
-                    required: true,
-                    presentable: true,
-                    collectionId: targetCollectionId,
-                    cascadeDelete: false,
-                    minSelect: 1,
-                    maxSelect: 1,
-                    displayFields: displayFields
-                };
-
-                const updatedFields = [...collection.fields];
-                updatedFields.splice(insertPosition, 0, relationField);
-                await this.pb.collections.update(collection.id, { fields: updatedFields });
-                
-                log(`✓ Relation field "${fieldName}" added successfully`, 's', null, 'RELATION_FIELD');
-                return true;
-            } catch (error) {
-                log(`✗ Failed to add relation field "${fieldName}"`, 'e', { 
-                    error: error.message,
-                    response: error.response?.data || 'No response data'
-                }, 'RELATION_FIELD');
-                return false;
-            }
-        }
-
-        async safeSeedData(collectionName, seedItems, uniqueKeyField = null) {
-            try {
-                log(`🔍 Seeding data for "${collectionName}"...`, 'i', null, 'SEED_DATA');
-                
-                if (!Array.isArray(seedItems) || seedItems.length === 0) {
-                    log(`No seed data provided for "${collectionName}"`, 'w', null, 'SEED_DATA');
-                    return { created: 0, updated: 0, errors: 0 };
-                }
-
-                const collection = await this.pb.collections.getOne(collectionName);
-                const requiredFields = collection.fields.filter(f => f.required).map(f => f.name);
-
-                let createdCount = 0, updatedCount = 0, errorCount = 0;
-                
-                for (const [index, item] of seedItems.entries()) {
-                    try {
-                        const dataErrors = PocketBaseValidator.validateRecordData(item, collectionName, requiredFields);
-                        if (dataErrors.length > 0) {
-                            throw new Error(`Data validation failed: ${dataErrors.join(', ')}`);
-                        }
-
-                        let existingRecord = null;
-                        if (uniqueKeyField && item[uniqueKeyField]) {
-                            try {
-                                const filter = `${uniqueKeyField}="${String(item[uniqueKeyField]).replace(/"/g, '\\"')}"`;
-                                existingRecord = await this.pb.collection(collectionName).getFirstListItem(filter);
-                            } catch (e) {
-                                if (e.status !== 404) throw e;
-                            }
-                        }
-
-                        if (existingRecord) {
-                            await this.pb.collection(collectionName).update(existingRecord.id, item);
-                            updatedCount++;
-                        } else {
-                            await this.pb.collection(collectionName).create(item);
-                            createdCount++;
-                        }
-                    } catch (error) {
-                        errorCount++;
-                        log(`Error processing record ${index + 1}: ${error.message}`, 'e', null, 'SEED_DATA');
-                    }
-                }
-
-                const result = { created: createdCount, updated: updatedCount, errors: errorCount };
-                log(`✓ Seeding "${collectionName}" complete`, 's', result, 'SEED_DATA');
-                return result;
-            } catch (error) {
-                log(`✗ Seeding "${collectionName}" failed`, 'e', { error: error.message }, 'SEED_DATA');
-                return { created: 0, updated: 0, errors: seedItems.length };
-            }
-        }
+const validateCollections = () => {
+    const result = validateJSON(collEditor.value, 'collections');
+    if (!result.valid) {
+        collStatus.className = 'status invalid';
+        collStatus.textContent = `❌ ${result.error}`;
+        return false;
     }
-
-    // ===========================================
-    // DEFAULT CONFIGURATIONS
-    // ===========================================
-
-    const DEFAULT_COLLECTIONS = [
-        {
-            name: "templates",
-            type: "base",
-            listRule: "",
-            viewRule: "",
-            createRule: "",
-            updateRule: "",
-            deleteRule: "",
-            fields: [
-                { 
-                    name: "name", 
-                    type: "text", 
-                    required: true, 
-                    presentable: true, 
-                    max: 100, 
-                    min: 1,
-                    pattern: "^[a-zA-Z0-9_\\-]+$" 
-                },
-                { 
-                    name: "description", 
-                    type: "text", 
-                    required: false, 
-                    presentable: true,
-                    max: 500
-                },
-                { 
-                    name: "is_default", 
-                    type: "bool", 
-                    required: false, 
-                    presentable: true 
-                },
-                { 
-                    name: "version", 
-                    type: "number", 
-                    required: false, 
-                    presentable: true, 
-                    min: 1,
-                    noDecimal: true
-                },
-                { 
-                    name: "structure", 
-                    type: "json", 
-                    required: true, 
-                    presentable: false 
-                }
-            ]
-        },
-        {
-            name: "planners",
-            type: "base", 
-            listRule: "",
-            viewRule: "",
-            createRule: "",
-            updateRule: "",
-            deleteRule: "",
-            fields: [
-                { 
-                    name: "week_id", 
-                    type: "text", 
-                    required: true, 
-                    presentable: true, 
-                    max: 50,
-                    min: 1
-                },
-                { 
-                    name: "title", 
-                    type: "text", 
-                    required: false, 
-                    presentable: true, 
-                    max: 200 
-                },
-                { 
-                    name: "city", 
-                    type: "text", 
-                    required: false, 
-                    presentable: true, 
-                    max: 100 
-                },
-                { 
-                    name: "date_range", 
-                    type: "text", 
-                    required: false, 
-                    presentable: true, 
-                    max: 100 
-                },
-                { 
-                    name: "prayer_times", 
-                    type: "json", 
-                    required: false, 
-                    presentable: false 
-                },
-                { 
-                    name: "schedule_data", 
-                    type: "json", 
-                    required: false, 
-                    presentable: false 
-                },
-                { 
-                    name: "tasks_data", 
-                    type: "json", 
-                    required: false, 
-                    presentable: false 
-                },
-                { 
-                    name: "workout_data", 
-                    type: "json", 
-                    required: false, 
-                    presentable: false 
-                },
-                { 
-                    name: "meals_data", 
-                    type: "json", 
-                    required: false, 
-                    presentable: false 
-                },
-                { 
-                    name: "grocery_data", 
-                    type: "json", 
-                    required: false, 
-                    presentable: false 
-                },
-                { 
-                    name: "measurements_data", 
-                    type: "json", 
-                    required: false, 
-                    presentable: false 
-                },
-                { 
-                    name: "financials_data", 
-                    type: "json", 
-                    required: false, 
-                    presentable: false 
-                }
-            ]
+    
+    if (!Array.isArray(result.data)) {
+        collStatus.className = 'status invalid';
+        collStatus.textContent = '❌ Must be array';
+        return false;
+    }
+    
+    // Basic validation
+    const errors = [];
+    result.data.forEach((coll, i) => {
+        if (!coll.name || typeof coll.name !== 'string') errors.push(`Collection ${i}: missing name`);
+        if (!coll.type) coll.type = 'base';
+        if (!Array.isArray(coll.fields)) errors.push(`Collection ${i}: missing fields array`);
+        
+        if (coll.fields) {
+            coll.fields.forEach((field, j) => {
+                if (!field.name) errors.push(`Collection ${i}, field ${j}: missing name`);
+                if (!field.type) errors.push(`Collection ${i}, field ${j}: missing type`);
+            });
         }
-    ];
+    });
+    
+    if (errors.length) {
+        collStatus.className = 'status invalid';
+        collStatus.textContent = `❌ ${errors.length} errors`;
+        return false;
+    }
+    
+    collStatus.className = 'status valid';
+    collStatus.textContent = `✅ ${result.data.length} collections valid`;
+    return true;
+};
 
-    const DEFAULT_SEED_DATA = {
-        templates: [
-            {
-                name: "enhanced-weekly-v3",
-                description: "Enhanced weekly planner with project management - normalized",
-                is_default: true,
-                version: 3,
-                structure: {
-                    ui: {
-                        title_default: "My Weekly Plan & Projects",
-                        headers: {
-                            main_table: ['TIME', 'DAY', 'ACTIVITY', 'SCR', 'MAX', '🔥'],
-                            days: ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'],
-                            max_cols: Array(7).fill('MAX'),
-                            tasks: ['№', '🔥', '🏷️', '✏️ Task/Project', '📅 Start', '🎯 Due', '✅ Done', '⏰ Delay', '✓']
-                        },
-                        sections: {
-                            tasks: 'TASKS & PROJECT MANAGEMENT',
-                            workout: 'WORKOUT PLAN',
-                            meals: 'MEAL PREP',
-                            grocery: 'GROCERY LIST',
-                            measurements: 'BODY MEASUREMENTS',
-                            financials: 'MONTH/1ST: FINANCIAL'
-                        }
+const validateSeeds = () => {
+    const result = validateJSON(seedEditor.value, 'seeds');
+    if (!result.valid) {
+        seedStatus.className = 'status invalid';
+        seedStatus.textContent = `❌ ${result.error}`;
+        return false;
+    }
+    
+    seedStatus.className = 'status valid';
+    seedStatus.textContent = '✅ Seeds valid';
+    return true;
+};
+
+// Stats update
+const updateStats = () => {
+    const collResult = validateJSON(collEditor.value);
+    const seedResult = validateJSON(seedEditor.value);
+    
+    if (collResult.valid && Array.isArray(collResult.data)) {
+        collCount.textContent = collResult.data.length;
+        let fields = 0;
+        collResult.data.forEach(c => {
+            if (c.fields) fields += c.fields.length;
+        });
+        fieldCount.textContent = fields;
+    } else {
+        collCount.textContent = '0';
+        fieldCount.textContent = '0';
+    }
+    
+    if (seedResult.valid && seedResult.data) {
+        let seeds = 0;
+        Object.values(seedResult.data).forEach(arr => {
+            if (Array.isArray(arr)) seeds += arr.length;
+        });
+        seedCount.textContent = seeds;
+    } else {
+        seedCount.textContent = '0';
+    }
+};
+
+// PocketBase operations
+const healthCheck = async () => {
+    setProgress(10, 'Health checking...');
+    url = document.getElementById('url').value || '/';
+    email = document.getElementById('email').value || 'admin@example.com';
+    pass = document.getElementById('pass').value || 'password123';
+    
+    try {
+        pb = new PocketBase(url);
+        
+        // Health API
+        const res = await fetch(pb.baseURL + '/api/health');
+        if (!res.ok) throw new Error(`Health check failed: ${res.status}`);
+        
+        const health = await res.json();
+        if (health.status !== 200) throw new Error(`Health status: ${health.status}`);
+        
+        healthStat.textContent = '✅';
+        healthStat.title = `Healthy | Backup: ${health.data?.canBackup ? 'Yes' : 'No'}`;
+        log('✅ Health check passed', 's');
+        
+        // Auth test
+        await pb.admins.authWithPassword(email, pass);
+        log('✅ Auth successful', 's');
+        
+        setProgress(100, 'Ready for setup');
+        
+        // Enable buttons
+        document.getElementById('setup').disabled = false;
+        document.getElementById('schema').disabled = false;
+        document.getElementById('validate').disabled = false;
+        
+        return true;
+    } catch (e) {
+        healthStat.textContent = '❌';
+        healthStat.title = 'Failed';
+        log(`❌ Health check failed: ${e.message}`, 'e');
+        setProgress(0);
+        return false;
+    } finally {
+        if (pb?.authStore?.isValid) pb.authStore.clear();
+    }
+};
+
+const runSchema = async () => {
+    if (!validateCollections()) {
+        log('❌ Collection validation failed', 'e');
+        return false;
+    }
+    
+    setProgress(20, 'Setting up schema...');
+    
+    try {
+        pb = new PocketBase(url);
+        await pb.admins.authWithPassword(email, pass);
+        
+        const collections = JSON.parse(collEditor.value);
+        
+        setProgress(40, 'Importing collections...');
+        await pb.collections.import(collections, false);
+        
+        // Add template_id relation to planners if both collections exist
+        const hasTemplates = collections.find(c => c.name === 'templates');
+        const hasPlannersCollection = collections.find(c => c.name === 'planners');
+        
+        if (hasTemplates && hasPlannersCollection) {
+            setProgress(70, 'Adding relations...');
+            try {
+                const templatesCollection = await pb.collections.getOne('templates');
+                const plannersCollection = await pb.collections.getOne('planners');
+                
+                // Check if template_id field already exists
+                const hasTemplateField = plannersCollection.fields.some(f => f.name === 'template_id');
+                
+                if (!hasTemplateField) {
+                    const relationField = {
+                        name: "template_id",
+                        type: "relation",
+                        required: true,
+                        presentable: true,
+                        collectionId: templatesCollection.id,
+                        cascadeDelete: false,
+                        minSelect: 1,
+                        maxSelect: 1,
+                        displayFields: ["name", "description"]
+                    };
+                    
+                    const updatedFields = [...plannersCollection.fields];
+                    updatedFields.splice(1, 0, relationField); // Insert after week_id
+                    
+                    await pb.collections.update(plannersCollection.id, { fields: updatedFields });
+                    log('✅ Added template_id relation to planners', 's');
+                }
+            } catch (e) {
+                log(`⚠️ Relation setup warning: ${e.message}`, 'w');
+            }
+        }
+        
+        setProgress(100, 'Schema setup complete');
+        log('✅ Schema setup successful', 's');
+        
+        document.getElementById('seed').disabled = false;
+        return true;
+    } catch (e) {
+        log(`❌ Schema setup failed: ${e.message}`, 'e');
+        setProgress(0);
+        return false;
+    } finally {
+        if (pb?.authStore?.isValid) pb.authStore.clear();
+    }
+};
+
+const runSeed = async () => {
+    if (!validateSeeds()) {
+        log('❌ Seed validation failed', 'e');
+        return false;
+    }
+    
+    setProgress(20, 'Seeding data...');
+    
+    try {
+        pb = new PocketBase(url);
+        await pb.admins.authWithPassword(email, pass);
+        
+        const seeds = JSON.parse(seedEditor.value);
+        
+        let progress = 30;
+        for (const [collName, items] of Object.entries(seeds)) {
+            if (!Array.isArray(items)) continue;
+            
+            setProgress(progress, `Seeding ${collName}...`);
+            
+            for (const item of items) {
+                try {
+                    await pb.collection(collName).create(item);
+                } catch (e) {
+                    log(`⚠️ Seed error in ${collName}: ${e.message}`, 'w');
+                }
+            }
+            progress += 20;
+        }
+        
+        setProgress(100, 'Seed data complete');
+        log('✅ Seed data successful', 's');
+        return true;
+    } catch (e) {
+        log(`❌ Seed failed: ${e.message}`, 'e');
+        setProgress(0);
+        return false;
+    } finally {
+        if (pb?.authStore?.isValid) pb.authStore.clear();
+    }
+};
+
+const runValidate = async () => {
+    setProgress(20, 'Validating setup...');
+    
+    try {
+        pb = new PocketBase(url);
+        await pb.admins.authWithPassword(email, pass);
+        
+        const collections = await pb.collections.getFullList();
+        log(`✅ Found ${collections.length} collections`, 's');
+        
+        for (const coll of collections) {
+            const records = await pb.collection(coll.name).getList(1, 1);
+            log(`✅ ${coll.name}: ${records.totalItems} records`, 's');
+        }
+        
+        setProgress(100, 'Validation complete');
+        log('✅ Validation successful', 's');
+        return true;
+    } catch (e) {
+        log(`❌ Validation failed: ${e.message}`, 'e');
+        setProgress(0);
+        return false;
+    } finally {
+        if (pb?.authStore?.isValid) pb.authStore.clear();
+    }
+};
+
+const resetAll = async () => {
+    if (!confirm('Delete all collections?')) return;
+    
+    setProgress(20, 'Resetting...');
+    
+    try {
+        pb = new PocketBase(url);
+        await pb.admins.authWithPassword(email, pass);
+        
+        const collections = await pb.collections.getFullList();
+        for (const coll of collections) {
+            if (!coll.system) {
+                await pb.collections.delete(coll.id);
+                log(`🗑️ Deleted ${coll.name}`, 'w');
+            }
+        }
+        
+        setProgress(100, 'Reset complete');
+        log('✅ Reset successful', 's');
+        
+        // Disable buttons
+        document.getElementById('setup').disabled = true;
+        document.getElementById('schema').disabled = true;
+        document.getElementById('seed').disabled = true;
+        document.getElementById('validate').disabled = true;
+        healthStat.textContent = '❓';
+        
+    } catch (e) {
+        log(`❌ Reset failed: ${e.message}`, 'e');
+        setProgress(0);
+    } finally {
+        if (pb?.authStore?.isValid) pb.authStore.clear();
+    }
+};
+
+// Enhanced Weekly Planner Collections
+const DEFAULT_COLLECTIONS = [
+    {
+        name: "templates",
+        type: "base",
+        listRule: "",
+        viewRule: "",
+        createRule: "",
+        updateRule: "",
+        deleteRule: "",
+        fields: [
+            { name: "name", type: "text", required: true, presentable: true, max: 100, pattern: "^[a-zA-Z0-9_\\-]+$" },
+            { name: "description", type: "text", required: false, presentable: true, max: 500 },
+            { name: "is_default", type: "bool", required: false, presentable: true },
+            { name: "version", type: "number", required: false, presentable: true, min: 1, noDecimal: true },
+            { name: "structure", type: "json", required: true, presentable: false }
+        ]
+    },
+    {
+        name: "planners",
+        type: "base",
+        listRule: "",
+        viewRule: "",
+        createRule: "",
+        updateRule: "",
+        deleteRule: "",
+        fields: [
+            { name: "week_id", type: "text", required: true, presentable: true, max: 50 },
+            { name: "title", type: "text", required: false, presentable: true, max: 200 },
+            { name: "city", type: "text", required: false, presentable: true, max: 100 },
+            { name: "date_range", type: "text", required: false, presentable: true, max: 100 },
+            { name: "prayer_times", type: "json", required: false, presentable: false },
+            { name: "schedule_data", type: "json", required: false, presentable: false },
+            { name: "tasks_data", type: "json", required: false, presentable: false },
+            { name: "workout_data", type: "json", required: false, presentable: false },
+            { name: "meals_data", type: "json", required: false, presentable: false },
+            { name: "grocery_data", type: "json", required: false, presentable: false },
+            { name: "measurements_data", type: "json", required: false, presentable: false },
+            { name: "financials_data", type: "json", required: false, presentable: false }
+        ]
+    }
+];
+
+const DEFAULT_SEEDS = {
+    templates: [
+        {
+            name: "enhanced-weekly-v3",
+            description: "Enhanced weekly planner with project management - normalized",
+            is_default: true,
+            version: 3,
+            structure: {
+                ui: {
+                    title_default: "My Weekly Plan & Projects",
+                    headers: {
+                        main_table: ['TIME', 'DAY', 'ACTIVITY', 'SCR', 'MAX', '🔥'],
+                        days: ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'],
+                        max_cols: Array(7).fill('MAX'),
+                        tasks: ['№', '🔥', '🏷️', '✏️ Task/Project', '📅 Start', '🎯 Due', '✅ Done', '⏰ Delay', '✓']
                     },
-                    prayer_times: [
-                        { label: 'Q', value: '' }, { label: 'F', value: '' }, { label: 'D', value: '' },
-                        { label: 'A', value: '' }, { label: 'M', value: '' }, { label: 'I', value: '' }
-                    ],
-                    schedule: [
-                        {
-                            name: 'QIYAM',
-                            activities: [
-                                { name: 'DAILY: Wakeup early', max_per_day: 1, max_score: 7 },
-                                { name: 'DAILY: Qiyam/Tahajjud', max_per_day: 1, max_score: 7 },
-                                { name: 'DAILY: Nutty Pudding', max_per_day: 1, max_score: 7 }
-                            ]
-                        },
-                        {
-                            name: 'FAJR',
-                            activities: [
-                                { name: 'DAILY: Fajr prayer', max_per_day: 1, max_score: 7 },
-                                { name: 'DAILY: Quran - 1 Juz', max_per_day: 1, max_score: 7 },
-                                { name: 'DAILY: 5min Cold Shower', max_per_day: 1, max_score: 7 }
-                            ]
-                        }
-                    ],
-                    tasks: {
-                        count: 15,
-                        fields: ['num', 'priority', 'tag', 'description', 'start_date', 'expected_date', 'actual_date', 'completed']
-                    },
-                    workout: [
-                        {
-                            name: 'TUESDAY',
-                            exercises: [
-                                { name: 'Incline Dumbbell Press', default_weight: 30, default_sets: 3, default_reps: 12 }
-                            ]
-                        }
-                    ],
-                    meals: [
-                        { name: 'Nutty Pudding', ingredients: 'Berries ½c, Cherries 3, Macadamia nuts 45g...' }
-                    ],
-                    grocery: {
-                        budget_default: '120',
-                        categories: [
-                            { name: 'Produce', items: 'Broccoli, Cauliflower, Mushrooms...' }
+                    sections: {
+                        tasks: 'TASKS & PROJECT MANAGEMENT',
+                        workout: 'WORKOUT PLAN',
+                        meals: 'MEAL PREP',
+                        grocery: 'GROCERY LIST',
+                        measurements: 'BODY MEASUREMENTS',
+                        financials: 'MONTH/1ST: FINANCIAL'
+                    }
+                },
+                prayer_times: [
+                    { label: 'Q', value: '' }, { label: 'F', value: '' }, { label: 'D', value: '' },
+                    { label: 'A', value: '' }, { label: 'M', value: '' }, { label: 'I', value: '' }
+                ],
+                schedule: [
+                    {
+                        name: 'QIYAM',
+                        activities: [
+                            { name: 'DAILY: Wakeup early', max_per_day: 1, max_score: 7 },
+                            { name: 'DAILY: Qiyam/Tahajjud', max_per_day: 1, max_score: 7 },
+                            { name: 'DAILY: Nutty Pudding', max_per_day: 1, max_score: 7 }
                         ]
                     },
-                    measurements: [
-                        { name: 'Weight', placeholder: '75kg' }
-                    ],
-                    financials: [
-                        { name: 'Rent', placeholder: '850', account: 'Cash' }
-                    ],
-                    city_default: "London"
-                }
-            }
-        ]
-    };
-
-    // ===========================================
-    // EDITOR FUNCTIONALITY
-    // ===========================================
-
-    function getCurrentCollections() {
-        try {
-            return JSON.parse(collectionsEditor.value);
-        } catch (e) {
-            return DEFAULT_COLLECTIONS;
-        }
-    }
-
-    function getCurrentSeedData() {
-        try {
-            return JSON.parse(seedDataEditor.value);
-        } catch (e) {
-            return DEFAULT_SEED_DATA;
-        }
-    }
-
-    function updateStats() {
-        const collections = getCurrentCollections();
-        const seedData = getCurrentSeedData();
-        
-        collectionCount.textContent = Array.isArray(collections) ? collections.length : 0;
-        
-        let totalFields = 0;
-        if (Array.isArray(collections)) {
-            collections.forEach(col => {
-                if (Array.isArray(col.fields)) {
-                    totalFields += col.fields.length;
-                }
-            });
-        }
-        fieldCount.textContent = totalFields;
-        
-        let totalRecords = 0;
-        if (seedData && typeof seedData === 'object') {
-            Object.values(seedData).forEach(items => {
-                if (Array.isArray(items)) {
-                    totalRecords += items.length;
-                }
-            });
-        }
-        seedRecordCount.textContent = totalRecords;
-    }
-
-    function validateCollections() {
-        try {
-            const collections = JSON.parse(collectionsEditor.value);
-            
-            if (!Array.isArray(collections)) {
-                throw new Error('Collections must be an array');
-            }
-
-            const errors = [];
-            collections.forEach((collection, index) => {
-                const collectionErrors = PocketBaseValidator.validateCollectionDefinition(collection);
-                errors.push(...collectionErrors.map(e => `Collection ${index + 1}: ${e}`));
-            });
-
-            if (errors.length > 0) {
-                collectionsValidation.className = 'validation-status validation-invalid';
-                collectionsValidation.textContent = `❌ ${errors.length} errors: ${errors.slice(0, 2).join('; ')}${errors.length > 2 ? '...' : ''}`;
-                validationStatus.textContent = '❌';
-                return false;
-            } else {
-                collectionsValidation.className = 'validation-status validation-valid';
-                collectionsValidation.textContent = `✅ All ${collections.length} collections valid`;
-                return true;
-            }
-        } catch (e) {
-            collectionsValidation.className = 'validation-status validation-invalid';
-            collectionsValidation.textContent = `❌ JSON Error: ${e.message}`;
-            validationStatus.textContent = '❌';
-            return false;
-        }
-    }
-
-    function validateSeedData() {
-        try {
-            const seedData = JSON.parse(seedDataEditor.value);
-            
-            if (!seedData || typeof seedData !== 'object') {
-                throw new Error('Seed data must be an object');
-            }
-
-            const errors = [];
-            Object.entries(seedData).forEach(([collectionName, items]) => {
-                if (!Array.isArray(items)) {
-                    errors.push(`${collectionName}: must be an array`);
-                } else {
-                    items.forEach((item, index) => {
-                        const itemErrors = PocketBaseValidator.validateRecordData(item, collectionName);
-                        errors.push(...itemErrors.map(e => `${collectionName}[${index}]: ${e}`));
-                    });
-                }
-            });
-
-            if (errors.length > 0) {
-                seedDataValidation.className = 'validation-status validation-invalid';
-                seedDataValidation.textContent = `❌ ${errors.length} errors: ${errors.slice(0, 2).join('; ')}${errors.length > 2 ? '...' : ''}`;
-                return false;
-            } else {
-                seedDataValidation.className = 'validation-status validation-valid';
-                seedDataValidation.textContent = `✅ All seed data valid`;
-                return true;
-            }
-        } catch (e) {
-            seedDataValidation.className = 'validation-status validation-invalid';
-            seedDataValidation.textContent = `❌ JSON Error: ${e.message}`;
-            return false;
-        }
-    }
-
-    function validateCredentials() {
-        const email = adminEmailEditor.value.trim();
-        const password = adminPasswordEditor.value;
-
-        if (!email || !password) {
-            credentialsValidation.className = 'validation-status validation-invalid';
-            credentialsValidation.textContent = '❌ Email and password required';
-            return false;
-        }
-
-        if (email === 'admin@example.com' && password === 'unifiedpassword') {
-            credentialsValidation.className = 'validation-status validation-warning';
-            credentialsValidation.textContent = '⚠️ Using default credentials - CHANGE FOR PRODUCTION';
-            return true;
-        }
-
-        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-            credentialsValidation.className = 'validation-status validation-invalid';
-            credentialsValidation.textContent = '❌ Invalid email format';
-            return false;
-        }
-
-        credentialsValidation.className = 'validation-status validation-valid';
-        credentialsValidation.textContent = '✅ Credentials valid';
-        return true;
-    }
-
-    function validateUrl() {
-        const url = pbUrlEditor.value.trim();
-        
-        if (!url) {
-            urlValidation.className = 'validation-status validation-invalid';
-            urlValidation.textContent = '❌ URL required';
-            return false;
-        }
-
-        urlValidation.className = 'validation-status validation-valid';
-        urlValidation.textContent = '✅ URL format valid';
-        return true;
-    }
-
-    function updatePreview() {
-        const collections = getCurrentCollections();
-        const seedData = getCurrentSeedData();
-        
-        let preview = '=== SETUP PREVIEW ===\n\n';
-        
-        preview += `📋 Collections (${Array.isArray(collections) ? collections.length : 0}):\n`;
-        if (Array.isArray(collections)) {
-            collections.forEach(col => {
-                preview += `  • ${col.name || 'unnamed'} (${col.type || 'base'}) - ${Array.isArray(col.fields) ? col.fields.length : 0} fields\n`;
-            });
-        }
-        
-        preview += `\n🌱 Seed Data:\n`;
-        if (seedData && typeof seedData === 'object') {
-            Object.entries(seedData).forEach(([collectionName, items]) => {
-                preview += `  • ${collectionName}: ${Array.isArray(items) ? items.length : 0} records\n`;
-            });
-        }
-        
-        preview += `\n🔑 Admin: ${adminEmailEditor.value}\n`;
-        preview += `🌐 URL: ${pbUrlEditor.value}\n`;
-        
-        setupPreview.textContent = preview;
-    }
-
-    function formatJSON(textareaId) {
-        const textarea = document.getElementById(textareaId);
-        try {
-            const parsed = JSON.parse(textarea.value);
-            textarea.value = JSON.stringify(parsed, null, 2);
-            updateValidationStatus();
-        } catch (e) {
-            alert('Invalid JSON: ' + e.message);
-        }
-    }
-
-    function updateValidationStatus() {
-        const collectionsValid = validateCollections();
-        const seedDataValid = validateSeedData();
-        const credentialsValid = validateCredentials();
-        const urlValid = validateUrl();
-        
-        if (collectionsValid && seedDataValid && credentialsValid && urlValid) {
-            validationStatus.textContent = '✅';
-        } else {
-            validationStatus.textContent = '❌';
-        }
-        
-        updateStats();
-        updatePreview();
-    }
-
-    // ===========================================
-    // SETUP FUNCTIONS
-    // ===========================================
-
-    async function preflightCheck() {
-        updateProgress(5, '🔍 Running preflight checks...');
-        outputDiv.innerHTML = '';
-        log('=== PREFLIGHT CHECK STARTED ===', 'i');
-        
-        // Sync editor values
-        pbUrl = pbUrlEditor.value.trim();
-        ADM_E = adminEmailEditor.value.trim();
-        ADM_P = adminPasswordEditor.value;
-        
-        try {
-            const pb = new PocketBase(pbUrl);
-            const guard = new PocketBaseGuard(pb);
-            
-            updateProgress(20, '🌐 Testing PocketBase connectivity & health...');
-            if (!await guard.validateConnection()) {
-                throw new Error('PocketBase connection/health check failed');
-            }
-            
-            updateProgress(40, '🔑 Testing admin authentication...');
-            if (!await guard.validateAdminAuth()) {
-                throw new Error('Admin authentication failed');
-            }
-            
-            updateProgress(60, '📋 Validating current configuration...');
-            if (!validateCollections() || !validateSeedData()) {
-                throw new Error('Configuration validation failed');
-            }
-            
-            updateProgress(100, '✅ Preflight check completed - All systems go!');
-            log('=== ✅ PREFLIGHT CHECK PASSED ===', 's');
-            
-            runFullSetupButton.disabled = false;
-            runSchemaOnlyButton.disabled = false;
-            validateSetupButton.disabled = false;
-            
-            return true;
-        } catch (error) {
-            updateProgress(0, '❌ Preflight check failed');
-            log('=== ❌ PREFLIGHT CHECK FAILED ===', 'e', { error: error.message });
-            return false;
-        } finally {
-            try {
-                const pb = new PocketBase(pbUrl);
-                if (pb.authStore.isValid) pb.authStore.clear();
-            } catch (e) {
-                // Ignore cleanup errors
-            }
-        }
-    }
-
-    async function bulletproofSchemaSetup() {
-        updateProgress(10, '🛡️ Starting bulletproof schema setup...');
-        log('=== BULLETPROOF SCHEMA SETUP ===', 'i');
-        
-        // Sync editor values
-        pbUrl = pbUrlEditor.value.trim();
-        ADM_E = adminEmailEditor.value.trim();
-        ADM_P = adminPasswordEditor.value;
-        
-        try {
-            const pb = new PocketBase(pbUrl);
-            const guard = new PocketBaseGuard(pb);
-            const collections = getCurrentCollections();
-            
-            updateProgress(20, '🔑 Authenticating...');
-            if (!await guard.validateAdminAuth()) {
-                throw new Error('Authentication failed');
-            }
-            
-            updateProgress(40, '📋 Importing collections...');
-            if (!await guard.safeCollectionImport(collections)) {
-                throw new Error('Collection import failed');
-            }
-            
-            updateProgress(60, '🔗 Adding relation fields...');
-            const templatesCollection = await pb.collections.getOne('templates');
-            if (!await guard.safeRelationFieldAdd(
-                'planners', 
-                'template_id', 
-                templatesCollection.id, 
-                1, 
-                ["name", "description"]
-            )) {
-                throw new Error('Relation field creation failed');
-            }
-            
-            updateProgress(100, '✅ Schema setup completed successfully');
-            log('=== ✅ SCHEMA SETUP COMPLETED ===', 's');
-            
-            runSeedOnlyButton.disabled = false;
-            return true;
-        } catch (error) {
-            updateProgress(0, '❌ Schema setup failed');
-            log('=== ❌ SCHEMA SETUP FAILED ===', 'e', { error: error.message });
-            return false;
-        } finally {
-            try {
-                const pb = new PocketBase(pbUrl);
-                if (pb.authStore.isValid) pb.authStore.clear();
-            } catch (e) {
-                // Ignore cleanup errors
-            }
-        }
-    }
-
-    async function bulletproofSeedData() {
-        updateProgress(10, '🌱 Starting bulletproof seed data...');
-        log('=== BULLETPROOF SEED DATA ===', 'i');
-        
-        // Sync editor values
-        pbUrl = pbUrlEditor.value.trim();
-        ADM_E = adminEmailEditor.value.trim();
-        ADM_P = adminPasswordEditor.value;
-        
-        try {
-            const pb = new PocketBase(pbUrl);
-            const guard = new PocketBaseGuard(pb);
-            const seedData = getCurrentSeedData();
-            
-            updateProgress(20, '🔑 Authenticating...');
-            if (!await guard.validateAdminAuth()) {
-                throw new Error('Authentication failed');
-            }
-            
-            updateProgress(30, '⏱️ Ensuring system stability...');
-            await new Promise(resolve => setTimeout(resolve, 1000));
-            
-            updateProgress(60, '📋 Seeding template data...');
-            if (seedData.templates && Array.isArray(seedData.templates)) {
-                const result = await guard.safeSeedData('templates', seedData.templates, 'name');
-                if (result.errors > 0) {
-                    log(`⚠️ Seeding completed with ${result.errors} errors`, 'w');
-                }
-            }
-            
-            updateProgress(100, '✅ Seed data completed successfully');
-            log('=== ✅ SEED DATA COMPLETED ===', 's');
-            return true;
-        } catch (error) {
-            updateProgress(0, '❌ Seed data failed');
-            log('=== ❌ SEED DATA FAILED ===', 'e', { error: error.message });
-            return false;
-        } finally {
-            try {
-                const pb = new PocketBase(pbUrl);
-                if (pb.authStore.isValid) pb.authStore.clear();
-            } catch (e) {
-                // Ignore cleanup errors
-            }
-        }
-    }
-
-    // ===========================================
-    // EVENT HANDLERS
-    // ===========================================
-
-    // Initialize editors with default values
-    collectionsEditor.value = JSON.stringify(DEFAULT_COLLECTIONS, null, 2);
-    seedDataEditor.value = JSON.stringify(DEFAULT_SEED_DATA, null, 2);
-
-    // Real-time validation
-    collectionsEditor.addEventListener('input', updateValidationStatus);
-    seedDataEditor.addEventListener('input', updateValidationStatus);
-    adminEmailEditor.addEventListener('input', updateValidationStatus);
-    adminPasswordEditor.addEventListener('input', updateValidationStatus);
-    pbUrlEditor.addEventListener('input', updateValidationStatus);
-
-    // Button handlers
-    document.getElementById('validateCollections').onclick = () => {
-        validateCollections();
-        updateStats();
-    };
-
-    document.getElementById('formatCollections').onclick = () => formatJSON('collectionsEditor');
-    document.getElementById('resetCollections').onclick = () => {
-        if (confirm('Reset collections to defaults?')) {
-            collectionsEditor.value = JSON.stringify(DEFAULT_COLLECTIONS, null, 2);
-            updateValidationStatus();
-        }
-    };
-
-    document.getElementById('exportCollections').onclick = () => {
-        const blob = new Blob([collectionsEditor.value], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'collections.json';
-        a.click();
-        URL.revokeObjectURL(url);
-    };
-
-    document.getElementById('validateSeedData').onclick = () => {
-        validateSeedData();
-        updateStats();
-    };
-
-    document.getElementById('formatSeedData').onclick = () => formatJSON('seedDataEditor');
-    document.getElementById('resetSeedData').onclick = () => {
-        if (confirm('Reset seed data to defaults?')) {
-            seedDataEditor.value = JSON.stringify(DEFAULT_SEED_DATA, null, 2);
-            updateValidationStatus();
-        }
-    };
-
-    document.getElementById('exportSeedData').onclick = () => {
-        const blob = new Blob([seedDataEditor.value], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'seed-data.json';
-        a.click();
-        URL.revokeObjectURL(url);
-    };
-
-    document.getElementById('refreshPreview').onclick = updatePreview;
-
-    document.getElementById('exportConfig').onclick = () => {
-        const config = {
-            collections: getCurrentCollections(),
-            seedData: getCurrentSeedData(),
-            adminEmail: adminEmailEditor.value,
-            pbUrl: pbUrlEditor.value
-        };
-        const blob = new Blob([JSON.stringify(config, null, 2)], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'pocketbase-setup-config.json';
-        a.click();
-        URL.revokeObjectURL(url);
-    };
-
-    document.getElementById('importConfig').onclick = () => {
-        const input = document.createElement('input');
-        input.type = 'file';
-        input.accept = 'application/json';
-        input.onchange = (e) => {
-            const file = e.target.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    try {
-                        const config = JSON.parse(e.target.result);
-                        if (config.collections) collectionsEditor.value = JSON.stringify(config.collections, null, 2);
-                        if (config.seedData) seedDataEditor.value = JSON.stringify(config.seedData, null, 2);
-                        if (config.adminEmail) adminEmailEditor.value = config.adminEmail;
-                        if (config.pbUrl) pbUrlEditor.value = config.pbUrl;
-                        updateValidationStatus();
-                        alert('Configuration imported successfully');
-                    } catch (err) {
-                        alert('Invalid configuration file: ' + err.message);
+                    {
+                        name: 'FAJR',
+                        activities: [
+                            { name: 'DAILY: Fajr prayer', max_per_day: 1, max_score: 7 },
+                            { name: 'DAILY: Quran - 1 Juz', max_per_day: 1, max_score: 7 },
+                            { name: 'DAILY: 5min Cold Shower', max_per_day: 1, max_score: 7 }
+                        ]
+                    },
+                    {
+                        name: '7AM - 9AM',
+                        activities: [
+                            { name: 'MON/THU: COMMUTE', days: ['mon', 'thu'], max_per_day: 1, max_score: 2 },
+                            { name: 'TUE/WED/FRI: Reading/Study', days: ['tue', 'wed', 'fri'], max_per_day: 1, max_score: 3 },
+                            { name: 'SAT: Errands, Grocery, Meal prep', days: ['sat'], max_per_day: 3, max_score: 3 },
+                            { name: 'SUN: House cleaning, laundry', days: ['sun'], max_per_day: 2, max_score: 2 }
+                        ]
+                    },
+                    {
+                        name: 'TOTAL',
+                        activities: [
+                            { name: 'DAILY POINTS', max_per_day: 0, max_score: 0 }
+                        ]
                     }
-                };
-                reader.readAsText(file);
+                ],
+                tasks: {
+                    count: 15,
+                    fields: ['num', 'priority', 'tag', 'description', 'start_date', 'expected_date', 'actual_date', 'completed']
+                },
+                workout: [
+                    {
+                        name: 'TUESDAY',
+                        exercises: [
+                            { name: 'Incline Dumbbell Press', default_weight: 30, default_sets: 3, default_reps: 12 },
+                            { name: 'Barbell Squats', default_weight: 80, default_sets: 3, default_reps: 8 },
+                            { name: 'DB Chest-Supported Row', default_weight: 25, default_sets: 3, default_reps: 12 }
+                        ]
+                    },
+                    {
+                        name: 'WEDNESDAY',
+                        exercises: [
+                            { name: 'Barbell Bench Press', default_weight: 70, default_sets: 3, default_reps: 6 },
+                            { name: 'Romanian Deadlift', default_weight: 90, default_sets: 3, default_reps: 8 },
+                            { name: 'Lat Pulldown', default_weight: 60, default_sets: 3, default_reps: 12 }
+                        ]
+                    },
+                    {
+                        name: 'FRIDAY',
+                        exercises: [
+                            { name: 'Seated DB Shoulder Press', default_weight: 20, default_sets: 3, default_reps: 12 },
+                            { name: 'Dumbbell Row', default_weight: 25, default_sets: 3, default_reps: 12 },
+                            { name: 'Barbell Hip Thrust', default_weight: 100, default_sets: 3, default_reps: 15 }
+                        ]
+                    }
+                ],
+                meals: [
+                    { name: 'Nutty Pudding', ingredients: 'Berries ½c, Cherries 3, Macadamia nuts 45g, Chia seeds 1tbsp, Protein powder 30g, Almond milk 200ml' },
+                    { name: 'Super Veggie', ingredients: 'Broccoli 250g, Cauliflower 150g, Mushrooms 50g, Bell peppers 100g, Olive oil 2tbsp' },
+                    { name: 'Third Meal', ingredients: 'Sweet Potato 350g, Protein 100g, Avocado ½, Spinach 100g, Lemon juice 1tbsp' }
+                ],
+                grocery: {
+                    budget_default: '120',
+                    categories: [
+                        { name: 'Produce', items: 'Broccoli, Cauliflower, Mushrooms, Bell peppers, Spinach, Avocado' },
+                        { name: 'Protein', items: 'Lentils, Protein powder, Milk, Eggs, Chicken breast' },
+                        { name: 'Pantry', items: 'Olive oil, Chia seeds, Macadamia nuts, Sweet potatoes' }
+                    ]
+                },
+                measurements: [
+                    { name: 'Weight', placeholder: '75kg' },
+                    { name: 'Chest', placeholder: '42in' },
+                    { name: 'Waist', placeholder: '34in' },
+                    { name: 'Arms', placeholder: '15in' },
+                    { name: 'Thighs', placeholder: '24in' }
+                ],
+                financials: [
+                    { name: 'Rent', placeholder: '850', account: 'Cash' },
+                    { name: 'Allowance', placeholder: '850', account: 'Revolut' },
+                    { name: 'Savings', placeholder: '3800', account: 'HSBCUK' },
+                    { name: 'Groceries', placeholder: '120', account: 'Cash' },
+                    { name: 'Transport', placeholder: '80', account: 'Card' }
+                ],
+                city_default: "London"
+            }
+        }
+    ]
+};
+
+// Event handlers
+document.getElementById('health').onclick = healthCheck;
+document.getElementById('setup').onclick = async () => {
+    out.innerHTML = '';
+    if (await runSchema() && await runSeed()) {
+        log('🎉 Full setup complete!', 's');
+    }
+};
+document.getElementById('schema').onclick = async () => {
+    out.innerHTML = '';
+    await runSchema();
+};
+document.getElementById('seed').onclick = async () => {
+    out.innerHTML = '';
+    await runSeed();
+};
+document.getElementById('validate').onclick = async () => {
+    out.innerHTML = '';
+    await runValidate();
+};
+document.getElementById('reset').onclick = resetAll;
+
+document.getElementById('export').onclick = () => {
+    const config = {
+        url: document.getElementById('url').value,
+        email: document.getElementById('email').value,
+        collections: validateJSON(collEditor.value).data,
+        seeds: validateJSON(seedEditor.value).data
+    };
+    const blob = new Blob([JSON.stringify(config, null, 2)], { type: 'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'pocketbase-config.json';
+    a.click();
+};
+
+document.getElementById('import').onclick = () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.json';
+    input.onchange = e => {
+        const file = e.target.files[0];
+        if (!file) return;
+        
+        const reader = new FileReader();
+        reader.onload = e => {
+            try {
+                const config = JSON.parse(e.target.result);
+                if (config.url) document.getElementById('url').value = config.url;
+                if (config.email) document.getElementById('email').value = config.email;
+                if (config.collections) collEditor.value = JSON.stringify(config.collections, null, 2);
+                if (config.seeds) seedEditor.value = JSON.stringify(config.seeds, null, 2);
+                updateStats();
+                validateCollections();
+                validateSeeds();
+                log('✅ Config imported', 's');
+            } catch (e) {
+                log(`❌ Import error: ${e.message}`, 'e');
             }
         };
-        input.click();
+        reader.readAsText(file);
     };
+    input.click();
+};
 
-    // Help modal
-    const modal = document.getElementById('helpModal');
-    const span = document.getElementsByClassName('close')[0];
-    showHelpButton.onclick = () => modal.style.display = 'block';
-    span.onclick = () => modal.style.display = 'none';
-    window.onclick = (event) => { if (event.target === modal) modal.style.display = 'none'; };
+// Real-time validation
+collEditor.addEventListener('input', () => {
+    validateCollections();
+    updateStats();
+});
+seedEditor.addEventListener('input', () => {
+    validateSeeds();
+    updateStats();
+});
 
-    // Main setup buttons
-    preflightCheckButton.onclick = preflightCheck;
+// Initialize
+collEditor.value = JSON.stringify(DEFAULT_COLLECTIONS, null, 2);
+seedEditor.value = JSON.stringify(DEFAULT_SEEDS, null, 2);
+updateStats();
+validateCollections();
+validateSeeds();
 
-    runFullSetupButton.onclick = async () => {
-        const buttons = [runFullSetupButton, runSchemaOnlyButton, runSeedOnlyButton, validateSetupButton];
-        buttons.forEach(btn => btn.disabled = true);
-        
-        try {
-            outputDiv.innerHTML = '';
-            currentProgress = 0;
-            log('=== FULL BULLETPROOF SETUP ===', 'i');
-            
-            const schemaSuccess = await bulletproofSchemaSetup();
-            if (!schemaSuccess) {
-                log('Schema setup failed, aborting full setup', 'e');
-                return;
-            }
-            
-            const seedSuccess = await bulletproofSeedData();
-            if (!seedSuccess) {
-                log('Seed data failed', 'e');
-                return;
-            }
-            
-            updateProgress(100, '🎉 Full setup completed successfully!');
-            log('=== 🎉 FULL SETUP SUCCESS ===', 's');
-            
-        } finally {
-            buttons.forEach(btn => btn.disabled = false);
-        }
-    };
-
-    runSchemaOnlyButton.onclick = async () => {
-        const buttons = [runFullSetupButton, runSchemaOnlyButton, runSeedOnlyButton, validateSetupButton];
-        buttons.forEach(btn => btn.disabled = true);
-        
-        try {
-            outputDiv.innerHTML = '';
-            currentProgress = 0;
-            await bulletproofSchemaSetup();
-        } finally {
-            buttons.forEach(btn => btn.disabled = false);
-        }
-    };
-
-    runSeedOnlyButton.onclick = async () => {
-        const buttons = [runFullSetupButton, runSchemaOnlyButton, runSeedOnlyButton, validateSetupButton];
-        buttons.forEach(btn => btn.disabled = true);
-        
-        try {
-            outputDiv.innerHTML = '';
-            currentProgress = 0;
-            await bulletproofSeedData();
-        } finally {
-            buttons.forEach(btn => btn.disabled = false);
-        }
-    };
-
-    emergencyResetButton.onclick = async () => {
-        if (!confirm('⚠️ EMERGENCY RESET will delete all collections and data. Are you sure?')) return;
-        if (!confirm('🚨 This action is IRREVERSIBLE. Continue?')) return;
-        
-        const confirmation = prompt('Type "DELETE EVERYTHING" to confirm:');
-        if (confirmation !== 'DELETE EVERYTHING') {
-            log('Emergency reset cancelled', 'w');
-            return;
-        }
-        
-        // Sync values
-        pbUrl = pbUrlEditor.value.trim();
-        ADM_E = adminEmailEditor.value.trim();
-        ADM_P = adminPasswordEditor.value;
-        
-        updateProgress(10, '🆘 Starting emergency reset...');
-        log('=== 🆘 EMERGENCY RESET ===', 'w');
-        
-        try {
-            const pb = new PocketBase(pbUrl);
-            await pb.admins.authWithPassword(ADM_E, ADM_P);
-            
-            updateProgress(50, '🗑️ Deleting collections...');
-            
-            const collections = await pb.collections.getFullList();
-            for (const collection of collections) {
-                if (['templates', 'planners'].includes(collection.name)) {
-                    try {
-                        await pb.collections.delete(collection.id);
-                        log(`Deleted collection: ${collection.name}`, 'w');
-                    } catch (error) {
-                        log(`Failed to delete ${collection.name}: ${error.message}`, 'e');
-                    }
-                }
-            }
-            
-            updateProgress(100, '🆘 Emergency reset completed');
-            log('=== 🆘 EMERGENCY RESET COMPLETED ===', 'w');
-            
-            // Reset button states
-            runFullSetupButton.disabled = true;
-            runSchemaOnlyButton.disabled = true;
-            runSeedOnlyButton.disabled = true;
-            validateSetupButton.disabled = true;
-            healthStatus.textContent = '❓';
-            
-        } catch (error) {
-            log('=== ❌ EMERGENCY RESET FAILED ===', 'e', { error: error.message });
-        } finally {
-            try {
-                const pb = new PocketBase(pbUrl);
-                if (pb.authStore.isValid) pb.authStore.clear();
-            } catch (e) {
-                // Ignore cleanup errors
-            }
-        }
-    };
-
-    // Initial setup
-    updateValidationStatus();
-    log('🛡️ PocketBase Bulletproof Setup Editor Ready', 'i');
-    log('✏️ Edit collections and seed data above, then run setup', 'i');
+log('🚀 Enhanced Weekly Planner Setup Ready', 'i');
+log('1. Edit collections/seeds 2. Health check 3. Run setup', 'i');
 </script>
 </body>
 </html>
