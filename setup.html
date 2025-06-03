@@ -14,12 +14,15 @@
         button{padding:3px 6px;background:#007bff;color:white;border:0;border-radius:2px;cursor:pointer;font-size:10px;margin:1px;}
         button:disabled{background:#ccc;} button:hover:not(:disabled){background:#0056b3;}
         button.danger{background:#dc3545;} button.export{background:#17a2b8;} button.reset{background:#6c757d;}
+        #togglePass{background:#f8f9fa !important;color:#333 !important;border:1px solid #ddd !important;z-index:10;}
+        #togglePass:hover{background:#e9ecef !important;}
         
         .row{display:flex;gap:4px;margin:3px 0;} .col{flex:1;}
         .editor{width:100%;min-height:150px;font-family:monospace;font-size:10px;border:1px solid #ccc;border-radius:2px;padding:3px;resize:vertical;}
         .editor:focus{outline:none;border-color:#007bff;}
         input{width:100%;padding:2px;border:1px solid #ccc;border-radius:2px;font-size:10px;}
         input:focus{outline:none;border-color:#007bff;}
+        #pass{padding-right:25px;} /* Space for toggle button */
         label{display:block;font-weight:500;font-size:9px;margin-bottom:1px;}
         
         .status{padding:2px 4px;border-radius:2px;font-size:9px;margin-top:2px;}
@@ -58,7 +61,10 @@
             </div>
             <div class="col">
                 <label for="pass">Password:</label>
-                <input id="pass" type="password" value="unifiedpassword">
+                <div style="position:relative;">
+                    <input id="pass" type="password" value="unifiedpassword">
+                    <button type="button" id="togglePass" title="Show password" style="position:absolute;right:2px;top:1px;padding:1px 4px;font-size:8px;background:#f8f9fa;border:1px solid #ddd;cursor:pointer;">👁️</button>
+                </div>
             </div>
         </div>
         
@@ -1009,6 +1015,22 @@ const DEFAULT_SEEDS = {
             }
         }
     ]
+};
+
+// Password visibility toggle
+document.getElementById('togglePass').onclick = () => {
+    const passField = document.getElementById('pass');
+    const toggleBtn = document.getElementById('togglePass');
+    
+    if (passField.type === 'password') {
+        passField.type = 'text';
+        toggleBtn.textContent = '🙈';
+        toggleBtn.title = 'Hide password';
+    } else {
+        passField.type = 'password';
+        toggleBtn.textContent = '👁️';
+        toggleBtn.title = 'Show password';
+    }
 };
 
 // Event handlers
