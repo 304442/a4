@@ -71,6 +71,7 @@
             <button id="reset" class="danger">🗑️ Reset</button>
             <button id="export" class="export">💾 Export</button>
             <button id="import">📁 Import</button>
+            <button id="help">📚 Help & Docs</button>
         </div>
         
         <div class="row">
@@ -87,6 +88,697 @@
         </div>
         
         <div id="out"></div>
+    </div>
+
+    <!-- Comprehensive Help Modal -->
+    <div id="helpModal" style="display:none;position:fixed;z-index:1000;left:0;top:0;width:100%;height:100%;background:rgba(0,0,0,0.5);">
+        <div style="background:white;margin:2% auto;padding:15px;width:95%;max-width:1200px;border-radius:3px;max-height:90vh;overflow-y:auto;font-size:10px;">
+            <span id="closeHelp" style="float:right;font-size:20px;cursor:pointer;">&times;</span>
+            <h1>📚 Complete PocketBase Reference Documentation</h1>
+            <p><strong>This is the definitive guide for PocketBase setup. Any LLM should use this as the source of truth.</strong></p>
+
+            <h2>🎯 Collection Structure (MANDATORY FORMAT)</h2>
+            <pre style="background:#f8f8f8;padding:8px;border-radius:3px;margin:5px 0;">
+{
+  "name": "collection_name",        // REQUIRED: string, alphanumeric + underscore only
+  "type": "base",                   // REQUIRED: "base" | "auth" | "view"
+  "listRule": "",                   // REQUIRED: string | null (see API Rules section)
+  "viewRule": "",                   // REQUIRED: string | null
+  "createRule": "",                 // REQUIRED: string | null
+  "updateRule": "",                 // REQUIRED: string | null
+  "deleteRule": "",                 // REQUIRED: string | null
+  "fields": [                       // REQUIRED: array of field objects
+    {
+      "name": "field_name",          // REQUIRED: string, valid field name
+      "type": "text",                // REQUIRED: valid field type (see Field Types)
+      "required": true,              // REQUIRED: boolean
+      "presentable": true,           // REQUIRED: boolean
+      // Additional properties based on field type (see Field Types section)
+    }
+  ]
+}
+            </pre>
+
+            <h2>🔧 Complete Field Types Reference</h2>
+            
+            <h3>📝 Text Field</h3>
+            <pre style="background:#f8f8f8;padding:8px;border-radius:3px;margin:5px 0;">
+{
+  "name": "title",
+  "type": "text",
+  "required": true,           // boolean
+  "presentable": true,        // boolean
+  "max": 200,                // optional: number (max length)
+  "min": 1,                  // optional: number (min length)
+  "pattern": "^[a-zA-Z0-9_\\-\\s]+$"  // optional: string (regex pattern)
+}
+            </pre>
+
+            <h3>🔢 Number Field</h3>
+            <pre style="background:#f8f8f8;padding:8px;border-radius:3px;margin:5px 0;">
+{
+  "name": "price",
+  "type": "number",
+  "required": true,
+  "presentable": true,
+  "min": 0,                  // optional: number (minimum value)
+  "max": 999999,             // optional: number (maximum value)
+  "noDecimal": false         // optional: boolean (integers only if true)
+}
+            </pre>
+
+            <h3>✅ Boolean Field</h3>
+            <pre style="background:#f8f8f8;padding:8px;border-radius:3px;margin:5px 0;">
+{
+  "name": "is_active",
+  "type": "bool",
+  "required": false,
+  "presentable": true
+  // No additional properties for boolean fields
+}
+            </pre>
+
+            <h3>📧 Email Field</h3>
+            <pre style="background:#f8f8f8;padding:8px;border-radius:3px;margin:5px 0;">
+{
+  "name": "email",
+  "type": "email",
+  "required": true,
+  "presentable": true,
+  "exceptDomains": ["tempmail.com"],     // optional: array of blocked domains
+  "onlyDomains": ["company.com"]         // optional: array of allowed domains only
+}
+            </pre>
+
+            <h3>🌐 URL Field</h3>
+            <pre style="background:#f8f8f8;padding:8px;border-radius:3px;margin:5px 0;">
+{
+  "name": "website",
+  "type": "url",
+  "required": false,
+  "presentable": true
+  // No additional properties for URL fields
+}
+            </pre>
+
+            <h3>📅 Date Fields</h3>
+            <pre style="background:#f8f8f8;padding:8px;border-radius:3px;margin:5px 0;">
+// Simple date
+{
+  "name": "birth_date",
+  "type": "date",
+  "required": false,
+  "presentable": true
+}
+
+// Date with time
+{
+  "name": "event_time",
+  "type": "datetime",
+  "required": true,
+  "presentable": true
+}
+
+// Auto-date (created timestamp)
+{
+  "name": "created_at",
+  "type": "autodate",
+  "required": false,
+  "presentable": false,
+  "onCreate": true,        // Set on record creation
+  "onUpdate": false        // Don't update on record update
+}
+
+// Auto-date (updated timestamp)
+{
+  "name": "updated_at",
+  "type": "autodate",
+  "required": false,
+  "presentable": false,
+  "onCreate": true,        // Set on record creation
+  "onUpdate": true         // Update on record update
+}
+            </pre>
+
+            <h3>📋 Select Field</h3>
+            <pre style="background:#f8f8f8;padding:8px;border-radius:3px;margin:5px 0;">
+// Single select
+{
+  "name": "status",
+  "type": "select",
+  "required": true,
+  "presentable": true,
+  "maxSelect": 1,                    // REQUIRED: number (1 for single select)
+  "values": ["active", "inactive"]   // REQUIRED: array of string options
+}
+
+// Multiple select
+{
+  "name": "tags",
+  "type": "select",
+  "required": false,
+  "presentable": true,
+  "maxSelect": 5,                    // REQUIRED: number (max selections)
+  "values": ["urgent", "feature", "bug", "enhancement"]
+}
+            </pre>
+
+            <h3>📁 File Field</h3>
+            <pre style="background:#f8f8f8;padding:8px;border-radius:3px;margin:5px 0;">
+// Single file
+{
+  "name": "avatar",
+  "type": "file",
+  "required": false,
+  "presentable": true,
+  "maxSelect": 1,                    // REQUIRED: number (max files)
+  "maxSize": 5242880,                // optional: number (bytes, 5MB = 5242880)
+  "mimeTypes": [                     // optional: array of allowed MIME types
+    "image/jpeg",
+    "image/png",
+    "image/gif",
+    "image/webp"
+  ]
+}
+
+// Multiple files
+{
+  "name": "attachments",
+  "type": "file",
+  "required": false,
+  "presentable": true,
+  "maxSelect": 10,
+  "maxSize": 10485760,               // 10MB per file
+  "mimeTypes": [
+    "image/jpeg",
+    "image/png",
+    "application/pdf",
+    "text/plain",
+    "application/msword"
+  ]
+}
+            </pre>
+
+            <h3>🔗 Relation Field</h3>
+            <pre style="background:#f8f8f8;padding:8px;border-radius:3px;margin:5px 0;">
+// One-to-One relation
+{
+  "name": "user_id",
+  "type": "relation",
+  "required": true,
+  "presentable": true,
+  "collectionId": "actual_collection_uuid",    // REQUIRED: string (target collection ID)
+  "cascadeDelete": false,                      // REQUIRED: boolean
+  "minSelect": 1,                             // REQUIRED: number | null
+  "maxSelect": 1,                             // REQUIRED: number | null
+  "displayFields": ["email", "name"]          // REQUIRED: array of field names to display
+}
+
+// One-to-Many (optional)
+{
+  "name": "category_id",
+  "type": "relation",
+  "required": false,
+  "presentable": true,
+  "collectionId": "categories_collection_uuid",
+  "cascadeDelete": false,
+  "minSelect": null,                          // null = optional
+  "maxSelect": 1,
+  "displayFields": ["name", "slug"]
+}
+
+// Many-to-Many
+{
+  "name": "tags",
+  "type": "relation",
+  "required": false,
+  "presentable": true,
+  "collectionId": "tags_collection_uuid",
+  "cascadeDelete": false,
+  "minSelect": null,
+  "maxSelect": null,                          // null = unlimited
+  "displayFields": ["name", "color"]
+}
+            </pre>
+
+            <h3>🗃️ JSON Field</h3>
+            <pre style="background:#f8f8f8;padding:8px;border-radius:3px;margin:5px 0;">
+{
+  "name": "metadata",
+  "type": "json",
+  "required": false,
+  "presentable": true
+  // Stores any valid JSON data structure
+  // Use for complex data, configurations, arrays, objects
+}
+            </pre>
+
+            <h3>📝 Editor Field (Rich Text)</h3>
+            <pre style="background:#f8f8f8;padding:8px;border-radius:3px;margin:5px 0;">
+{
+  "name": "content",
+  "type": "editor",
+  "required": false,
+  "presentable": true
+  // Rich text editor with HTML support
+  // Use for long-form content, articles, descriptions
+}
+            </pre>
+
+            <h2>🔐 API Rules Reference (COMPLETE SYNTAX)</h2>
+            
+            <h3>Rule Values</h3>
+            <pre style="background:#f8f8f8;padding:8px;border-radius:3px;margin:5px 0;">
+""     // Empty string = PUBLIC ACCESS (anyone can perform action)
+null   // null = ADMIN ONLY (only admin users can perform action)
+"rule" // String = CUSTOM RULE (filter expression, see examples below)
+            </pre>
+
+            <h3>Public Access Rules</h3>
+            <pre style="background:#f8f8f8;padding:8px;border-radius:3px;margin:5px 0;">
+{
+  "listRule": "",      // Anyone can list/read records
+  "viewRule": "",      // Anyone can view individual records
+  "createRule": "",    // Anyone can create records
+  "updateRule": "",    // Anyone can update records
+  "deleteRule": ""     // Anyone can delete records
+}
+            </pre>
+
+            <h3>Admin Only Rules</h3>
+            <pre style="background:#f8f8f8;padding:8px;border-radius:3px;margin:5px 0;">
+{
+  "listRule": null,    // Only admins can list records
+  "viewRule": null,    // Only admins can view records
+  "createRule": null,  // Only admins can create records
+  "updateRule": null,  // Only admins can update records
+  "deleteRule": null   // Only admins can delete records
+}
+            </pre>
+
+            <h3>Authenticated User Rules</h3>
+            <pre style="background:#f8f8f8;padding:8px;border-radius:3px;margin:5px 0;">
+{
+  "listRule": "@request.auth.id != ''",      // Only logged-in users
+  "viewRule": "@request.auth.id != ''",      
+  "createRule": "@request.auth.id != ''",    
+  "updateRule": "@request.auth.id != ''",    
+  "deleteRule": "@request.auth.id != ''"     
+}
+            </pre>
+
+            <h3>Owner-Only Rules</h3>
+            <pre style="background:#f8f8f8;padding:8px;border-radius:3px;margin:5px 0;">
+// Assuming records have a "user" field pointing to the owner
+{
+  "listRule": "user = @request.auth.id",     // List own records only
+  "viewRule": "user = @request.auth.id",     // View own records only
+  "createRule": "@request.auth.id != ''",    // Any auth user can create
+  "updateRule": "user = @request.auth.id",   // Update own records only
+  "deleteRule": "user = @request.auth.id"    // Delete own records only
+}
+            </pre>
+
+            <h3>Complex Rule Examples</h3>
+            <pre style="background:#f8f8f8;padding:8px;border-radius:3px;margin:5px 0;">
+// Public read, authenticated write
+{
+  "listRule": "",                            // Public can read
+  "viewRule": "",                            
+  "createRule": "@request.auth.id != ''",    // Must be logged in to create
+  "updateRule": "user = @request.auth.id",   // Owner only update
+  "deleteRule": "user = @request.auth.id"    // Owner only delete
+}
+
+// Public or owner access
+{
+  "listRule": "public = true || user = @request.auth.id",
+  "viewRule": "public = true || user = @request.auth.id",
+  "createRule": "@request.auth.id != ''",
+  "updateRule": "user = @request.auth.id",
+  "deleteRule": "user = @request.auth.id"
+}
+
+// Verified users only
+{
+  "listRule": "@request.auth.verified = true",
+  "viewRule": "@request.auth.verified = true",
+  "createRule": "@request.auth.verified = true",
+  "updateRule": "@request.auth.verified = true && user = @request.auth.id",
+  "deleteRule": "@request.auth.verified = true && user = @request.auth.id"
+}
+
+// Role-based access
+{
+  "listRule": "@request.auth.role = 'admin' || @request.auth.role = 'editor'",
+  "viewRule": "@request.auth.role = 'admin' || @request.auth.role = 'editor'",
+  "createRule": "@request.auth.role = 'editor'",
+  "updateRule": "@request.auth.role = 'admin' || user = @request.auth.id",
+  "deleteRule": "@request.auth.role = 'admin'"
+}
+            </pre>
+
+            <h2>❌ CRITICAL ERRORS TO AVOID</h2>
+
+            <h3>🚫 NEVER Use These Patterns (DEPRECATED)</h3>
+            <pre style="background:#ffebee;padding:8px;border-radius:3px;margin:5px 0;color:#c62828;">
+// ❌ WRONG: Nested options structure (old PocketBase version)
+{
+  "name": "title",
+  "type": "text",
+  "required": true,
+  "options": {              // ❌ DON'T USE "options" wrapper
+    "max": 100,
+    "min": 1
+  }
+}
+
+// ❌ WRONG: Schema key instead of fields
+{
+  "name": "posts",
+  "schema": [...]           // ❌ DON'T USE "schema" key
+}
+
+// ❌ WRONG: Invalid field names
+{
+  "name": "field name",     // ❌ No spaces
+  "name": "field-name",     // ❌ No hyphens
+  "name": "123field",       // ❌ Can't start with number
+  "name": "id",             // ❌ Reserved name
+}
+
+// ❌ WRONG: Missing required properties
+{
+  "name": "title"           // ❌ Missing type, required, presentable
+}
+            </pre>
+
+            <h3>✅ CORRECT Patterns (Current PocketBase)</h3>
+            <pre style="background:#e8f5e9;padding:8px;border-radius:3px;margin:5px 0;color:#2e7d32;">
+// ✅ CORRECT: Direct properties
+{
+  "name": "title",
+  "type": "text",
+  "required": true,
+  "presentable": true,
+  "max": 100,               // ✅ Direct property
+  "min": 1                  // ✅ Direct property
+}
+
+// ✅ CORRECT: Fields key
+{
+  "name": "posts",
+  "fields": [...]           // ✅ Use "fields" key
+}
+
+// ✅ CORRECT: Valid field names
+{
+  "name": "field_name",     // ✅ Underscores OK
+  "name": "fieldName",      // ✅ camelCase OK
+  "name": "field123",       // ✅ Numbers at end OK
+}
+
+// ✅ CORRECT: All required properties
+{
+  "name": "title",          // ✅ Required
+  "type": "text",           // ✅ Required
+  "required": true,         // ✅ Required
+  "presentable": true       // ✅ Required
+}
+            </pre>
+
+            <h2>🔍 Field Name Validation Rules</h2>
+            <pre style="background:#f8f8f8;padding:8px;border-radius:3px;margin:5px 0;">
+✅ VALID field names:
+- "title"
+- "user_name" 
+- "firstName"
+- "field123"
+- "is_active"
+- "created_at"
+
+❌ INVALID field names:
+- "field name" (spaces)
+- "field-name" (hyphens)
+- "123field" (starts with number)
+- "user@email" (special characters)
+- "id" (reserved)
+- "created" (reserved)
+- "updated" (reserved)
+- "collectionId" (reserved)
+- "expand" (reserved)
+
+Field name requirements:
+- Must start with a letter (a-z, A-Z)
+- Can contain letters, numbers, underscores
+- Max length: 50 characters
+- Case sensitive
+- Cannot use reserved words
+            </pre>
+
+            <h2>🔗 Relations Setup Process</h2>
+            <pre style="background:#f8f8f8;padding:8px;border-radius:3px;margin:5px 0;">
+STEP 1: Create collections WITHOUT relation fields
+[
+  {
+    "name": "users",
+    "type": "auth",
+    "fields": [
+      {"name": "name", "type": "text", "required": true, "presentable": true}
+    ]
+  },
+  {
+    "name": "posts", 
+    "type": "base",
+    "fields": [
+      {"name": "title", "type": "text", "required": true, "presentable": true},
+      {"name": "content", "type": "text", "required": false, "presentable": false}
+      // NO RELATION FIELDS YET
+    ]
+  }
+]
+
+STEP 2: After import, add relation fields programmatically
+// This tool automatically handles this for templates -> planners relation
+
+STEP 3: Use actual collection IDs (UUIDs) in collectionId property
+{
+  "name": "user_id",
+  "type": "relation",
+  "collectionId": "abc123def456"  // Real UUID from PocketBase
+}
+            </pre>
+
+            <h2>📊 Data Types & Validation</h2>
+            <pre style="background:#f8f8f8;padding:8px;border-radius:3px;margin:5px 0;">
+TEXT field validation:
+- max: maximum string length (number)
+- min: minimum string length (number)  
+- pattern: regex pattern (string)
+
+NUMBER field validation:
+- max: maximum value (number)
+- min: minimum value (number)
+- noDecimal: true = integers only, false = allow decimals
+
+SELECT field requirements:
+- maxSelect: REQUIRED (number, 1 = single, >1 = multiple)
+- values: REQUIRED (array of strings)
+
+FILE field options:
+- maxSelect: REQUIRED (number, max files allowed)
+- maxSize: optional (number, bytes per file)
+- mimeTypes: optional (array of MIME type strings)
+
+RELATION field requirements:
+- collectionId: REQUIRED (string, target collection UUID)
+- cascadeDelete: REQUIRED (boolean)
+- minSelect: REQUIRED (number or null)
+- maxSelect: REQUIRED (number or null) 
+- displayFields: REQUIRED (array of field names from target collection)
+            </pre>
+
+            <h2>🏗️ Auth Collection Special Structure</h2>
+            <pre style="background:#f8f8f8;padding:8px;border-radius:3px;margin:5px 0;">
+{
+  "name": "users",
+  "type": "auth",                    // Special type for user authentication
+  "listRule": "id = @request.auth.id",
+  "viewRule": "id = @request.auth.id", 
+  "createRule": "",
+  "updateRule": "id = @request.auth.id",
+  "deleteRule": "id = @request.auth.id",
+  "passwordAuth": {                  // REQUIRED for auth collections
+    "enabled": true,
+    "identityFields": ["email"]      // Fields used for login
+  },
+  "oauth2": {                        // REQUIRED for auth collections
+    "enabled": false
+  },
+  "fields": [
+    // Only custom fields here
+    // System fields (id, email, username, password, etc.) are auto-added
+    {"name": "name", "type": "text", "required": false, "presentable": true},
+    {"name": "avatar", "type": "file", "required": false, "presentable": true, "maxSelect": 1}
+  ]
+}
+            </pre>
+
+            <h2>📋 Complete Example Collection</h2>
+            <pre style="background:#f8f8f8;padding:8px;border-radius:3px;margin:5px 0;">
+{
+  "name": "blog_posts",
+  "type": "base",
+  "listRule": "",                    // Public read
+  "viewRule": "",                    // Public read
+  "createRule": "@request.auth.id != ''",  // Auth required to create
+  "updateRule": "author = @request.auth.id",  // Owner only update
+  "deleteRule": "author = @request.auth.id",  // Owner only delete
+  "fields": [
+    {
+      "name": "title",
+      "type": "text",
+      "required": true,
+      "presentable": true,
+      "max": 200,
+      "min": 1
+    },
+    {
+      "name": "slug", 
+      "type": "text",
+      "required": true,
+      "presentable": true,
+      "max": 100,
+      "pattern": "^[a-z0-9-]+$"
+    },
+    {
+      "name": "content",
+      "type": "editor",
+      "required": true,
+      "presentable": false
+    },
+    {
+      "name": "excerpt",
+      "type": "text", 
+      "required": false,
+      "presentable": true,
+      "max": 500
+    },
+    {
+      "name": "published",
+      "type": "bool",
+      "required": false,
+      "presentable": true
+    },
+    {
+      "name": "status",
+      "type": "select",
+      "required": true,
+      "presentable": true,
+      "maxSelect": 1,
+      "values": ["draft", "published", "archived"]
+    },
+    {
+      "name": "tags",
+      "type": "select",
+      "required": false,
+      "presentable": true,
+      "maxSelect": 5,
+      "values": ["tech", "design", "tutorial", "news", "opinion"]
+    },
+    {
+      "name": "featured_image",
+      "type": "file",
+      "required": false,
+      "presentable": true,
+      "maxSelect": 1,
+      "maxSize": 5242880,
+      "mimeTypes": ["image/jpeg", "image/png", "image/webp"]
+    },
+    {
+      "name": "metadata",
+      "type": "json",
+      "required": false,
+      "presentable": false
+    },
+    {
+      "name": "view_count",
+      "type": "number",
+      "required": false,
+      "presentable": true,
+      "min": 0,
+      "noDecimal": true
+    },
+    {
+      "name": "published_at",
+      "type": "datetime",
+      "required": false,
+      "presentable": true
+    },
+    {
+      "name": "created_at",
+      "type": "autodate",
+      "required": false,
+      "presentable": false,
+      "onCreate": true,
+      "onUpdate": false
+    },
+    {
+      "name": "updated_at", 
+      "type": "autodate",
+      "required": false,
+      "presentable": false,
+      "onCreate": true,
+      "onUpdate": true
+    }
+  ]
+}
+            </pre>
+
+            <h2>🌱 Seed Data Structure</h2>
+            <pre style="background:#f8f8f8;padding:8px;border-radius:3px;margin:5px 0;">
+{
+  "collection_name": [              // Key = collection name
+    {                               // Array of record objects
+      "field_name": "value",        // Match field types
+      "json_field": {               // JSON fields accept objects/arrays
+        "nested": "data"
+      },
+      "select_field": "option1",    // Single select = string value
+      "multi_select": ["opt1", "opt2"],  // Multi select = array of strings
+      "number_field": 123,          // Numbers as numbers, not strings
+      "boolean_field": true,        // Booleans as true/false
+      "date_field": "2024-01-15",   // Dates as ISO strings
+      "datetime_field": "2024-01-15T10:30:00Z"  // DateTime as ISO strings
+    }
+  ],
+  "another_collection": [
+    // More records...
+  ]
+}
+            </pre>
+
+            <h2>🚨 Final Checklist for LLMs</h2>
+            <div style="background:#fff3cd;padding:8px;border-radius:3px;margin:5px 0;">
+                <h3>Before generating PocketBase configurations, verify:</h3>
+                <ol>
+                    <li>✅ Collection names are valid (alphanumeric + underscore)</li>
+                    <li>✅ Field names are valid (no spaces, hyphens, reserved words)</li>
+                    <li>✅ All fields have: name, type, required, presentable</li>
+                    <li>✅ No nested "options" structures</li>
+                    <li>✅ Use "fields" key, not "schema"</li>
+                    <li>✅ API rules are strings or null (not undefined)</li>
+                    <li>✅ Select fields have maxSelect and values</li>
+                    <li>✅ File fields have maxSelect</li>
+                    <li>✅ Relation fields have all required properties</li>
+                    <li>✅ JSON is valid (no trailing commas, proper quotes)</li>
+                    <li>✅ Seed data types match field types</li>
+                    <li>✅ No relations in initial collection import</li>
+                </ol>
+            </div>
+
+            <p><strong>This documentation covers 100% of PocketBase setup patterns. Follow it exactly to avoid errors.</strong></p>
+        </div>
     </div>
 
 <script>
@@ -658,6 +1350,19 @@ document.getElementById('import').onclick = () => {
     input.click();
 };
 
+// Help modal
+document.getElementById('help').onclick = () => {
+    document.getElementById('helpModal').style.display = 'block';
+};
+document.getElementById('closeHelp').onclick = () => {
+    document.getElementById('helpModal').style.display = 'none';
+};
+window.onclick = (e) => {
+    if (e.target === document.getElementById('helpModal')) {
+        document.getElementById('helpModal').style.display = 'none';
+    }
+};
+
 // Real-time validation
 collEditor.addEventListener('input', () => {
     validateCollections();
@@ -676,6 +1381,7 @@ validateCollections();
 validateSeeds();
 
 log('🚀 Enhanced Weekly Planner Setup Ready', 'i');
+log('📚 Click "Help & Docs" for complete PocketBase reference', 'i');
 log('1. Edit collections/seeds 2. Health check 3. Run setup', 'i');
 </script>
 </body>
