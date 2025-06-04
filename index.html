@@ -10,12 +10,19 @@
   <link rel="stylesheet" href="styles.css">
 </head>
 <body x-data="plannerApp()" x-init="init()">
-  <div id="save-status" :class="'status-' + saveStatus" x-text="saveStatus === 'saving' ? 'Saving...' : (saveStatus === 'error' ? 'Error!' : 'Saved')"></div>
-  <div id="sync-status" :class="pendingSync.length > 0 ? 'status-pending' : 'status-synced'" x-show="pendingSync.length > 0 || !isOnline">
-    <span x-text="isOnline ? (pendingSync.length > 0 ? 'Pending: ' + pendingSync.length : '') : 'Offline'"></span>
+  <div class="offline-warning" :class="{ 'show': !isOnline }">
+    ⚠️ Offline Mode - Changes saved locally only. Will sync when connection restored.
+  </div>
+
+  <div id="save-status" :class="'status-' + saveStatus" x-text="saveStatus === 'saving' ? 'Saving...' : (saveStatus === 'error' ? 'Error!' : saveStatus === 'local' ? 'Local' : saveStatus === 'syncing' ? 'Syncing...' : 'Saved')"></div>
+  <div id="sync-status" :class="isOnline ? 'status-online' : 'status-offline'" x-show="!isOnline || syncQueue.length > 0">
+    <span x-text="isOnline ? (syncQueue.length > 0 ? `Queue: ${syncQueue.length}` : 'Online') : 'Offline'"></span>
+  </div>
+  <div id="offline-status" x-show="hasUnsavedLocalChanges" class="status-local">
+    Unsaved Changes
   </div>
   <div id="notification" :class="{ 'show': showNotification }" x-text="notificationMessage"></div>
-  
+
   <div class="card">
     <div class="flex between center mb-1">
       <h1 class="text-sm bold editable" @dblclick="editField($event, 'plannerTitle', plannerTitle)" x-text="plannerTitle"></h1>
@@ -108,17 +115,17 @@
         <tbody>
           <template x-for="(task, i) in tasks" :key="task.id || i">
             <tr :class="getTaskRowClass(task)" class="task-row">
-              <td><input type="text" class="mini-input" x-model="task.num" :placeholder="i + 1" @change="saveData()"></td>
-              <td><input type="text" class="mini-input" x-model="task.priority" placeholder="A" @change="saveData()"></td>
-              <td><input type="text" class="mini-input" x-model="task.tag" placeholder="W" @change="saveData()"></td>
-              <td><input type="text" class="mini-input task-description-input" x-model="task.description" placeholder="Task description" @change="saveData()"></td>
+              <td><input type="text" class="mini-input" x-model="task.num" :placeholder="uiHints.placeholders?.task_num_prefix ? uiHints.placeholders.task_num_prefix + (i + 1) : (i + 1)" @change="saveData()"></td>
+              <td><input type="text" class="mini-input" x-model="task.priority" :placeholder="uiHints.placeholders?.task_priority" @change="saveData()"></td>
+              <td><input type="text" class="mini-input" x-model="task.tag" :placeholder="uiHints.placeholders?.task_tag" @change="saveData()"></td>
+              <td><input type="text" class="mini-input task-description-input" x-model="task.description" :placeholder="uiHints.placeholders?.task_description" @change="saveData()"></td>
               <td><input type="date" class="mini-input date-input" x-model="task.startDate" @change="calculateTaskDelay(task); saveData();"></td>
               <td><input type="date" class="mini-input date-input" x-model="task.expectedDate" @change="calculateTaskDelay(task); saveData();"></td>
               <td><input type="date" class="mini-input date-input" x-model="task.actualDate" @change="calculateTaskDelay(task); saveData();"></td>
               <td class="dc delay-cell" :class="getDelayClass(task)">
                 <span x-text="formatDelay(getTaskDelay(task))"></span>
               </td>
-              <td><input type="text" class="mini-input" x-model="task.completed" @click.prevent="toggleTaskCompletion(task)" :class="{'completed-task': task.completed === '✓'}" placeholder="☐"></td>
+              <td><input type="text" class="mini-input" x-model="task.completed" @click.prevent="toggleTaskCompletion(task)" :class="{'completed-task': task.completed === uiHints.symbols?.task_checkbox_checked}" :placeholder="uiHints.symbols?.task_checkbox_empty"></td>
             </tr>
           </template>
         </tbody>
@@ -137,11 +144,11 @@
                   <span x-text="ex.name"></span>:
                 </div>
                 <div class="exercise-inputs">
-                  <input type="number" class="mini-input" x-model.number="ex.weight" @input="saveData();" :placeholder="ex.defaultWeight">
-                  <span class="exercise-unit">kg,</span>
-                  <input type="number" class="mini-input sets" x-model.number="ex.sets" @input="saveData();" :placeholder="ex.defaultSets">
-                  <span class="exercise-unit">×</span>
-                  <input type="number" class="mini-input reps" x-model.number="ex.reps" @input="saveData();" :placeholder="ex.defaultReps">
+                  <input type="number" class="mini-input" x-model.number="ex.weight" @input="saveData();" :placeholder="ex.defaultWeight || uiHints.placeholders?.workout_weight_value">
+                  <span class="exercise-unit" x-text="uiHints.symbols?.weight_unit"></span>,
+                  <input type="number" class="mini-input sets" x-model.number="ex.sets" @input="saveData();" :placeholder="ex.defaultSets || uiHints.placeholders?.workout_sets_value">
+                  <span class="exercise-unit" x-text="uiHints.symbols?.sets_reps_separator"></span>
+                  <input type="number" class="mini-input reps" x-model.number="ex.reps" @input="saveData();" :placeholder="ex.defaultReps || uiHints.placeholders?.workout_reps_value">
                 </div>
               </div>
             </template>
@@ -165,7 +172,8 @@
     <div class="section">
       <h3 class="section-title inline-title editable" @dblclick="editField($event, 'sectionTitle', uiConfig.sectionTitles?.grocery, 'grocery')">
         <span x-text="uiConfig.sectionTitles?.grocery"></span>
-        <input type="text" class="mini-input inline-input" x-model="groceryBudget" placeholder="£120" @change="saveData();">
+        <span x-text="uiHints.symbols?.currency_default"></span>
+        <input type="text" class="mini-input inline-input" x-model="groceryBudget" :placeholder="uiHints.placeholders?.grocery_budget_value" @change="saveData();">
       </h3>
       <ul class="list text-xs">
         <template x-for="(cat, i) in groceryList" :key="cat.id || i">
@@ -183,7 +191,8 @@
         <template x-for="(m, i) in bodyMeasurements" :key="m.id || i">
           <span class="inline-measurement">
             <span class="editable measurement-label" @dblclick="editField($event, 'measurementName', m.name, i)" x-text="m.name + ':'"></span>
-            <input type="text" class="mini-input inline-input" x-model="m.value" :placeholder="m.placeholder" @change="saveData();">
+            <input type="text" class="mini-input inline-input" x-model="m.value" :placeholder="m.placeholder || uiHints.placeholders?.measurement_value" @change="saveData();">
+            <span class="measurement-unit" x-text="m.unit || uiHints.symbols?.default_measurement_unit"></span>
           </span>
         </template>
       </h3>
@@ -195,7 +204,8 @@
         <template x-for="(item, i) in financials" :key="item.id || i">
           <span class="inline-financial">
             <span class="editable financial-label" @dblclick="editField($event, 'financialName', item.name, i)" x-text="item.name + ':'"></span>
-            £<input type="text" class="mini-input inline-input" x-model="item.value" :placeholder="item.placeholder" @change="saveData();">
+            <span x-text="item.currency_symbol || uiHints.symbols?.currency_default"></span>
+            <input type="text" class="mini-input inline-input" x-model="item.value" :placeholder="item.placeholder || uiHints.placeholders?.financial_value" @change="saveData();">
             <span class="editable" @dblclick="editField($event, 'financialAccount', item.account, i)" x-text="item.account"></span>
           </span>
         </template>
@@ -216,13 +226,13 @@
       <template x-if="savedWeeks.length > 0">
         <template x-for="week in savedWeeks" :key="week.iso_week">
           <div class="flex between center dropdown-item" :class="{'current': week.isCurrent}">
-            <span @click="confirmLoadWeek(week.iso_week)" x-text="`${week.iso_week} (${week.dateRange})`"></span>
+            <span @click="confirmLoadWeek(week.iso_week)" x-text="`${week.iso_week} (${week.dateRange})${week.hasUnsavedChanges ? ' *' : ''}${week.source === 'local' ? ' 📱' : ''}`"></span>
             <span @click="confirmDeleteWeek(week.iso_week)" class="delete-week-btn">×</span>
           </div>
         </template>
       </template>
       <template x-if="savedWeeks.length === 0">
-        <div class="dropdown-item-empty">No saved schedules</div>
+        <div class="dropdown-item-empty" x-text="uiHints.placeholders?.no_saved_schedules || 'No saved schedules'"></div>
       </template>
     </div>
   </div>
