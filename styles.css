@@ -122,9 +122,8 @@ tr.task-completed td:nth-child(4) input{text-decoration:line-through;color:#6c75
 .task-table .task-description-input:focus-visible{color:#111827!important;font-weight:600;}
 
 .section{margin-top:2mm;}
-.section-title{margin-bottom:2mm;font-size:10pt;font-weight:700;color:#1f2937;padding:2mm 0;border-bottom:2px solid #e5e7eb;position:relative;display:flex;align-items:center;letter-spacing:-.01em;}
+.section-title{margin-bottom:1mm;font-size:10pt;font-weight:700;color:#1f2937;padding:1mm 0;position:relative;display:flex;align-items:center;letter-spacing:-.01em;}
 .section-title.inline-title{gap:2mm;}
-.section-title::before{content:'';position:absolute;bottom:-2px;left:0;width:40px;height:2px;background:linear-gradient(135deg,#667eea,#764ba2);border-radius:1px;}
 
 table:not(.task-table) th{background:linear-gradient(135deg,#f8fafc 0%,#e2e8f0 100%)!important;color:#475569!important;font-weight:600;border-bottom:2px solid #cbd5e1!important;font-size:8pt;}
 table:not(.task-table) tr:hover td{background-color:#f1f5f9!important;transition:background-color .15s ease;}
@@ -243,7 +242,7 @@ h1.editable{font-size:8pt;font-weight:bold;line-height:1.2;}
   .task-table th:nth-child(9),.task-table td:nth-child(9){width:6mm!important;}
   .task-table input,input,.mini-input{border:none!important;background:transparent!important;font-size:inherit!important;font-family:inherit!important;color:#000!important;padding:0!important;margin:0!important;width:100%!important;height:auto!important;box-shadow:none!important;outline:none!important;appearance:none!important;-webkit-appearance:none!important;-moz-appearance:textfield!important;line-height:1.1!important;}
   input[type=number]::-webkit-outer-spin-button,input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none!important;margin:0!important;}
-  .section-title{font-size:7pt!important;margin:1mm 0 .5mm 0!important;padding:.5mm 0!important;border-bottom:1px solid #000!important;}
+  .section-title{font-size:7pt!important;margin:1mm 0 .5mm 0!important;padding:.5mm 0!important;}
   .section-title::before{display:none!important;}
   .grid{gap:.5mm!important;}
   .workout-day-card{padding:.5mm!important;}
