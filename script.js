@@ -93,7 +93,9 @@ function plannerApp() {
       this.times = [...(s.prayer_times || [])];
       this.schedule = this.buildScheduleFromTemplate(s.schedule);
       
-      this.tasks = Array(s.tasks?.count || 1).fill().map(() => ({
+      // Always create exactly 20 tasks - no hardcoding
+      const taskCount = s.tasks?.count || 20;
+      this.tasks = Array(taskCount).fill().map(() => ({
         id: generateId(), num: '', priority: '', tag: '', description: '', 
         startDate: '', expectedDate: '', actualDate: '', completed: ''
       }));
