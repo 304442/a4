@@ -45,125 +45,154 @@ td.dc:nth-child(4n+5), th.dc:nth-child(4n+5) { border-right: 1px solid #ccc; }
 .current-day { background-color: #fff8e1 !important; }
 
 /* Task Table Specific Styling with NO MARGINS/SPACING */
-.section .task-table {
-  border-collapse: collapse;
+.task-table {
+  border-collapse: collapse !important;
   width: 100%;
   margin-top: 1mm;
+  border-spacing: 0 !important;
 }
 
-/* Task Table Headers with Borders */
-.section .task-table th {
+/* Task Table Headers - Remove all spacing */
+.task-table th {
   background-color: #e6e6e6 !important;
   border-right: 1px solid #ccc;
   border-bottom: 1px solid #ccc;
   font-weight: bold;
   text-align: center;
-  padding: 1mm 0.5mm;
-  height: 3mm;
+  padding: 0.5mm !important;
+  margin: 0 !important;
+  height: 3mm !important;
+  line-height: 3mm !important;
 }
 
-.section .task-table th:last-child {
+.task-table th:last-child {
   border-right: none;
 }
 
-/* Task Table Rows - ZERO SPACING/MARGINS */
-.task-row {
+/* Task Table Rows - ABSOLUTELY ZERO SPACING/MARGINS */
+.task-table .task-row,
+.task-table tbody tr {
   margin: 0 !important;
   padding: 0 !important;
   border-spacing: 0 !important;
-  height: 3mm;
+  height: 3mm !important;
+  line-height: 3mm !important;
+  border-top: none !important;
+  border-bottom: 1px solid #f0f0f0 !important;
 }
 
-.task-row td {
+.task-table .task-row td,
+.task-table tbody tr td {
   border-right: 1px solid #e0e0e0;
-  border-bottom: 1px solid #f0f0f0;
-  padding: 0;
-  margin: 0;
+  border-bottom: none !important;
+  border-top: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
   vertical-align: middle;
-  height: 3mm;
-  line-height: 3mm;
+  height: 3mm !important;
+  line-height: 3mm !important;
 }
 
-.task-row td:last-child {
+.task-table .task-row td:last-child,
+.task-table tbody tr td:last-child {
   border-right: none;
+}
+
+/* Remove any inherited spacing from parent elements */
+.task-table tbody {
+  margin: 0 !important;
+  padding: 0 !important;
+  border-spacing: 0 !important;
 }
 
 /* Task Table Column Widths - SUPER WIDE TASK COLUMN */
-.section .task-table th:nth-child(1), .section .task-table td:nth-child(1) { 
-  width: 4mm; 
+.task-table th:nth-child(1), .task-table td:nth-child(1) { 
+  width: 4mm !important; 
   text-align: center; 
 }
 
-.section .task-table th:nth-child(2), .section .task-table td:nth-child(2) { 
-  width: 4mm; 
+.task-table th:nth-child(2), .task-table td:nth-child(2) { 
+  width: 4mm !important; 
   text-align: center; 
 }
 
-.section .task-table th:nth-child(3), .section .task-table td:nth-child(3) { 
-  width: 4mm; 
+.task-table th:nth-child(3), .task-table td:nth-child(3) { 
+  width: 4mm !important; 
   text-align: center; 
 }
 
-.section .task-table th:nth-child(4), .section .task-table td:nth-child(4) { 
-  width: 130mm; 
+.task-table th:nth-child(4), .task-table td:nth-child(4) { 
+  width: 130mm !important; 
   text-align: left;
-  padding-left: 1mm;
+  padding-left: 1mm !important;
 }
 
-.section .task-table th:nth-child(5), .section .task-table td:nth-child(5) { 
-  width: 8mm; 
+.task-table th:nth-child(5), .task-table td:nth-child(5) { 
+  width: 8mm !important; 
   text-align: center; 
 }
 
-.section .task-table th:nth-child(6), .section .task-table td:nth-child(6) { 
-  width: 8mm; 
+.task-table th:nth-child(6), .task-table td:nth-child(6) { 
+  width: 8mm !important; 
   text-align: center; 
 }
 
-.section .task-table th:nth-child(7), .section .task-table td:nth-child(7) { 
-  width: 8mm; 
+.task-table th:nth-child(7), .task-table td:nth-child(7) { 
+  width: 8mm !important; 
   text-align: center; 
 }
 
-.section .task-table th:nth-child(8), .section .task-table td:nth-child(8) { 
-  width: 6mm; 
+.task-table th:nth-child(8), .task-table td:nth-child(8) { 
+  width: 6mm !important; 
   text-align: center; 
 }
 
-.section .task-table th:nth-child(9), .section .task-table td:nth-child(9) { 
-  width: 4mm; 
+.task-table th:nth-child(9), .task-table td:nth-child(9) { 
+  width: 4mm !important; 
   text-align: center; 
 }
 
-/* Other Section Tables (not tasks) - Keep original styling */
-.section table:not(.task-table) {
-  border-collapse: collapse;
-  width: 100%;
-  margin-top: 1mm;
+/* Override any general table styling for task tables specifically */
+.task-table,
+.task-table * {
+  border-spacing: 0 !important;
+  border-collapse: collapse !important;
 }
 
-.section table:not(.task-table) th {
-  background-color: #e6e6e6 !important;
-  border-right: 1px solid #ccc;
-  border-bottom: 1px solid #ccc;
-  font-weight: bold;
+/* Remove inherited row styling that might add spacing */
+.task-table tr:nth-child(even) td,
+.task-table tr:nth-child(odd) td {
+  background-color: #ffffff !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+/* Ensure task inputs have no extra spacing */
+.task-table .mini-input {
+  width: 100% !important;
+  height: 3mm !important;
+  padding: 0 !important;
+  border: none !important;
   text-align: center;
-  padding: 1mm 0.5mm;
+  font-size: 7pt;
+  background-color: #e6f7ff;
+  margin: 0 !important;
+  box-sizing: border-box !important;
 }
 
-.section table:not(.task-table) th:last-child {
-  border-right: none;
+.task-table .task-description-input {
+  text-align: left !important;
+  padding-left: 1mm !important;
 }
 
-.section table:not(.task-table) td {
-  border-right: 1px solid #e0e0e0;
-  border-bottom: 1px solid #f0f0f0;
-  padding: 0.5mm;
-  vertical-align: middle;
-}
-
-.section table:not(.task-table) td:last-child {
-  border-right: none;
+.task-table .date-input {
+  width: 8mm !important;
+  font-size: 6pt;
+  background-color: #f8f9fa;
+  border: 1px solid #dee2e6;
+  border-radius: 2px;
+  margin: 0 !important;
+  padding: 0 !important;
 }
 
 /* Input Styling */
