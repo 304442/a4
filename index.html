@@ -86,7 +86,7 @@
 
     <div class="section">
       <h3 class="section-title editable" @dblclick="editField($event, 'sectionTitle', uiConfig.sectionTitles?.tasks, 'tasks')" x-text="uiConfig.sectionTitles?.tasks"></h3>
-      <table>
+      <table class="task-table">
         <thead>
           <tr>
             <template x-for="(header, i) in uiConfig.taskHeaders" :key="i">
@@ -96,7 +96,7 @@
         </thead>
         <tbody>
           <template x-for="(task, i) in tasks" :key="task.id || i">
-            <tr :class="getTaskRowClass(task)">
+            <tr :class="getTaskRowClass(task)" class="task-row">
               <td><input type="text" class="mini-input" x-model="task.num" :placeholder="i + 1" @change="saveData()"></td>
               <td><input type="text" class="mini-input" x-model="task.priority" placeholder="A" @change="saveData()"></td>
               <td><input type="text" class="mini-input" x-model="task.tag" placeholder="W" @change="saveData()"></td>
