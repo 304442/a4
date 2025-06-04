@@ -957,7 +957,7 @@ const healthCheck = async () => {
     setProgress(10, 'Testing connection...');
     url = document.getElementById('url').value || '/';
     email = document.getElementById('email').value || 'admin@example.com';
-    pass = document.getElementById('pass').value || 'password123';
+    pass = document.getElementById('pass').value || 'unifiedpassword';
     
     try {
         pb = new PocketBase(url);
