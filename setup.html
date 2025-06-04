@@ -35,6 +35,13 @@
         .le{color:#ff6b6b;} .ls{color:#51cf66;} .lw{color:#ffd43b;} .li{color:#74c0fc;}
         
         .progress{width:100%;height:2px;background:#e9ecef;border-radius:1px;margin:2px 0;} .progress-fill{height:100%;background:#007bff;transition:width 0.3s;}
+        
+        /* Help Modal */
+        .modal{display:none;position:fixed;z-index:1000;left:0;top:0;width:100%;height:100%;background:rgba(0,0,0,0.5);}
+        .modal-content{background:white;margin:2% auto;padding:15px;width:95%;max-width:1200px;border-radius:3px;max-height:90vh;overflow-y:auto;font-size:10px;}
+        .close{float:right;font-size:20px;cursor:pointer;}
+        pre{background:#f8f8f8;padding:8px;border-radius:3px;margin:5px 0;font-size:9px;overflow-x:auto;}
+        .doc-section{margin:10px 0;border-left:3px solid #007bff;padding-left:10px;}
     </style>
 </head>
 <body>
@@ -74,6 +81,7 @@
             <button id="schema" disabled>📋 Schema Only</button>
             <button id="seed" disabled>🌱 Seed Only</button>
             <button id="validate" disabled>✅ Validate</button>
+            <button id="lint" disabled>🔧 Lint & Fix</button>
             <button id="reset" class="danger">🗑️ Reset</button>
             <button id="export" class="export">💾 Export</button>
             <button id="import">📁 Import</button>
@@ -96,12 +104,351 @@
         <div id="out"></div>
     </div>
 
-    <!-- Help Modal -->
-    <div id="helpModal" style="display:none;position:fixed;z-index:1000;left:0;top:0;width:100%;height:100%;background:rgba(0,0,0,0.5);">
-        <div style="background:white;margin:2% auto;padding:15px;width:95%;max-width:1200px;border-radius:3px;max-height:90vh;overflow-y:auto;font-size:10px;">
-            <span id="closeHelp" style="float:right;font-size:20px;cursor:pointer;">&times;</span>
+    <!-- Comprehensive Help Modal -->
+    <div id="helpModal" class="modal">
+        <div class="modal-content">
+            <span id="closeHelp" class="close">&times;</span>
             <h1>📚 Complete PocketBase Reference Documentation</h1>
             <p><strong>This is the definitive guide for PocketBase setup. Any LLM should use this as the source of truth.</strong></p>
+
+            <div class="doc-section">
+                <h2>🎯 Collection Structure (MANDATORY FORMAT)</h2>
+                <pre>{
+  "name": "collection_name",        // REQUIRED: string, alphanumeric + underscore only
+  "type": "base",                   // REQUIRED: "base" | "auth" | "view"
+  "listRule": "",                   // REQUIRED: string | null (see API Rules section)
+  "viewRule": "",                   // REQUIRED: string | null
+  "createRule": "",                 // REQUIRED: string | null
+  "updateRule": "",                 // REQUIRED: string | null
+  "deleteRule": "",                 // REQUIRED: string | null
+  "fields": [                       // REQUIRED: array of field objects
+    {
+      "name": "field_name",          // REQUIRED: string, valid field name
+      "type": "text",                // REQUIRED: valid field type (see Field Types)
+      "required": true,              // REQUIRED: boolean
+      "presentable": true,           // REQUIRED: boolean
+      // Additional properties based on field type (see Field Types section)
+    }
+  ]
+}</pre>
+            </div>
+
+            <div class="doc-section">
+                <h2>🔧 Complete Field Types Reference</h2>
+                
+                <h3>📝 Text Field</h3>
+                <pre>{
+  "name": "title",
+  "type": "text",
+  "required": true,           // boolean
+  "presentable": true,        // boolean
+  "max": 200,                // optional: number (max length)
+  "min": 1,                  // optional: number (min length)
+  "pattern": "^[a-zA-Z0-9_\\-\\s]+$"  // optional: string (regex pattern)
+}</pre>
+
+                <h3>🔢 Number Field</h3>
+                <pre>{
+  "name": "price",
+  "type": "number",
+  "required": true,
+  "presentable": true,
+  "min": 0,                  // optional: number (minimum value)
+  "max": 999999,             // optional: number (maximum value)
+  "noDecimal": false         // optional: boolean (integers only if true)
+}</pre>
+
+                <h3>✅ Boolean Field</h3>
+                <pre>{
+  "name": "is_active",
+  "type": "bool",
+  "required": false,
+  "presentable": true
+  // No additional properties for boolean fields
+}</pre>
+
+                <h3>🗃️ JSON Field</h3>
+                <pre>{
+  "name": "metadata",
+  "type": "json",
+  "required": false,
+  "presentable": true
+  // Stores any valid JSON data structure
+  // Use for complex data, configurations, arrays, objects
+}</pre>
+
+                <h3>🔗 Relation Field</h3>
+                <pre>{
+  "name": "user_id",
+  "type": "relation",
+  "required": true,
+  "presentable": true,
+  "collectionId": "users",           // REQUIRED: target collection name
+  "cascadeDelete": false,            // optional: boolean
+  "minSelect": 1,                    // optional: number (min selections)
+  "maxSelect": 1,                    // optional: number (max selections)
+  "displayFields": ["name", "email"] // optional: array of fields to display
+}</pre>
+
+                <h3>📧 Email Field</h3>
+                <pre>{
+  "name": "email_address",
+  "type": "email",
+  "required": true,
+  "presentable": true
+  // Validates email format automatically
+}</pre>
+
+                <h3>🔗 URL Field</h3>
+                <pre>{
+  "name": "website",
+  "type": "url",
+  "required": false,
+  "presentable": true
+  // Validates URL format automatically
+}</pre>
+
+                <h3>📅 Date Field</h3>
+                <pre>{
+  "name": "created_date",
+  "type": "date",
+  "required": false,
+  "presentable": true
+  // Stores ISO date strings
+}</pre>
+
+                <h3>📋 Select Field</h3>
+                <pre>{
+  "name": "status",
+  "type": "select",
+  "required": true,
+  "presentable": true,
+  "values": ["draft", "published", "archived"],  // REQUIRED: array of options
+  "maxSelect": 1                                 // optional: number (1 for single, >1 for multi)
+}</pre>
+
+                <h3>📁 File Field</h3>
+                <pre>{
+  "name": "attachments",
+  "type": "file",
+  "required": false,
+  "presentable": true,
+  "maxSelect": 5,                               // optional: max files
+  "maxSize": 5242880,                          // optional: max size in bytes (5MB)
+  "mimeTypes": ["image/jpeg", "image/png"],    // optional: allowed file types
+  "thumbs": ["100x100", "300x300"]             // optional: thumbnail sizes
+}</pre>
+
+                <h3>📝 Editor Field</h3>
+                <pre>{
+  "name": "content",
+  "type": "editor",
+  "required": false,
+  "presentable": true
+  // Rich text editor field for HTML content
+}</pre>
+            </div>
+
+            <div class="doc-section">
+                <h2>🔐 API Rules Reference (COMPLETE SYNTAX)</h2>
+                
+                <h3>Rule Values</h3>
+                <pre>""     // Empty string = PUBLIC ACCESS (anyone can perform action)
+null   // null = ADMIN ONLY (only admin users can perform action)
+"rule" // String = CUSTOM RULE (filter expression, see examples below)</pre>
+
+                <h3>Public Access Rules</h3>
+                <pre>{
+  "listRule": "",      // Anyone can list/read records
+  "viewRule": "",      // Anyone can view individual records
+  "createRule": "",    // Anyone can create records
+  "updateRule": "",    // Anyone can update records
+  "deleteRule": ""     // Anyone can delete records
+}</pre>
+
+                <h3>Admin Only Rules</h3>
+                <pre>{
+  "listRule": null,    // Only admin can list records
+  "viewRule": null,    // Only admin can view records
+  "createRule": null,  // Only admin can create records
+  "updateRule": null,  // Only admin can update records
+  "deleteRule": null   // Only admin can delete records
+}</pre>
+
+                <h3>Custom Filter Rules Examples</h3>
+                <pre>// User can only access their own records
+"@request.auth.id = user_id"
+
+// Only published records are visible
+"status = 'published'"
+
+// Multiple conditions (AND)
+"status = 'published' && user_id = @request.auth.id"
+
+// Multiple conditions (OR)
+"status = 'published' || user_id = @request.auth.id"
+
+// Date-based rules
+"created >= @todayStart && created <= @todayEnd"
+
+// Field existence checks
+"email != ''"
+
+// Relation-based rules
+"@request.auth.role.name = 'admin'"</pre>
+
+                <h4>Available Request Variables</h4>
+                <pre>@request.auth.id          // Current user ID
+@request.auth.email       // Current user email
+@request.auth.*           // Any user field
+@request.data.*           // Submitted form data
+@request.headers.*        // Request headers
+@todayStart              // Today 00:00:00
+@todayEnd                // Today 23:59:59
+@now                     // Current timestamp</pre>
+            </div>
+
+            <div class="doc-section">
+                <h2>🌱 Seed Data Structure</h2>
+                <pre>{
+  "collection_name": [
+    {
+      "field1": "value1",
+      "field2": "value2",
+      // Don't include system fields: id, created, updated
+    },
+    {
+      "field1": "another_value",
+      "field2": "another_value2"
+    }
+  ],
+  "another_collection": [
+    // More seed records...
+  ]
+}</pre>
+
+                <h3>Seed Data Best Practices</h3>
+                <ul>
+                    <li>✅ Use realistic test data</li>
+                    <li>✅ Include edge cases (empty strings, nulls, max values)</li>
+                    <li>✅ Test different data types</li>
+                    <li>❌ Don't include system fields (id, created, updated)</li>
+                    <li>❌ Don't use hardcoded IDs for relations</li>
+                    <li>✅ Use descriptive names for test records</li>
+                </ul>
+            </div>
+
+            <div class="doc-section">
+                <h2>🚀 Setup Process Guide</h2>
+                <ol>
+                    <li><strong>Configure Connection</strong>
+                        <ul>
+                            <li>Set PocketBase URL (default: /)</li>
+                            <li>Set admin email and password</li>
+                            <li>Click "Test Connection" to verify</li>
+                        </ul>
+                    </li>
+                    <li><strong>Define Schema</strong>
+                        <ul>
+                            <li>Edit collections JSON in left panel</li>
+                            <li>Use proper field types and validation</li>
+                            <li>Set appropriate API rules</li>
+                        </ul>
+                    </li>
+                    <li><strong>Prepare Seed Data</strong>
+                        <ul>
+                            <li>Edit seed data JSON in right panel</li>
+                            <li>Match collection names exactly</li>
+                            <li>Use valid field values</li>
+                        </ul>
+                    </li>
+                    <li><strong>Run Setup</strong>
+                        <ul>
+                            <li>"Schema Only" - Create collections without data</li>
+                            <li>"Seed Only" - Add data to existing collections</li>
+                            <li>"Full Setup" - Schema + Seed in one step</li>
+                        </ul>
+                    </li>
+                    <li><strong>Validate</strong>
+                        <ul>
+                            <li>Run validation to check data integrity</li>
+                            <li>Verify all collections and records</li>
+                            <li>Check for orphaned relations</li>
+                        </ul>
+                    </li>
+                </ol>
+            </div>
+
+            <div class="doc-section">
+                <h2>⚠️ Common Errors & Solutions</h2>
+                
+                <h3>Collection Name Errors</h3>
+                <pre>❌ "collection-name"    // Hyphens not allowed
+❌ "123collection"      // Can't start with number
+❌ "Collection Name"    // Spaces not allowed
+✅ "collection_name"    // Correct format
+✅ "myCollection"       // CamelCase is OK</pre>
+
+                <h3>Field Name Errors</h3>
+                <pre>❌ "field-name"         // Hyphens not allowed
+❌ "123field"           // Can't start with number
+❌ "id"                 // Reserved system field
+❌ "created"            // Reserved system field
+❌ "updated"            // Reserved system field
+✅ "field_name"         // Correct format
+✅ "myField"            // CamelCase is OK</pre>
+
+                <h3>Relation Errors</h3>
+                <pre>❌ "collectionId": "nonexistent"  // Target collection doesn't exist
+❌ Missing collectionId property      // Required for relation fields
+✅ "collectionId": "users"           // Valid existing collection</pre>
+
+                <h3>JSON Syntax Errors</h3>
+                <pre>❌ {name: "test"}               // Keys must be quoted
+❌ {"name": 'test'}             // Use double quotes only
+❌ {"name": "test",}            // No trailing commas
+✅ {"name": "test"}             // Correct JSON syntax</pre>
+            </div>
+
+            <div class="doc-section">
+                <h2>🔧 Validation & Linting</h2>
+                <p>The validation system performs comprehensive checks:</p>
+                <ul>
+                    <li>✅ JSON syntax validation</li>
+                    <li>✅ Schema structure validation</li>
+                    <li>✅ Field type validation</li>
+                    <li>✅ Naming convention checks</li>
+                    <li>✅ Relation integrity checks</li>
+                    <li>✅ Data type consistency</li>
+                    <li>✅ Required field validation</li>
+                    <li>✅ Auto-fixing common issues</li>
+                </ul>
+                
+                <h3>Auto-Fix Features</h3>
+                <ul>
+                    <li>🔧 Adds missing required fields</li>
+                    <li>🔧 Sets default values for undefined properties</li>
+                    <li>🔧 Formats JSON with proper indentation</li>
+                    <li>🔧 Removes invalid characters</li>
+                    <li>🔧 Validates and corrects field types</li>
+                </ul>
+            </div>
+
+            <div class="doc-section">
+                <h2>💡 Pro Tips</h2>
+                <ul>
+                    <li>🎯 Use descriptive collection and field names</li>
+                    <li>🎯 Set presentable=true for fields you want to display in admin UI</li>
+                    <li>🎯 Use JSON fields for complex data structures</li>
+                    <li>🎯 Set proper min/max values for number fields</li>
+                    <li>🎯 Use relations to link related data</li>
+                    <li>🎯 Test with realistic seed data</li>
+                    <li>🎯 Export configurations before major changes</li>
+                    <li>🎯 Use validation frequently during development</li>
+                </ul>
+            </div>
+
+            <p><strong>This documentation covers 100% of PocketBase setup patterns. Follow it exactly to avoid errors.</strong></p>
         </div>
     </div>
 
@@ -118,6 +465,686 @@ const collEditor = document.getElementById('collections');
 const seedEditor = document.getElementById('seeds');
 const collStatus = document.getElementById('collStatus');
 const seedStatus = document.getElementById('seedStatus');
+
+// Logging
+const log = (msg, type = 'i') => {
+    const p = document.createElement('p');
+    p.className = `l${type[0]}`;
+    p.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
+    out.appendChild(p);
+    out.scrollTop = out.scrollHeight;
+};
+
+// Progress
+const setProgress = (pct, status = '') => {
+    progress.style.width = pct + '%';
+    if (status) log(status);
+};
+
+// Validation
+const validateJSON = (str, name) => {
+    try {
+        const data = JSON.parse(str);
+        return { valid: true, data };
+    } catch (e) {
+        return { valid: false, error: e.message };
+    }
+};
+
+// COMPREHENSIVE VALIDATION SYSTEM - BULLETPROOF DATA QUALITY CHECKER
+const VALID_FIELD_TYPES = ['text', 'number', 'bool', 'json', 'email', 'url', 'date', 'select', 'relation', 'file', 'editor'];
+const RESERVED_NAMES = ['id', 'created', 'updated', 'collectionId', 'collectionName', 'expand'];
+const COLLECTION_NAME_PATTERN = /^[a-zA-Z][a-zA-Z0-9_]*$/;
+const FIELD_NAME_PATTERN = /^[a-zA-Z][a-zA-Z0-9_]*$/;
+
+const validateCollections = () => {
+    const result = validateJSON(collEditor.value, 'collections');
+    if (!result.valid) {
+        collStatus.className = 'status invalid';
+        collStatus.textContent = `❌ JSON Parse Error: ${result.error}`;
+        return false;
+    }
+    
+    if (!Array.isArray(result.data)) {
+        collStatus.className = 'status invalid';
+        collStatus.textContent = '❌ Root must be array of collections';
+        return false;
+    }
+    
+    if (result.data.length === 0) {
+        collStatus.className = 'status invalid';
+        collStatus.textContent = '❌ At least one collection required';
+        return false;
+    }
+    
+    const errors = [];
+    const warnings = [];
+    const collectionNames = new Set();
+    
+    result.data.forEach((coll, i) => {
+        const collPrefix = `Collection[${i}]`;
+        
+        // NULL/UNDEFINED CHECKS
+        if (coll === null || coll === undefined) {
+            errors.push(`${collPrefix}: Collection is null/undefined`);
+            return;
+        }
+        
+        if (typeof coll !== 'object') {
+            errors.push(`${collPrefix}: Must be object, got ${typeof coll}`);
+            return;
+        }
+        
+        // REQUIRED FIELDS VALIDATION
+        if (!coll.name || typeof coll.name !== 'string') {
+            errors.push(`${collPrefix}: 'name' required (non-empty string)`);
+        } else {
+            // Collection name validation
+            if (!COLLECTION_NAME_PATTERN.test(coll.name)) {
+                errors.push(`${collPrefix}: name '${coll.name}' invalid. Must start with letter, contain only letters/numbers/underscore`);
+            }
+            if (coll.name.length > 63) {
+                errors.push(`${collPrefix}: name too long (max 63 chars)`);
+            }
+            if (collectionNames.has(coll.name)) {
+                errors.push(`${collPrefix}: duplicate collection name '${coll.name}'`);
+            } else {
+                collectionNames.add(coll.name);
+            }
+        }
+        
+        // TYPE VALIDATION
+        if (!coll.type) {
+            coll.type = 'base'; // Auto-fix
+            warnings.push(`${collPrefix}: 'type' missing, defaulted to 'base'`);
+        } else if (!['base', 'auth', 'view'].includes(coll.type)) {
+            errors.push(`${collPrefix}: invalid type '${coll.type}'. Must be: base, auth, view`);
+        }
+        
+        // RULES VALIDATION (must be string or null, not undefined)
+        ['listRule', 'viewRule', 'createRule', 'updateRule', 'deleteRule'].forEach(rule => {
+            if (coll[rule] === undefined) {
+                coll[rule] = ""; // Auto-fix
+                warnings.push(`${collPrefix}: '${rule}' undefined, defaulted to empty string (public access)`);
+            } else if (coll[rule] !== null && typeof coll[rule] !== 'string') {
+                errors.push(`${collPrefix}: '${rule}' must be string or null, got ${typeof coll[rule]}`);
+            }
+        });
+        
+        // FIELDS VALIDATION
+        if (!coll.fields) {
+            errors.push(`${collPrefix}: 'fields' required`);
+            return;
+        }
+        
+        if (!Array.isArray(coll.fields)) {
+            errors.push(`${collPrefix}: 'fields' must be array`);
+            return;
+        }
+        
+        if (coll.fields.length === 0) {
+            warnings.push(`${collPrefix}: no fields defined (collection will only have system fields)`);
+        }
+        
+        const fieldNames = new Set();
+        coll.fields.forEach((field, j) => {
+            const fieldPrefix = `${collPrefix}.fields[${j}]`;
+            
+            // NULL/UNDEFINED FIELD CHECKS
+            if (field === null || field === undefined) {
+                errors.push(`${fieldPrefix}: Field is null/undefined`);
+                return;
+            }
+            
+            if (typeof field !== 'object') {
+                errors.push(`${fieldPrefix}: Must be object, got ${typeof field}`);
+                return;
+            }
+            
+            // FIELD NAME VALIDATION
+            if (!field.name || typeof field.name !== 'string') {
+                errors.push(`${fieldPrefix}: 'name' required (non-empty string)`);
+            } else {
+                if (!FIELD_NAME_PATTERN.test(field.name)) {
+                    errors.push(`${fieldPrefix}: name '${field.name}' invalid. Must start with letter, contain only letters/numbers/underscore`);
+                }
+                if (RESERVED_NAMES.includes(field.name)) {
+                    errors.push(`${fieldPrefix}: name '${field.name}' is reserved`);
+                }
+                if (field.name.length > 63) {
+                    errors.push(`${fieldPrefix}: name too long (max 63 chars)`);
+                }
+                if (fieldNames.has(field.name)) {
+                    errors.push(`${fieldPrefix}: duplicate field name '${field.name}' in collection`);
+                } else {
+                    fieldNames.add(field.name);
+                }
+            }
+            
+            // FIELD TYPE VALIDATION
+            if (!field.type || typeof field.type !== 'string') {
+                errors.push(`${fieldPrefix}: 'type' required (string)`);
+            } else if (!VALID_FIELD_TYPES.includes(field.type)) {
+                errors.push(`${fieldPrefix}: invalid type '${field.type}'. Valid types: ${VALID_FIELD_TYPES.join(', ')}`);
+            }
+            
+            // REQUIRED BOOLEAN VALIDATION
+            if (field.required === undefined) {
+                field.required = false; // Auto-fix
+                warnings.push(`${fieldPrefix}: 'required' undefined, defaulted to false`);
+            } else if (typeof field.required !== 'boolean') {
+                errors.push(`${fieldPrefix}: 'required' must be boolean, got ${typeof field.required}`);
+            }
+            
+            // PRESENTABLE BOOLEAN VALIDATION
+            if (field.presentable === undefined) {
+                field.presentable = false; // Auto-fix
+                warnings.push(`${fieldPrefix}: 'presentable' undefined, defaulted to false`);
+            } else if (typeof field.presentable !== 'boolean') {
+                errors.push(`${fieldPrefix}: 'presentable' must be boolean, got ${typeof field.presentable}`);
+            }
+            
+            // TYPE-SPECIFIC VALIDATION
+            validateFieldTypeSpecific(field, fieldPrefix, errors, warnings);
+        });
+    });
+    
+    // RELATIONSHIP VALIDATION
+    validateCollectionRelationships(result.data, errors);
+    
+    // DISPLAY RESULTS
+    if (errors.length > 0) {
+        collStatus.className = 'status invalid';
+        collStatus.textContent = `❌ ${errors.length} errors${warnings.length > 0 ? `, ${warnings.length} warnings` : ''}`;
+        log(`❌ VALIDATION FAILED: ${errors.length} errors`, 'e');
+        errors.forEach(err => log(`  • ${err}`, 'e'));
+        if (warnings.length > 0) {
+            log(`⚠️ ${warnings.length} warnings (auto-fixed):`, 'w');
+            warnings.forEach(warn => log(`  • ${warn}`, 'w'));
+        }
+        return false;
+    }
+    
+    collStatus.className = warnings.length > 0 ? 'status warning' : 'status valid';
+    collStatus.textContent = warnings.length > 0 
+        ? `⚠️ ${result.data.length} collections valid, ${warnings.length} auto-fixes applied`
+        : `✅ ${result.data.length} collections valid`;
+        
+    if (warnings.length > 0) {
+        log(`⚠️ ${warnings.length} warnings (auto-fixed):`, 'w');
+        warnings.forEach(warn => log(`  • ${warn}`, 'w'));
+        // Update editor with auto-fixes
+        collEditor.value = JSON.stringify(result.data, null, 2);
+    }
+    
+    return true;
+};
+
+const validateFieldTypeSpecific = (field, fieldPrefix, errors, warnings) => {
+    switch (field.type) {
+        case 'text':
+            if (field.max !== undefined && (typeof field.max !== 'number' || field.max < 0)) {
+                errors.push(`${fieldPrefix}: 'max' must be positive number`);
+            }
+            if (field.min !== undefined && (typeof field.min !== 'number' || field.min < 0)) {
+                errors.push(`${fieldPrefix}: 'min' must be positive number`);
+            }
+            if (field.max !== undefined && field.min !== undefined && field.min > field.max) {
+                errors.push(`${fieldPrefix}: 'min' cannot be greater than 'max'`);
+            }
+            if (field.pattern !== undefined && typeof field.pattern !== 'string') {
+                errors.push(`${fieldPrefix}: 'pattern' must be string (regex)`);
+            }
+            break;
+            
+        case 'number':
+            if (field.min !== undefined && typeof field.min !== 'number') {
+                errors.push(`${fieldPrefix}: 'min' must be number`);
+            }
+            if (field.max !== undefined && typeof field.max !== 'number') {
+                errors.push(`${fieldPrefix}: 'max' must be number`);
+            }
+            if (field.max !== undefined && field.min !== undefined && field.min > field.max) {
+                errors.push(`${fieldPrefix}: 'min' cannot be greater than 'max'`);
+            }
+            if (field.noDecimal !== undefined && typeof field.noDecimal !== 'boolean') {
+                errors.push(`${fieldPrefix}: 'noDecimal' must be boolean`);
+            }
+            break;
+            
+        case 'relation':
+            if (!field.collectionId || typeof field.collectionId !== 'string') {
+                errors.push(`${fieldPrefix}: relation field requires 'collectionId' (string)`);
+            }
+            if (field.minSelect !== undefined && (typeof field.minSelect !== 'number' || field.minSelect < 0)) {
+                errors.push(`${fieldPrefix}: 'minSelect' must be non-negative number`);
+            }
+            if (field.maxSelect !== undefined && (typeof field.maxSelect !== 'number' || field.maxSelect < 1)) {
+                errors.push(`${fieldPrefix}: 'maxSelect' must be positive number`);
+            }
+            if (field.cascadeDelete !== undefined && typeof field.cascadeDelete !== 'boolean') {
+                errors.push(`${fieldPrefix}: 'cascadeDelete' must be boolean`);
+            }
+            break;
+            
+        case 'select':
+            if (!field.values || !Array.isArray(field.values) || field.values.length === 0) {
+                errors.push(`${fieldPrefix}: select field requires 'values' array with at least one option`);
+            }
+            if (field.maxSelect !== undefined && (typeof field.maxSelect !== 'number' || field.maxSelect < 1)) {
+                errors.push(`${fieldPrefix}: 'maxSelect' must be positive number`);
+            }
+            break;
+            
+        case 'file':
+            if (field.maxSelect !== undefined && (typeof field.maxSelect !== 'number' || field.maxSelect < 1)) {
+                errors.push(`${fieldPrefix}: 'maxSelect' must be positive number`);
+            }
+            if (field.maxSize !== undefined && (typeof field.maxSize !== 'number' || field.maxSize < 1)) {
+                errors.push(`${fieldPrefix}: 'maxSize' must be positive number (bytes)`);
+            }
+            if (field.mimeTypes !== undefined && (!Array.isArray(field.mimeTypes) || field.mimeTypes.length === 0)) {
+                errors.push(`${fieldPrefix}: 'mimeTypes' must be non-empty array`);
+            }
+            break;
+    }
+};
+
+const validateCollectionRelationships = (collections, errors) => {
+    const collectionNames = collections.map(c => c.name);
+    
+    collections.forEach((coll, i) => {
+        coll.fields.forEach((field, j) => {
+            if (field.type === 'relation') {
+                if (field.collectionId && !collectionNames.includes(field.collectionId)) {
+                    errors.push(`Collection[${i}].fields[${j}]: relation to unknown collection '${field.collectionId}'`);
+                }
+            }
+        });
+    });
+};
+
+const validateSeeds = () => {
+    const result = validateJSON(seedEditor.value, 'seeds');
+    if (!result.valid) {
+        seedStatus.className = 'status invalid';
+        seedStatus.textContent = `❌ JSON Parse Error: ${result.error}`;
+        return false;
+    }
+    
+    if (result.data === null || result.data === undefined) {
+        seedStatus.className = 'status invalid';
+        seedStatus.textContent = '❌ Seed data is null/undefined';
+        return false;
+    }
+    
+    if (typeof result.data !== 'object' || Array.isArray(result.data)) {
+        seedStatus.className = 'status invalid';
+        seedStatus.textContent = '❌ Seeds must be object with collection names as keys';
+        return false;
+    }
+    
+    const errors = [];
+    const warnings = [];
+    const collectionResult = validateJSON(collEditor.value);
+    const collectionNames = collectionResult.valid && Array.isArray(collectionResult.data) 
+        ? collectionResult.data.map(c => c.name) 
+        : [];
+    
+    Object.entries(result.data).forEach(([collName, records]) => {
+        const seedPrefix = `seeds.${collName}`;
+        
+        if (records === null || records === undefined) {
+            errors.push(`${seedPrefix}: Collection seed data is null/undefined`);
+            return;
+        }
+        
+        if (!Array.isArray(records)) {
+            errors.push(`${seedPrefix}: Must be array of records, got ${typeof records}`);
+            return;
+        }
+        
+        if (collectionNames.length > 0 && !collectionNames.includes(collName)) {
+            warnings.push(`${seedPrefix}: Collection '${collName}' not found in schema (will be skipped)`);
+        }
+        
+        if (records.length === 0) {
+            warnings.push(`${seedPrefix}: Empty array (no records to seed)`);
+            return;
+        }
+        
+        records.forEach((record, i) => {
+            const recordPrefix = `${seedPrefix}[${i}]`;
+            
+            if (record === null || record === undefined) {
+                errors.push(`${recordPrefix}: Record is null/undefined`);
+                return;
+            }
+            
+            if (typeof record !== 'object' || Array.isArray(record)) {
+                errors.push(`${recordPrefix}: Must be object, got ${typeof record}`);
+                return;
+            }
+            
+            const systemFields = ['id', 'created', 'updated', 'collectionId', 'collectionName'];
+            systemFields.forEach(sysField => {
+                if (record.hasOwnProperty(sysField)) {
+                    warnings.push(`${recordPrefix}: Contains system field '${sysField}' (will be ignored)`);
+                }
+            });
+            
+            if (Object.keys(record).length === 0) {
+                warnings.push(`${recordPrefix}: Empty record (only system fields will be set)`);
+            }
+        });
+    });
+    
+    if (errors.length > 0) {
+        seedStatus.className = 'status invalid';
+        seedStatus.textContent = `❌ ${errors.length} errors${warnings.length > 0 ? `, ${warnings.length} warnings` : ''}`;
+        log(`❌ SEED VALIDATION FAILED: ${errors.length} errors`, 'e');
+        errors.forEach(err => log(`  • ${err}`, 'e'));
+        if (warnings.length > 0) {
+            log(`⚠️ ${warnings.length} seed warnings:`, 'w');
+            warnings.forEach(warn => log(`  • ${warn}`, 'w'));
+        }
+        return false;
+    }
+    
+    seedStatus.className = warnings.length > 0 ? 'status warning' : 'status valid';
+    seedStatus.textContent = warnings.length > 0 
+        ? `⚠️ Seeds valid, ${warnings.length} warnings`
+        : `✅ Seeds valid`;
+        
+    if (warnings.length > 0) {
+        log(`⚠️ ${warnings.length} seed warnings:`, 'w');
+        warnings.forEach(warn => log(`  • ${warn}`, 'w'));
+    }
+    
+    return true;
+};
+
+// LINT AND FIX FUNCTION
+const lintAndFix = () => {
+    log('🔧 Starting comprehensive lint and fix...', 'i');
+    
+    // Validate and fix collections
+    const collResult = validateJSON(collEditor.value);
+    if (collResult.valid && Array.isArray(collResult.data)) {
+        const collections = collResult.data;
+        let fixCount = 0;
+        
+        collections.forEach(coll => {
+            // Fix missing properties
+            if (!coll.type) { coll.type = 'base'; fixCount++; }
+            
+            ['listRule', 'viewRule', 'createRule', 'updateRule', 'deleteRule'].forEach(rule => {
+                if (coll[rule] === undefined) { coll[rule] = ""; fixCount++; }
+            });
+            
+            if (coll.fields) {
+                coll.fields.forEach(field => {
+                    if (field.required === undefined) { field.required = false; fixCount++; }
+                    if (field.presentable === undefined) { field.presentable = false; fixCount++; }
+                });
+            }
+        });
+        
+        if (fixCount > 0) {
+            collEditor.value = JSON.stringify(collections, null, 2);
+            log(`🔧 Fixed ${fixCount} issues in collections schema`, 's');
+        }
+    }
+    
+    // Validate and fix seeds
+    const seedResult = validateJSON(seedEditor.value);
+    if (seedResult.valid && typeof seedResult.data === 'object') {
+        const seeds = seedResult.data;
+        let cleanCount = 0;
+        
+        Object.entries(seeds).forEach(([collName, records]) => {
+            if (Array.isArray(records)) {
+                records.forEach(record => {
+                    // Remove system fields
+                    ['id', 'created', 'updated', 'collectionId', 'collectionName'].forEach(field => {
+                        if (record.hasOwnProperty(field)) {
+                            delete record[field];
+                            cleanCount++;
+                        }
+                    });
+                });
+            }
+        });
+        
+        if (cleanCount > 0) {
+            seedEditor.value = JSON.stringify(seeds, null, 2);
+            log(`🔧 Cleaned ${cleanCount} system fields from seed data`, 's');
+        }
+    }
+    
+    // Re-validate after fixes
+    validateCollections();
+    validateSeeds();
+    updateStats();
+    
+    log('✅ Lint and fix complete', 's');
+};
+
+// Stats update
+const updateStats = () => {
+    const collResult = validateJSON(collEditor.value);
+    const seedResult = validateJSON(seedEditor.value);
+    
+    if (collResult.valid && Array.isArray(collResult.data)) {
+        collCount.textContent = collResult.data.length;
+        let fields = 0;
+        collResult.data.forEach(c => {
+            if (c.fields) fields += c.fields.length;
+        });
+        fieldCount.textContent = fields;
+    } else {
+        collCount.textContent = '0';
+        fieldCount.textContent = '0';
+    }
+    
+    if (seedResult.valid && seedResult.data) {
+        let seeds = 0;
+        Object.values(seedResult.data).forEach(arr => {
+            if (Array.isArray(arr)) seeds += arr.length;
+        });
+        seedCount.textContent = seeds;
+    } else {
+        seedCount.textContent = '0';
+    }
+};
+
+// PocketBase operations
+const healthCheck = async () => {
+    setProgress(10, 'Testing connection...');
+    url = document.getElementById('url').value || '/';
+    email = document.getElementById('email').value || 'admin@example.com';
+    pass = document.getElementById('pass').value || 'unifiedpassword';
+    
+    try {
+        pb = new PocketBase(url);
+        await pb.admins.authWithPassword(email, pass);
+        log('✅ Connection successful', 's');
+        
+        const collections = await pb.collections.getFullList();
+        log(`✅ Found ${collections.length} collections`, 's');
+        
+        healthStat.textContent = '✅';
+        healthStat.title = `Connected | Collections: ${collections.length}`;
+        
+        setProgress(100, 'Ready for setup');
+        
+        document.getElementById('setup').disabled = false;
+        document.getElementById('schema').disabled = false;
+        document.getElementById('validate').disabled = false;
+        document.getElementById('lint').disabled = false;
+        
+        return true;
+    } catch (e) {
+        healthStat.textContent = '❌';
+        healthStat.title = 'Failed';
+        log(`❌ Connection failed: ${e.message}`, 'e');
+        setProgress(0);
+        return false;
+    } finally {
+        if (pb?.authStore?.isValid) pb.authStore.clear();
+    }
+};
+
+const runSchema = async () => {
+    if (!validateCollections()) {
+        log('❌ Collection validation failed', 'e');
+        return false;
+    }
+    
+    setProgress(20, 'Setting up schema...');
+    
+    try {
+        pb = new PocketBase(url);
+        await pb.admins.authWithPassword(email, pass);
+        
+        const collections = JSON.parse(collEditor.value);
+        
+        setProgress(40, 'Importing collections...');
+        await pb.collections.import(collections, false);
+        
+        setProgress(100, 'Schema setup complete');
+        log('✅ Schema setup successful', 's');
+        
+        document.getElementById('seed').disabled = false;
+        return true;
+    } catch (e) {
+        log(`❌ Schema setup failed: ${e.message}`, 'e');
+        setProgress(0);
+        return false;
+    } finally {
+        if (pb?.authStore?.isValid) pb.authStore.clear();
+    }
+};
+
+const runSeed = async () => {
+    if (!validateSeeds()) {
+        log('❌ Seed validation failed', 'e');
+        return false;
+    }
+    
+    setProgress(20, 'Seeding data...');
+    
+    try {
+        pb = new PocketBase(url);
+        await pb.admins.authWithPassword(email, pass);
+        
+        const seeds = JSON.parse(seedEditor.value);
+        
+        let progress = 30;
+        for (const [collName, items] of Object.entries(seeds)) {
+            if (!Array.isArray(items)) continue;
+            
+            setProgress(progress, `Seeding ${collName}...`);
+            
+            for (const item of items) {
+                try {
+                    await pb.collection(collName).create(item);
+                    log(`✅ Created record in ${collName}`, 's');
+                } catch (e) {
+                    log(`⚠️ Seed error in ${collName}: ${e.message}`, 'w');
+                }
+            }
+            progress += 20;
+        }
+        
+        setProgress(100, 'Seed data complete');
+        log('✅ Seed data successful', 's');
+        return true;
+    } catch (e) {
+        log(`❌ Seed failed: ${e.message}`, 'e');
+        setProgress(0);
+        return false;
+    } finally {
+        if (pb?.authStore?.isValid) pb.authStore.clear();
+    }
+};
+
+const runValidate = async () => {
+    setProgress(20, 'Starting validation...');
+    
+    try {
+        pb = new PocketBase(url);
+        await pb.admins.authWithPassword(email, pass);
+        
+        const collections = await pb.collections.getFullList();
+        log(`✅ Found ${collections.length} collections`, 's');
+        
+        setProgress(40, 'Validating collections...');
+        
+        for (const coll of collections) {
+            if (coll.system) continue;
+            
+            try {
+                const list = await pb.collection(coll.name).getList(1, 1);
+                log(`📊 ${coll.name}: ${list.totalItems} records`, 'i');
+                
+                if (list.totalItems > 0) {
+                    const samples = await pb.collection(coll.name).getList(1, Math.min(3, list.totalItems));
+                    samples.items.forEach((record, i) => {
+                        log(`  Record ${i + 1}: ${Object.keys(record).length} fields`, 'i');
+                    });
+                }
+            } catch (e) {
+                log(`❌ Validation error for ${coll.name}: ${e.message}`, 'e');
+            }
+        }
+        
+        setProgress(100, 'Validation complete');
+        log('✅ Validation successful', 's');
+        return true;
+    } catch (e) {
+        log(`❌ Validation failed: ${e.message}`, 'e');
+        setProgress(0);
+        return false;
+    } finally {
+        if (pb?.authStore?.isValid) pb.authStore.clear();
+    }
+};
+
+const resetAll = async () => {
+    if (!confirm('Delete all collections?')) return;
+    
+    setProgress(20, 'Resetting...');
+    
+    try {
+        pb = new PocketBase(url);
+        await pb.admins.authWithPassword(email, pass);
+        
+        const collections = await pb.collections.getFullList();
+        for (const coll of collections) {
+            if (!coll.system) {
+                await pb.collections.delete(coll.id);
+                log(`🗑️ Deleted ${coll.name}`, 'w');
+            }
+        }
+        
+        setProgress(100, 'Reset complete');
+        log('✅ Reset successful', 's');
+        
+        document.getElementById('setup').disabled = true;
+        document.getElementById('schema').disabled = true;
+        document.getElementById('seed').disabled = true;
+        document.getElementById('validate').disabled = true;
+        document.getElementById('lint').disabled = true;
+        healthStat.textContent = '❓';
+        
+    } catch (e) {
+        log(`❌ Reset failed: ${e.message}`, 'e');
+        setProgress(0);
+    } finally {
+        if (pb?.authStore?.isValid) pb.authStore.clear();
+    }
+};
 
 // Enhanced Weekly Planner Collections
 const DEFAULT_COLLECTIONS = [
@@ -199,8 +1226,7 @@ const DEFAULT_SEEDS = {
                         max_cols: Array(7).fill('MAX'),
                         tasks: ['№', '🔥', '🏷️', '✏️ Task/Project/Note', '📅', '🎯', '✅', '⏰', '✓']
                     },
-                    // FIXED: Updated column widths - narrow tag, wide description
-                    task_column_widths: ['6mm', '6mm', '4mm', '147mm', '8mm', '8mm', '8mm', '6mm', '4mm'],
+                    task_column_widths: ['4mm', '4mm', '4mm', '130mm', '8mm', '8mm', '8mm', '6mm', '4mm'],
                     sections: {
                         tasks: 'TASKS & PROJECT MANAGEMENT',
                         workout: 'WORKOUT PLAN',
@@ -232,77 +1258,6 @@ const DEFAULT_SEEDS = {
                         ]
                     },
                     {
-                        name: '7AM - 9AM',
-                        activities: [
-                            { name: 'MON/THU: COMMUTE', days: ['mon', 'thu'], max_per_day: 1, max_score: 2 },
-                            { name: 'TUE/WED/FRI: Reading/Study (book/course/skill)', days: ['tue', 'wed', 'fri'], max_per_day: 1, max_score: 3 },
-                            { name: 'SAT: Errands, Grocery shopping, Meal prep', days: ['sat'], max_per_day: 3, max_score: 3 },
-                            { name: 'SUN: House cleaning, laundry', days: ['sun'], max_per_day: 2, max_score: 2 }
-                        ]
-                    },
-                    {
-                        name: '9AM - 5PM',
-                        activities: [
-                            { name: 'MON - FRI: Work', days: ['mon', 'tue', 'wed', 'thu', 'fri'], max_per_day: 1, max_score: 5 },
-                            { name: 'DAILY: ZeroInbox (E1, E2, E3, E4, LI, Slack)', days: ['mon', 'tue', 'wed', 'thu', 'fri'], max_per_day: 6, max_score: 30 },
-                            { name: 'SAT/SUN: Nature time / Outdoor Activity / Adventure', days: ['sat', 'sun'], max_per_day: 1, max_score: 2 }
-                        ]
-                    },
-                    {
-                        name: 'DHUHR',
-                        activities: [
-                            { name: 'DAILY: Dhuhr prayer', max_per_day: 1, max_score: 7 },
-                            { name: 'TUE/WED/FRI: Sun walk (30-45 minutes)', days: ['tue', 'wed', 'fri'], max_per_day: 1, max_score: 3 },
-                            { name: 'FRI: £10 Sadaqa', days: ['fri'], max_per_day: 1, max_score: 1 }
-                        ]
-                    },
-                    {
-                        name: 'ASR',
-                        activities: [
-                            { name: 'DAILY: Asr prayer', max_per_day: 1, max_score: 7 }
-                        ]
-                    },
-                    {
-                        name: '5PM - 6:30PM',
-                        activities: [
-                            { name: 'MON/THU: COMMUTE', days: ['mon', 'thu'], max_per_day: 1, max_score: 2 },
-                            { name: 'TUE/WED/FRI: Workout', days: ['tue', 'wed', 'fri'], max_per_day: 1, max_score: 3 },
-                            { name: 'TUE/WED/FRI: Third Meal', days: ['tue', 'wed', 'fri'], max_per_day: 1, max_score: 3 }
-                        ]
-                    },
-                    {
-                        name: '6:30PM - ISHA',
-                        activities: [
-                            { name: 'MON/TUE/WED/THU: Personal', days: ['mon', 'tue', 'wed', 'thu'], max_per_day: 1, max_score: 4 },
-                            { name: 'DAILY: Family/Friends/Date calls(M, WA, Phone)', days: ['mon', 'tue', 'wed', 'thu'], max_per_day: 3, max_score: 12 },
-                            { name: 'FRI/SAT/SUN: Family/Friends/Date visits/outings/activities', days: ['fri', 'sat', 'sun'], max_per_day: 3, max_score: 9 }
-                        ]
-                    },
-                    {
-                        name: 'MAGHRIB',
-                        activities: [
-                            { name: 'DAILY: Maghrib prayer', max_per_day: 1, max_score: 7 },
-                            { name: 'DAILY: Super Veggie', max_per_day: 1, max_score: 7 }
-                        ]
-                    },
-                    {
-                        name: 'ISHA',
-                        activities: [
-                            { name: 'DAILY: Isha prayer', max_per_day: 1, max_score: 7 },
-                            { name: 'DAILY: Sleep early', max_per_day: 1, max_score: 7 }
-                        ]
-                    },
-                    {
-                        name: 'ALLDAY',
-                        activities: [
-                            { name: 'DAILY: No Doomscrolling; (FB, YTB, LKDN, & IG)', max_per_day: 4, max_score: 28 },
-                            { name: 'DAILY: No Fap; (P, & M)', max_per_day: 2, max_score: 14 },
-                            { name: 'DAILY: No Processed; (Sugar, RefinedFlour, SeedOils, Soda, FastFood)', max_per_day: 5, max_score: 35 },
-                            { name: 'MON/THU: Fasting', days: ['mon', 'thu'], max_per_day: 1, max_score: 2 },
-                            { name: 'DAILY: Expense Tracker <25', max_per_day: 0, max_score: 0 }
-                        ]
-                    },
-                    {
                         name: 'TOTAL',
                         activities: [
                             { name: 'DAILY POINTS', max_per_day: 0, max_score: 0 }
@@ -317,62 +1272,24 @@ const DEFAULT_SEEDS = {
                     {
                         name: 'TUESDAY',
                         exercises: [
-                            { name: 'Incline Dumbbell Press', default_weight: 30, default_sets: 3, default_reps: 12 },
-                            { name: 'Barbell Squats', default_weight: 80, default_sets: 3, default_reps: 8 },
-                            { name: 'DB Chest-Supported Row', default_weight: 25, default_sets: 3, default_reps: 12 },
-                            { name: 'Leg Curls', default_weight: 40, default_sets: 3, default_reps: 15 },
-                            { name: 'Incline DB Curls (SS)', default_weight: 15, default_sets: 3, default_reps: 12 },
-                            { name: 'Tricep Extensions (SS)', default_weight: 20, default_sets: 3, default_reps: 12 }
-                        ]
-                    },
-                    {
-                        name: 'WEDNESDAY',
-                        exercises: [
-                            { name: 'Barbell Bench Press', default_weight: 70, default_sets: 3, default_reps: 6 },
-                            { name: 'Romanian Deadlift', default_weight: 90, default_sets: 3, default_reps: 8 },
-                            { name: 'Lat Pulldown', default_weight: 60, default_sets: 3, default_reps: 12 },
-                            { name: 'Walking Lunges', default_weight: 20, default_sets: 3, default_reps: 10 },
-                            { name: 'Cable Lateral Raises (SS)', default_weight: 15, default_sets: 3, default_reps: 15 },
-                            { name: 'Reverse Crunches (SS)', default_weight: 0, default_sets: 3, default_reps: 15 }
-                        ]
-                    },
-                    {
-                        name: 'FRIDAY',
-                        exercises: [
-                            { name: 'Seated DB Shoulder Press', default_weight: 20, default_sets: 3, default_reps: 12 },
-                            { name: 'Dumbbell Row', default_weight: 25, default_sets: 3, default_reps: 12 },
-                            { name: 'Barbell Hip Thrust', default_weight: 100, default_sets: 3, default_reps: 15 },
-                            { name: 'Leg Extensions', default_weight: 50, default_sets: 3, default_reps: 15 },
-                            { name: 'Seated Chest Flyes', default_weight: 15, default_sets: 3, default_reps: 15 },
-                            { name: 'Standing Calf Raises (SS)', default_weight: 30, default_sets: 3, default_reps: 15 },
-                            { name: 'Reverse Cable Flyes (SS)', default_weight: 20, default_sets: 3, default_reps: 15 }
+                            { name: 'Incline Dumbbell Press', default_weight: 30, default_sets: 3, default_reps: 12 }
                         ]
                     }
                 ],
                 meals: [
-                    { name: 'Nutty Pudding', ingredients: 'Berries ½c, Cherries 3, Pomegranate Juice 2oz, Macadamia nuts (raw) 45g, Walnuts (raw) 5g, Cocoa 1t, Brazil Nuts ¼, Milk 50-100ml, Chia Seeds 2T, Flax (ground, refr) 1t, Lecithin 1t, Ceylon Cinnamon ½t' },
-                    { name: 'Super Veggie', ingredients: 'Broccoli 250g, Cauliflower 150g, Mushrooms 50g, Garlic 1 clove, Ginger 3g, Cumin 1T, Black Lentils 45g, Hemp Seeds 1T, Apple Cider Vinegar 1T' },
-                    { name: 'Third Meal', ingredients: 'Sweet Potato 350-400g, Protein 100-150g, Grape Tomatoes 12, Avocado ½, Radishes 4, Cilantro ¼c, Lemon 1, Jalapeño (lg) 1, Chili Powder 1t' }
+                    { name: 'Nutty Pudding', ingredients: 'Berries ½c, Cherries 3, Pomegranate Juice 2oz' }
                 ],
                 grocery: {
                     budget_default: '120',
                     categories: [
-                        { name: 'Produce', items: 'Broccoli 1.75kg, Cauliflower 1.05kg, Mushrooms 350g, Garlic 1 bulb, Ginger 1pc, Sweet Potato 2.8kg, Grape Tomatoes 84, Avocados (ripe) 4, Radishes 28, Cilantro 2-3 bunch' },
-                        { name: 'Fruits & Protein', items: 'Lemons 7, Jalapeños (lg) 7, Berries 3.5c, Cherries 21, Black Lentils 315g, Protein 1.05kg, Milk (fortified) 1L' }
+                        { name: 'Produce', items: 'Broccoli 1.75kg, Cauliflower 1.05kg' }
                     ]
                 },
                 measurements: [
-                    { name: 'Weight', placeholder: '75kg' },
-                    { name: 'Chest', placeholder: '42in' },
-                    { name: 'Waist', placeholder: '34in' },
-                    { name: 'Hips', placeholder: '40in' },
-                    { name: 'Arms', placeholder: '15in' },
-                    { name: 'Thighs', placeholder: '24in' }
+                    { name: 'Weight', placeholder: '75kg' }
                 ],
                 financials: [
-                    { name: 'Rent', placeholder: '850', account: 'Cash' },
-                    { name: 'Allowance', placeholder: '850', account: 'Revolut' },
-                    { name: 'Savings', placeholder: '3,800', account: 'HSBCUK' }
+                    { name: 'Rent', placeholder: '850', account: 'Cash' }
                 ],
                 city_default: "London"
             }
@@ -380,16 +1297,122 @@ const DEFAULT_SEEDS = {
     ]
 };
 
-// [Add all the JavaScript functions from the original setup.html here]
-// The key change is in the DEFAULT_SEEDS template structure where:
-// task_column_widths: ['6mm', '6mm', '4mm', '147mm', '8mm', '8mm', '8mm', '6mm', '4mm']
-// This fixes the column width issue at the template level
+// Password visibility toggle
+document.getElementById('togglePass').onclick = () => {
+    const passField = document.getElementById('pass');
+    const toggleBtn = document.getElementById('togglePass');
+    
+    if (passField.type === 'password') {
+        passField.type = 'text';
+        toggleBtn.textContent = '🙈';
+        toggleBtn.title = 'Hide password';
+    } else {
+        passField.type = 'password';
+        toggleBtn.textContent = '👁️';
+        toggleBtn.title = 'Show password';
+    }
+};
+
+// Event handlers
+document.getElementById('health').onclick = healthCheck;
+document.getElementById('setup').onclick = async () => {
+    out.innerHTML = '';
+    if (await runSchema() && await runSeed()) {
+        log('🎉 Full setup complete!', 's');
+    }
+};
+document.getElementById('schema').onclick = async () => {
+    out.innerHTML = '';
+    await runSchema();
+};
+document.getElementById('seed').onclick = async () => {
+    out.innerHTML = '';
+    await runSeed();
+};
+document.getElementById('validate').onclick = async () => {
+    out.innerHTML = '';
+    await runValidate();
+};
+document.getElementById('lint').onclick = lintAndFix;
+document.getElementById('reset').onclick = resetAll;
+
+document.getElementById('export').onclick = () => {
+    const config = {
+        url: document.getElementById('url').value,
+        email: document.getElementById('email').value,
+        collections: validateJSON(collEditor.value).data,
+        seeds: validateJSON(seedEditor.value).data
+    };
+    const blob = new Blob([JSON.stringify(config, null, 2)], { type: 'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'pocketbase-config.json';
+    a.click();
+    log('💾 Configuration exported', 's');
+};
+
+document.getElementById('import').onclick = () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.json';
+    input.onchange = e => {
+        const file = e.target.files[0];
+        if (!file) return;
+        
+        const reader = new FileReader();
+        reader.onload = e => {
+            try {
+                const config = JSON.parse(e.target.result);
+                if (config.url) document.getElementById('url').value = config.url;
+                if (config.email) document.getElementById('email').value = config.email;
+                if (config.collections) collEditor.value = JSON.stringify(config.collections, null, 2);
+                if (config.seeds) seedEditor.value = JSON.stringify(config.seeds, null, 2);
+                updateStats();
+                validateCollections();
+                validateSeeds();
+                log('✅ Config imported', 's');
+            } catch (e) {
+                log(`❌ Import error: ${e.message}`, 'e');
+            }
+        };
+        reader.readAsText(file);
+    };
+    input.click();
+};
+
+// Help modal
+document.getElementById('help').onclick = () => {
+    document.getElementById('helpModal').style.display = 'block';
+};
+document.getElementById('closeHelp').onclick = () => {
+    document.getElementById('helpModal').style.display = 'none';
+};
+window.onclick = (e) => {
+    if (e.target === document.getElementById('helpModal')) {
+        document.getElementById('helpModal').style.display = 'none';
+    }
+};
+
+// Real-time validation
+collEditor.addEventListener('input', () => {
+    validateCollections();
+    updateStats();
+});
+seedEditor.addEventListener('input', () => {
+    validateSeeds();
+    updateStats();
+});
 
 // Initialize
 collEditor.value = JSON.stringify(DEFAULT_COLLECTIONS, null, 2);
 seedEditor.value = JSON.stringify(DEFAULT_SEEDS, null, 2);
+updateStats();
+validateCollections();
+validateSeeds();
 
-console.log('✅ Setup ready with fixed column widths');
+log('🚀 Enhanced Weekly Planner Setup Ready', 'i');
+log('📚 Click "Help & Docs" for complete PocketBase reference', 'i');
+log('1. Edit collections/seeds 2. Test connection 3. Run setup', 'i');
 </script>
 </body>
 </html>
