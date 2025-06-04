@@ -37,8 +37,8 @@
     <table>
       <thead>
         <tr>
-          <th style="width:18mm" class="editable" @dblclick="editField($event, 'header', uiConfig.mainTableHeaders?.[0], 'main', 0)" x-text="uiConfig.mainTableHeaders?.[0]"></th>
-          <th style="width:18mm" class="editable" @dblclick="editField($event, 'header', uiConfig.mainTableHeaders?.[1], 'main', 1)" x-text="uiConfig.mainTableHeaders?.[1]"></th>
+          <th class="editable main-col-1" @dblclick="editField($event, 'header', uiConfig.mainTableHeaders?.[0], 'main', 0)" x-text="uiConfig.mainTableHeaders?.[0]"></th>
+          <th class="editable main-col-2" @dblclick="editField($event, 'header', uiConfig.mainTableHeaders?.[1], 'main', 1)" x-text="uiConfig.mainTableHeaders?.[1]"></th>
           <th class="ac editable" @dblclick="editField($event, 'header', uiConfig.mainTableHeaders?.[2], 'main', 2)" x-text="uiConfig.mainTableHeaders?.[2]"></th>
           <template x-for="(dayKey, i) in ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN']" :key="dayKey">
             <th class="dc editable" :class="{'current-day': i === (currentDay || 7) - 1}" @dblclick="editField($event, 'header', uiConfig.dayHeaders?.[i], 'day', i)" x-text="uiConfig.dayHeaders?.[i]"></th>
@@ -90,7 +90,7 @@
         <thead>
           <tr>
             <template x-for="(header, i) in uiConfig.taskHeaders" :key="i">
-              <th :style="getTaskColumnStyle(i)" class="editable" @dblclick="editField($event, 'header', header, 'task', i)" x-text="header"></th>
+              <th class="editable" @dblclick="editField($event, 'header', header, 'task', i)" x-text="header"></th>
             </template>
           </tr>
         </thead>
@@ -192,7 +192,7 @@
     </div>
   </div>
 
-  <div class="dropdown" :class="{'show': showCitySelector}" :style="getDropdownStyle()">
+  <div class="dropdown" :class="{'show': showCitySelector}" data-dropdown="city">
     <div class="dropdown-content">
       <template x-for="cityItem in cityOptions" :key="cityItem.name">
         <div class="dropdown-item" @click="selectCity(cityItem)" x-text="cityItem.name"></div>
@@ -200,7 +200,7 @@
     </div>
   </div>
 
-  <div class="dropdown" :class="{'show': showWeekSelector}" :style="getDropdownStyle()">
+  <div class="dropdown" :class="{'show': showWeekSelector}" data-dropdown="week">
     <div class="dropdown-content">
       <template x-if="savedWeeks.length > 0">
         <template x-for="week in savedWeeks" :key="week.iso_week">
