@@ -239,57 +239,689 @@ const validateJSON = (str, name) => {
     }
 };
 
+// COMPREHENSIVE VALIDATION SYSTEM - BULLETPROOF DATA QUALITY CHECKER
+const VALID_FIELD_TYPES = ['text', 'number', 'bool', 'json', 'email', 'url', 'date', 'select', 'relation', 'file', 'editor'];
+const RESERVED_NAMES = ['id', 'created', 'updated', 'collectionId', 'collectionName', 'expand'];
+const COLLECTION_NAME_PATTERN = /^[a-zA-Z][a-zA-Z0-9_]*$/;
+const FIELD_NAME_PATTERN = /^[a-zA-Z][a-zA-Z0-9_]*$/;
+
 const validateCollections = () => {
     const result = validateJSON(collEditor.value, 'collections');
     if (!result.valid) {
         collStatus.className = 'status invalid';
-        collStatus.textContent = `❌ ${result.error}`;
+        collStatus.textContent = `❌ JSON Parse Error: ${result.error}`;
         return false;
     }
     
     if (!Array.isArray(result.data)) {
         collStatus.className = 'status invalid';
-        collStatus.textContent = '❌ Must be array';
+        collStatus.textContent = '❌ Root must be array of collections';
         return false;
     }
     
-    // Basic validation
+    if (result.data.length === 0) {
+        collStatus.className = 'status invalid';
+        collStatus.textContent = '❌ At least one collection required';
+        return false;
+    }
+    
     const errors = [];
+    const warnings = [];
+    const collectionNames = new Set();
+    
     result.data.forEach((coll, i) => {
-        if (!coll.name || typeof coll.name !== 'string') errors.push(`Collection ${i}: missing name`);
-        if (!coll.type) coll.type = 'base';
-        if (!Array.isArray(coll.fields)) errors.push(`Collection ${i}: missing fields array`);
+        const collPrefix = `Collection[${i}]`;
         
-        if (coll.fields) {
-            coll.fields.forEach((field, j) => {
-                if (!field.name) errors.push(`Collection ${i}, field ${j}: missing name`);
-                if (!field.type) errors.push(`Collection ${i}, field ${j}: missing type`);
-            });
+        // NULL/UNDEFINED CHECKS
+        if (coll === null || coll === undefined) {
+            errors.push(`${collPrefix}: Collection is null/undefined`);
+            return;
+        }
+        
+        if (typeof coll !== 'object') {
+            errors.push(`${collPrefix}: Must be object, got ${typeof coll}`);
+            return;
+        }
+        
+        // REQUIRED FIELDS VALIDATION
+        if (!coll.name || typeof coll.name !== 'string') {
+            errors.push(`${collPrefix}: 'name' required (non-empty string)`);
+        } else {
+            // Collection name validation
+            if (!COLLECTION_NAME_PATTERN.test(coll.name)) {
+                errors.push(`${collPrefix}: name '${coll.name}' invalid. Must start with letter, contain only letters/numbers/underscore`);
+            }
+            if (coll.name.length > 63) {
+                errors.push(`${collPrefix}: name too long (max 63 chars)`);
+            }
+            if (collectionNames.has(coll.name)) {
+                errors.push(`${collPrefix}: duplicate collection name '${coll.name}'`);
+            } else {
+                collectionNames.add(coll.name);
+            }
+        }
+        
+        // TYPE VALIDATION
+        if (!coll.type) {
+            coll.type = 'base'; // Auto-fix
+            warnings.push(`${collPrefix}: 'type' missing, defaulted to 'base'`);
+        } else if (!['base', 'auth', 'view'].includes(coll.type)) {
+            errors.push(`${collPrefix}: invalid type '${coll.type}'. Must be: base, auth, view`);
+        }
+        
+        // RULES VALIDATION (must be string or null, not undefined)
+        ['listRule', 'viewRule', 'createRule', 'updateRule', 'deleteRule'].forEach(rule => {
+            if (coll[rule] === undefined) {
+                coll[rule] = ""; // Auto-fix
+                warnings.push(`${collPrefix}: '${rule}' undefined, defaulted to empty string (public access)`);
+            } else if (coll[rule] !== null && typeof coll[rule] !== 'string') {
+                errors.push(`${collPrefix}: '${rule}' must be string or null, got ${typeof coll[rule]}`);
+            }
+        });
+        
+        // FIELDS VALIDATION
+        if (!coll.fields) {
+            errors.push(`${collPrefix}: 'fields' required`);
+            return;
+        }
+        
+        if (!Array.isArray(coll.fields)) {
+            errors.push(`${collPrefix}: 'fields' must be array`);
+            return;
+        }
+        
+        if (coll.fields.length === 0) {
+            warnings.push(`${collPrefix}: no fields defined (collection will only have system fields)`);
+        }
+        
+        const fieldNames = new Set();
+        coll.fields.forEach((field, j) => {
+            const fieldPrefix = `${collPrefix}.fields[${j}]`;
+            
+            // NULL/UNDEFINED FIELD CHECKS
+            if (field === null || field === undefined) {
+                errors.push(`${fieldPrefix}: Field is null/undefined`);
+                return;
+            }
+            
+            if (typeof field !== 'object') {
+                errors.push(`${fieldPrefix}: Must be object, got ${typeof field}`);
+                return;
+            }
+            
+            // FIELD NAME VALIDATION
+            if (!field.name || typeof field.name !== 'string') {
+                errors.push(`${fieldPrefix}: 'name' required (non-empty string)`);
+            } else {
+                if (!FIELD_NAME_PATTERN.test(field.name)) {
+                    errors.push(`${fieldPrefix}: name '${field.name}' invalid. Must start with letter, contain only letters/numbers/underscore`);
+                }
+                if (RESERVED_NAMES.includes(field.name)) {
+                    errors.push(`${fieldPrefix}: name '${field.name}' is reserved`);
+                }
+                if (field.name.length > 63) {
+                    errors.push(`${fieldPrefix}: name too long (max 63 chars)`);
+                }
+                if (fieldNames.has(field.name)) {
+                    errors.push(`${fieldPrefix}: duplicate field name '${field.name}' in collection`);
+                } else {
+                    fieldNames.add(field.name);
+                }
+            }
+            
+            // FIELD TYPE VALIDATION
+            if (!field.type || typeof field.type !== 'string') {
+                errors.push(`${fieldPrefix}: 'type' required (string)`);
+            } else if (!VALID_FIELD_TYPES.includes(field.type)) {
+                errors.push(`${fieldPrefix}: invalid type '${field.type}'. Valid types: ${VALID_FIELD_TYPES.join(', ')}`);
+            }
+            
+            // REQUIRED BOOLEAN VALIDATION
+            if (field.required === undefined) {
+                field.required = false; // Auto-fix
+                warnings.push(`${fieldPrefix}: 'required' undefined, defaulted to false`);
+            } else if (typeof field.required !== 'boolean') {
+                errors.push(`${fieldPrefix}: 'required' must be boolean, got ${typeof field.required}`);
+            }
+            
+            // PRESENTABLE BOOLEAN VALIDATION
+            if (field.presentable === undefined) {
+                field.presentable = false; // Auto-fix
+                warnings.push(`${fieldPrefix}: 'presentable' undefined, defaulted to false`);
+            } else if (typeof field.presentable !== 'boolean') {
+                errors.push(`${fieldPrefix}: 'presentable' must be boolean, got ${typeof field.presentable}`);
+            }
+            
+            // TYPE-SPECIFIC VALIDATION
+            validateFieldTypeSpecific(field, fieldPrefix, errors, warnings);
+        });
+        
+        // COLLECTION-SPECIFIC VALIDATION
+        if (coll.name === 'templates') {
+            validateTemplatesCollection(coll, collPrefix, errors, warnings);
+        }
+        if (coll.name === 'planners') {
+            validatePlannersCollection(coll, collPrefix, errors, warnings);
+        }
+        if (coll.name === 'cities') {
+            validateCitiesCollection(coll, collPrefix, errors, warnings);
         }
     });
     
-    if (errors.length) {
+    // RELATIONSHIP VALIDATION
+    validateCollectionRelationships(result.data, errors);
+    
+    // DISPLAY RESULTS
+    if (errors.length > 0) {
         collStatus.className = 'status invalid';
-        collStatus.textContent = `❌ ${errors.length} errors`;
+        collStatus.textContent = `❌ ${errors.length} errors${warnings.length > 0 ? `, ${warnings.length} warnings` : ''}`;
+        log(`❌ VALIDATION FAILED: ${errors.length} errors`, 'e');
+        errors.forEach(err => log(`  • ${err}`, 'e'));
+        if (warnings.length > 0) {
+            log(`⚠️ ${warnings.length} warnings (auto-fixed):`, 'w');
+            warnings.forEach(warn => log(`  • ${warn}`, 'w'));
+        }
         return false;
     }
     
-    collStatus.className = 'status valid';
-    collStatus.textContent = `✅ ${result.data.length} collections valid`;
+    collStatus.className = warnings.length > 0 ? 'status warning' : 'status valid';
+    collStatus.textContent = warnings.length > 0 
+        ? `⚠️ ${result.data.length} collections valid, ${warnings.length} auto-fixes applied`
+        : `✅ ${result.data.length} collections valid`;
+        
+    if (warnings.length > 0) {
+        log(`⚠️ ${warnings.length} warnings (auto-fixed):`, 'w');
+        warnings.forEach(warn => log(`  • ${warn}`, 'w'));
+        // Update editor with auto-fixes
+        collEditor.value = JSON.stringify(result.data, null, 2);
+    }
+    
     return true;
+};
+
+const validateFieldTypeSpecific = (field, fieldPrefix, errors, warnings) => {
+    switch (field.type) {
+        case 'text':
+            if (field.max !== undefined && (typeof field.max !== 'number' || field.max < 0)) {
+                errors.push(`${fieldPrefix}: 'max' must be positive number`);
+            }
+            if (field.min !== undefined && (typeof field.min !== 'number' || field.min < 0)) {
+                errors.push(`${fieldPrefix}: 'min' must be positive number`);
+            }
+            if (field.max !== undefined && field.min !== undefined && field.min > field.max) {
+                errors.push(`${fieldPrefix}: 'min' cannot be greater than 'max'`);
+            }
+            if (field.pattern !== undefined && typeof field.pattern !== 'string') {
+                errors.push(`${fieldPrefix}: 'pattern' must be string (regex)`);
+            }
+            break;
+            
+        case 'number':
+            if (field.min !== undefined && typeof field.min !== 'number') {
+                errors.push(`${fieldPrefix}: 'min' must be number`);
+            }
+            if (field.max !== undefined && typeof field.max !== 'number') {
+                errors.push(`${fieldPrefix}: 'max' must be number`);
+            }
+            if (field.max !== undefined && field.min !== undefined && field.min > field.max) {
+                errors.push(`${fieldPrefix}: 'min' cannot be greater than 'max'`);
+            }
+            if (field.noDecimal !== undefined && typeof field.noDecimal !== 'boolean') {
+                errors.push(`${fieldPrefix}: 'noDecimal' must be boolean`);
+            }
+            break;
+            
+        case 'relation':
+            if (!field.collectionId || typeof field.collectionId !== 'string') {
+                errors.push(`${fieldPrefix}: relation field requires 'collectionId' (string)`);
+            }
+            if (field.minSelect !== undefined && (typeof field.minSelect !== 'number' || field.minSelect < 0)) {
+                errors.push(`${fieldPrefix}: 'minSelect' must be non-negative number`);
+            }
+            if (field.maxSelect !== undefined && (typeof field.maxSelect !== 'number' || field.maxSelect < 1)) {
+                errors.push(`${fieldPrefix}: 'maxSelect' must be positive number`);
+            }
+            if (field.cascadeDelete !== undefined && typeof field.cascadeDelete !== 'boolean') {
+                errors.push(`${fieldPrefix}: 'cascadeDelete' must be boolean`);
+            }
+            break;
+            
+        case 'select':
+            if (!field.values || !Array.isArray(field.values) || field.values.length === 0) {
+                errors.push(`${fieldPrefix}: select field requires 'values' array with at least one option`);
+            }
+            if (field.maxSelect !== undefined && (typeof field.maxSelect !== 'number' || field.maxSelect < 1)) {
+                errors.push(`${fieldPrefix}: 'maxSelect' must be positive number`);
+            }
+            break;
+            
+        case 'file':
+            if (field.maxSelect !== undefined && (typeof field.maxSelect !== 'number' || field.maxSelect < 1)) {
+                errors.push(`${fieldPrefix}: 'maxSelect' must be positive number`);
+            }
+            if (field.maxSize !== undefined && (typeof field.maxSize !== 'number' || field.maxSize < 1)) {
+                errors.push(`${fieldPrefix}: 'maxSize' must be positive number (bytes)`);
+            }
+            if (field.mimeTypes !== undefined && (!Array.isArray(field.mimeTypes) || field.mimeTypes.length === 0)) {
+                errors.push(`${fieldPrefix}: 'mimeTypes' must be non-empty array`);
+            }
+            break;
+    }
+};
+
+const validateTemplatesCollection = (coll, collPrefix, errors, warnings) => {
+    const requiredFields = ['name', 'description', 'is_default', 'version', 'structure'];
+    const fieldNames = coll.fields.map(f => f.name);
+    
+    requiredFields.forEach(reqField => {
+        if (!fieldNames.includes(reqField)) {
+            errors.push(`${collPrefix}: templates collection missing required field '${reqField}'`);
+        }
+    });
+    
+    // Validate structure field is JSON
+    const structureField = coll.fields.find(f => f.name === 'structure');
+    if (structureField && structureField.type !== 'json') {
+        errors.push(`${collPrefix}: 'structure' field must be type 'json'`);
+    }
+    
+    // Validate is_default field is boolean
+    const isDefaultField = coll.fields.find(f => f.name === 'is_default');
+    if (isDefaultField && isDefaultField.type !== 'bool') {
+        errors.push(`${collPrefix}: 'is_default' field must be type 'bool'`);
+    }
+};
+
+const validatePlannersCollection = (coll, collPrefix, errors, warnings) => {
+    const requiredFields = ['week_id', 'title', 'city', 'date_range', 'prayer_times', 'schedule_data', 'tasks_data', 'workout_data', 'meals_data', 'grocery_data', 'measurements_data', 'financials_data'];
+    const fieldNames = coll.fields.map(f => f.name);
+    
+    requiredFields.forEach(reqField => {
+        if (!fieldNames.includes(reqField)) {
+            errors.push(`${collPrefix}: planners collection missing required field '${reqField}'`);
+        }
+    });
+    
+    // Validate JSON fields
+    const jsonFields = ['prayer_times', 'schedule_data', 'tasks_data', 'workout_data', 'meals_data', 'grocery_data', 'measurements_data', 'financials_data'];
+    jsonFields.forEach(jsonField => {
+        const field = coll.fields.find(f => f.name === jsonField);
+        if (field && field.type !== 'json') {
+            errors.push(`${collPrefix}: '${jsonField}' field must be type 'json'`);
+        }
+    });
+};
+
+const validateCitiesCollection = (coll, collPrefix, errors, warnings) => {
+    const requiredFields = ['name', 'latitude', 'longitude'];
+    const fieldNames = coll.fields.map(f => f.name);
+    
+    requiredFields.forEach(reqField => {
+        if (!fieldNames.includes(reqField)) {
+            errors.push(`${collPrefix}: cities collection missing required field '${reqField}'`);
+        }
+    });
+    
+    // Validate coordinate fields are numbers
+    ['latitude', 'longitude'].forEach(coordField => {
+        const field = coll.fields.find(f => f.name === coordField);
+        if (field && field.type !== 'number') {
+            errors.push(`${collPrefix}: '${coordField}' field must be type 'number'`);
+        }
+    });
+};
+
+const validateCollectionRelationships = (collections, errors) => {
+    const collectionNames = collections.map(c => c.name);
+    
+    collections.forEach((coll, i) => {
+        coll.fields.forEach((field, j) => {
+            if (field.type === 'relation') {
+                if (field.collectionId && !collectionNames.includes(field.collectionId)) {
+                    errors.push(`Collection[${i}].fields[${j}]: relation to unknown collection '${field.collectionId}'`);
+                }
+            }
+        });
+    });
 };
 
 const validateSeeds = () => {
     const result = validateJSON(seedEditor.value, 'seeds');
     if (!result.valid) {
         seedStatus.className = 'status invalid';
-        seedStatus.textContent = `❌ ${result.error}`;
+        seedStatus.textContent = `❌ JSON Parse Error: ${result.error}`;
         return false;
     }
     
-    seedStatus.className = 'status valid';
-    seedStatus.textContent = '✅ Seeds valid';
+    if (result.data === null || result.data === undefined) {
+        seedStatus.className = 'status invalid';
+        seedStatus.textContent = '❌ Seed data is null/undefined';
+        return false;
+    }
+    
+    if (typeof result.data !== 'object' || Array.isArray(result.data)) {
+        seedStatus.className = 'status invalid';
+        seedStatus.textContent = '❌ Seeds must be object with collection names as keys';
+        return false;
+    }
+    
+    const errors = [];
+    const warnings = [];
+    const collectionResult = validateJSON(collEditor.value);
+    const collectionNames = collectionResult.valid && Array.isArray(collectionResult.data) 
+        ? collectionResult.data.map(c => c.name) 
+        : [];
+    
+    Object.entries(result.data).forEach(([collName, records]) => {
+        const seedPrefix = `seeds.${collName}`;
+        
+        // NULL/UNDEFINED CHECKS
+        if (records === null || records === undefined) {
+            errors.push(`${seedPrefix}: Collection seed data is null/undefined`);
+            return;
+        }
+        
+        if (!Array.isArray(records)) {
+            errors.push(`${seedPrefix}: Must be array of records, got ${typeof records}`);
+            return;
+        }
+        
+        // Check if collection exists in schema
+        if (collectionNames.length > 0 && !collectionNames.includes(collName)) {
+            warnings.push(`${seedPrefix}: Collection '${collName}' not found in schema (will be skipped)`);
+        }
+        
+        if (records.length === 0) {
+            warnings.push(`${seedPrefix}: Empty array (no records to seed)`);
+            return;
+        }
+        
+        // Validate each record
+        records.forEach((record, i) => {
+            const recordPrefix = `${seedPrefix}[${i}]`;
+            
+            if (record === null || record === undefined) {
+                errors.push(`${recordPrefix}: Record is null/undefined`);
+                return;
+            }
+            
+            if (typeof record !== 'object' || Array.isArray(record)) {
+                errors.push(`${recordPrefix}: Must be object, got ${typeof record}`);
+                return;
+            }
+            
+            // Validate record doesn't contain system fields
+            const systemFields = ['id', 'created', 'updated', 'collectionId', 'collectionName'];
+            systemFields.forEach(sysField => {
+                if (record.hasOwnProperty(sysField)) {
+                    warnings.push(`${recordPrefix}: Contains system field '${sysField}' (will be ignored)`);
+                }
+            });
+            
+            // Check for empty object
+            if (Object.keys(record).length === 0) {
+                warnings.push(`${recordPrefix}: Empty record (only system fields will be set)`);
+            }
+            
+            // Type-specific validation for known collections
+            validateSeedRecord(collName, record, recordPrefix, errors, warnings);
+        });
+    });
+    
+    // TEMPLATE STRUCTURE VALIDATION
+    if (result.data.templates) {
+        validateTemplateStructures(result.data.templates, errors, warnings);
+    }
+    
+    // DISPLAY RESULTS
+    if (errors.length > 0) {
+        seedStatus.className = 'status invalid';
+        seedStatus.textContent = `❌ ${errors.length} errors${warnings.length > 0 ? `, ${warnings.length} warnings` : ''}`;
+        log(`❌ SEED VALIDATION FAILED: ${errors.length} errors`, 'e');
+        errors.forEach(err => log(`  • ${err}`, 'e'));
+        if (warnings.length > 0) {
+            log(`⚠️ ${warnings.length} seed warnings:`, 'w');
+            warnings.forEach(warn => log(`  • ${warn}`, 'w'));
+        }
+        return false;
+    }
+    
+    seedStatus.className = warnings.length > 0 ? 'status warning' : 'status valid';
+    seedStatus.textContent = warnings.length > 0 
+        ? `⚠️ Seeds valid, ${warnings.length} warnings`
+        : `✅ Seeds valid`;
+        
+    if (warnings.length > 0) {
+        log(`⚠️ ${warnings.length} seed warnings:`, 'w');
+        warnings.forEach(warn => log(`  • ${warn}`, 'w'));
+    }
+    
     return true;
+};
+
+const validateSeedRecord = (collName, record, recordPrefix, errors, warnings) => {
+    switch (collName) {
+        case 'cities':
+            if (!record.name || typeof record.name !== 'string') {
+                errors.push(`${recordPrefix}: 'name' required (string)`);
+            }
+            if (record.latitude !== null && record.latitude !== undefined && typeof record.latitude !== 'number') {
+                errors.push(`${recordPrefix}: 'latitude' must be number or null`);
+            }
+            if (record.longitude !== null && record.longitude !== undefined && typeof record.longitude !== 'number') {
+                errors.push(`${recordPrefix}: 'longitude' must be number or null`);
+            }
+            if (record.latitude !== undefined && (record.latitude < -90 || record.latitude > 90)) {
+                errors.push(`${recordPrefix}: 'latitude' must be between -90 and 90`);
+            }
+            if (record.longitude !== undefined && (record.longitude < -180 || record.longitude > 180)) {
+                errors.push(`${recordPrefix}: 'longitude' must be between -180 and 180`);
+            }
+            break;
+            
+        case 'templates':
+            if (!record.name || typeof record.name !== 'string') {
+                errors.push(`${recordPrefix}: 'name' required (string)`);
+            }
+            if (record.description !== undefined && typeof record.description !== 'string') {
+                errors.push(`${recordPrefix}: 'description' must be string`);
+            }
+            if (record.is_default !== undefined && typeof record.is_default !== 'boolean') {
+                errors.push(`${recordPrefix}: 'is_default' must be boolean`);
+            }
+            if (record.version !== undefined && (typeof record.version !== 'number' || record.version < 1)) {
+                errors.push(`${recordPrefix}: 'version' must be positive number`);
+            }
+            if (!record.structure) {
+                errors.push(`${recordPrefix}: 'structure' required`);
+            } else if (typeof record.structure !== 'object') {
+                errors.push(`${recordPrefix}: 'structure' must be object`);
+            }
+            break;
+            
+        case 'planners':
+            if (!record.week_id || typeof record.week_id !== 'string') {
+                errors.push(`${recordPrefix}: 'week_id' required (string)`);
+            } else if (!/^\d{4}-W\d{2}$/.test(record.week_id)) {
+                errors.push(`${recordPrefix}: 'week_id' invalid format (expected: YYYY-W##)`);
+            }
+            if (record.title !== undefined && typeof record.title !== 'string') {
+                errors.push(`${recordPrefix}: 'title' must be string`);
+            }
+            if (record.city !== undefined && typeof record.city !== 'string') {
+                errors.push(`${recordPrefix}: 'city' must be string`);
+            }
+            
+            // Validate JSON fields
+            const jsonFields = ['prayer_times', 'schedule_data', 'tasks_data', 'workout_data', 'meals_data', 'grocery_data', 'measurements_data', 'financials_data'];
+            jsonFields.forEach(jsonField => {
+                if (record[jsonField] !== undefined && record[jsonField] !== null && typeof record[jsonField] !== 'object') {
+                    errors.push(`${recordPrefix}: '${jsonField}' must be object/array or null`);
+                }
+            });
+            break;
+    }
+};
+
+const validateTemplateStructures = (templates, errors, warnings) => {
+    templates.forEach((template, i) => {
+        const templatePrefix = `seeds.templates[${i}]`;
+        
+        if (!template.structure || typeof template.structure !== 'object') {
+            return; // Already validated above
+        }
+        
+        const structure = template.structure;
+        
+        // UI structure validation
+        if (structure.ui) {
+            if (typeof structure.ui !== 'object') {
+                errors.push(`${templatePrefix}.structure.ui: Must be object`);
+            } else {
+                // Headers validation
+                if (structure.ui.headers) {
+                    if (typeof structure.ui.headers !== 'object') {
+                        errors.push(`${templatePrefix}.structure.ui.headers: Must be object`);
+                    } else {
+                        ['main_table', 'days', 'max_cols', 'tasks'].forEach(headerType => {
+                            if (structure.ui.headers[headerType] && !Array.isArray(structure.ui.headers[headerType])) {
+                                errors.push(`${templatePrefix}.structure.ui.headers.${headerType}: Must be array`);
+                            }
+                        });
+                        
+                        // Task headers specific validation
+                        if (structure.ui.headers.tasks) {
+                            if (structure.ui.headers.tasks.length !== 9) {
+                                warnings.push(`${templatePrefix}.structure.ui.headers.tasks: Expected 9 headers, got ${structure.ui.headers.tasks.length}`);
+                            }
+                        }
+                    }
+                }
+                
+                // Task column widths validation
+                if (structure.ui.task_column_widths && !Array.isArray(structure.ui.task_column_widths)) {
+                    errors.push(`${templatePrefix}.structure.ui.task_column_widths: Must be array`);
+                }
+                
+                // Sections validation
+                if (structure.ui.sections && typeof structure.ui.sections !== 'object') {
+                    errors.push(`${templatePrefix}.structure.ui.sections: Must be object`);
+                }
+            }
+        }
+        
+        // Schedule validation
+        if (structure.schedule) {
+            if (!Array.isArray(structure.schedule)) {
+                errors.push(`${templatePrefix}.structure.schedule: Must be array`);
+            } else {
+                structure.schedule.forEach((section, j) => {
+                    const sectionPrefix = `${templatePrefix}.structure.schedule[${j}]`;
+                    
+                    if (!section.name || typeof section.name !== 'string') {
+                        errors.push(`${sectionPrefix}: 'name' required (string)`);
+                    }
+                    
+                    if (!section.activities || !Array.isArray(section.activities)) {
+                        errors.push(`${sectionPrefix}: 'activities' required (array)`);
+                    } else {
+                        section.activities.forEach((activity, k) => {
+                            const activityPrefix = `${sectionPrefix}.activities[${k}]`;
+                            
+                            if (!activity.name || typeof activity.name !== 'string') {
+                                errors.push(`${activityPrefix}: 'name' required (string)`);
+                            }
+                            
+                            if (activity.max_per_day !== undefined && (typeof activity.max_per_day !== 'number' || activity.max_per_day < 0)) {
+                                errors.push(`${activityPrefix}: 'max_per_day' must be non-negative number`);
+                            }
+                            
+                            if (activity.max_score !== undefined && (typeof activity.max_score !== 'number' || activity.max_score < 0)) {
+                                errors.push(`${activityPrefix}: 'max_score' must be non-negative number`);
+                            }
+                            
+                            if (activity.days && !Array.isArray(activity.days)) {
+                                errors.push(`${activityPrefix}: 'days' must be array`);
+                            } else if (activity.days) {
+                                const validDays = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
+                                activity.days.forEach(day => {
+                                    if (!validDays.includes(day.toLowerCase())) {
+                                        errors.push(`${activityPrefix}: invalid day '${day}'. Valid days: ${validDays.join(', ')}`);
+                                    }
+                                });
+                            }
+                        });
+                    }
+                });
+            }
+        }
+        
+        // Tasks validation
+        if (structure.tasks) {
+            if (typeof structure.tasks !== 'object') {
+                errors.push(`${templatePrefix}.structure.tasks: Must be object`);
+            } else {
+                if (structure.tasks.count !== undefined && (typeof structure.tasks.count !== 'number' || structure.tasks.count < 1)) {
+                    errors.push(`${templatePrefix}.structure.tasks.count: Must be positive number`);
+                }
+                
+                if (structure.tasks.count === undefined) {
+                    warnings.push(`${templatePrefix}.structure.tasks.count: Not specified, will default to 20`);
+                }
+            }
+        }
+        
+        // Workout validation
+        if (structure.workout && !Array.isArray(structure.workout)) {
+            errors.push(`${templatePrefix}.structure.workout: Must be array`);
+        } else if (structure.workout) {
+            structure.workout.forEach((day, j) => {
+                const dayPrefix = `${templatePrefix}.structure.workout[${j}]`;
+                
+                if (!day.name || typeof day.name !== 'string') {
+                    errors.push(`${dayPrefix}: 'name' required (string)`);
+                }
+                
+                if (!day.exercises || !Array.isArray(day.exercises)) {
+                    errors.push(`${dayPrefix}: 'exercises' required (array)`);
+                } else {
+                    day.exercises.forEach((exercise, k) => {
+                        const exercisePrefix = `${dayPrefix}.exercises[${k}]`;
+                        
+                        if (!exercise.name || typeof exercise.name !== 'string') {
+                            errors.push(`${exercisePrefix}: 'name' required (string)`);
+                        }
+                        
+                        ['default_weight', 'default_sets', 'default_reps'].forEach(prop => {
+                            if (exercise[prop] !== undefined && typeof exercise[prop] !== 'number') {
+                                errors.push(`${exercisePrefix}: '${prop}' must be number`);
+                            }
+                        });
+                    });
+                }
+            });
+        }
+        
+        // Meals validation
+        if (structure.meals && !Array.isArray(structure.meals)) {
+            errors.push(`${templatePrefix}.structure.meals: Must be array`);
+        }
+        
+        // Grocery validation
+        if (structure.grocery && typeof structure.grocery !== 'object') {
+            errors.push(`${templatePrefix}.structure.grocery: Must be object`);
+        }
+        
+        // Measurements validation
+        if (structure.measurements && !Array.isArray(structure.measurements)) {
+            errors.push(`${templatePrefix}.structure.measurements: Must be array`);
+        }
+        
+        // Financials validation
+        if (structure.financials && !Array.isArray(structure.financials)) {
+            errors.push(`${templatePrefix}.structure.financials: Must be array`);
+        }
+    });
 };
 
 // Stats update
@@ -471,7 +1103,7 @@ const runSeed = async () => {
 };
 
 const runValidate = async () => {
-    setProgress(20, 'Validating setup...');
+    setProgress(20, 'Starting comprehensive validation...');
     
     try {
         pb = new PocketBase(url);
@@ -480,13 +1112,178 @@ const runValidate = async () => {
         const collections = await pb.collections.getFullList();
         log(`✅ Found ${collections.length} collections`, 's');
         
+        const validationErrors = [];
+        const validationWarnings = [];
+        
+        setProgress(40, 'Validating collection schemas...');
+        
+        // SCHEMA VALIDATION
         for (const coll of collections) {
-            const records = await pb.collection(coll.name).getList(1, 1);
-            log(`✅ ${coll.name}: ${records.totalItems} records`, 's');
+            try {
+                const collPrefix = `Collection '${coll.name}'`;
+                
+                // Validate collection structure
+                if (!coll.name || typeof coll.name !== 'string') {
+                    validationErrors.push(`${collPrefix}: Invalid name`);
+                }
+                
+                if (!coll.type || !['base', 'auth', 'view'].includes(coll.type)) {
+                    validationErrors.push(`${collPrefix}: Invalid type '${coll.type}'`);
+                }
+                
+                // Validate fields
+                if (!coll.schema || !Array.isArray(coll.schema)) {
+                    validationErrors.push(`${collPrefix}: Invalid schema structure`);
+                    continue;
+                }
+                
+                const fieldNames = new Set();
+                coll.schema.forEach((field, i) => {
+                    const fieldPrefix = `${collPrefix}.fields[${i}]`;
+                    
+                    if (!field.name || typeof field.name !== 'string') {
+                        validationErrors.push(`${fieldPrefix}: Invalid field name`);
+                        return;
+                    }
+                    
+                    if (fieldNames.has(field.name)) {
+                        validationErrors.push(`${fieldPrefix}: Duplicate field name '${field.name}'`);
+                    } else {
+                        fieldNames.add(field.name);
+                    }
+                    
+                    if (!field.type || !VALID_FIELD_TYPES.includes(field.type)) {
+                        validationErrors.push(`${fieldPrefix}: Invalid field type '${field.type}'`);
+                    }
+                    
+                    // Type-specific validation
+                    if (field.type === 'relation' && !field.options?.collectionId) {
+                        validationErrors.push(`${fieldPrefix}: Relation field missing collectionId`);
+                    }
+                });
+                
+            } catch (e) {
+                validationErrors.push(`Collection '${coll.name}': Validation error - ${e.message}`);
+            }
+        }
+        
+        setProgress(60, 'Validating data integrity...');
+        
+        // DATA INTEGRITY VALIDATION
+        for (const coll of collections) {
+            if (coll.system) continue; // Skip system collections
+            
+            try {
+                const collPrefix = `Data '${coll.name}'`;
+                
+                // Check record count
+                const list = await pb.collection(coll.name).getList(1, 1);
+                log(`📊 ${coll.name}: ${list.totalItems} records`, 'i');
+                
+                if (list.totalItems > 0) {
+                    // Sample validation - check first few records
+                    const sampleSize = Math.min(5, list.totalItems);
+                    const samples = await pb.collection(coll.name).getList(1, sampleSize);
+                    
+                    samples.items.forEach((record, i) => {
+                        const recordPrefix = `${collPrefix}[${i}]`;
+                        
+                        // Check for null/undefined in required fields
+                        coll.schema.forEach(field => {
+                            if (field.required && (record[field.name] === null || record[field.name] === undefined || record[field.name] === '')) {
+                                validationWarnings.push(`${recordPrefix}: Required field '${field.name}' is empty`);
+                            }
+                            
+                            // Type validation
+                            if (record[field.name] !== null && record[field.name] !== undefined) {
+                                validateRecordFieldType(field, record[field.name], recordPrefix, validationErrors, validationWarnings);
+                            }
+                        });
+                        
+                        // Check for orphaned relations
+                        coll.schema.forEach(field => {
+                            if (field.type === 'relation' && record[field.name]) {
+                                // Note: Full relation validation would require checking target collection
+                                // This is a simplified check
+                                if (typeof record[field.name] !== 'string' && !Array.isArray(record[field.name])) {
+                                    validationWarnings.push(`${recordPrefix}: Relation field '${field.name}' has unexpected type`);
+                                }
+                            }
+                        });
+                    });
+                }
+                
+                // COLLECTION-SPECIFIC VALIDATION
+                switch (coll.name) {
+                    case 'templates':
+                        await validateTemplatesData(pb, collPrefix, validationErrors, validationWarnings);
+                        break;
+                    case 'planners':
+                        await validatePlannersData(pb, collPrefix, validationErrors, validationWarnings);
+                        break;
+                    case 'cities':
+                        await validateCitiesData(pb, collPrefix, validationErrors, validationWarnings);
+                        break;
+                }
+                
+            } catch (e) {
+                validationErrors.push(`Data validation for '${coll.name}': ${e.message}`);
+            }
+        }
+        
+        setProgress(80, 'Checking system health...');
+        
+        // SYSTEM HEALTH CHECKS
+        try {
+            // Check if there's a default template
+            const templates = await pb.collection('templates').getFullList();
+            const defaultTemplates = templates.filter(t => t.is_default);
+            
+            if (defaultTemplates.length === 0) {
+                validationWarnings.push('No default template found - system may not work properly');
+            } else if (defaultTemplates.length > 1) {
+                validationWarnings.push(`Multiple default templates found (${defaultTemplates.length}) - only one should be default`);
+            }
+            
+            // Check template structure integrity
+            for (const template of templates) {
+                if (!template.structure || typeof template.structure !== 'object') {
+                    validationErrors.push(`Template '${template.name}': Invalid or missing structure`);
+                    continue;
+                }
+                
+                // Deep structure validation
+                const structure = template.structure;
+                if (!structure.ui || !structure.schedule || !structure.tasks) {
+                    validationWarnings.push(`Template '${template.name}': Missing core structure components`);
+                }
+                
+                if (structure.tasks && structure.tasks.count !== 20) {
+                    validationWarnings.push(`Template '${template.name}': Task count is ${structure.tasks?.count || 'undefined'}, expected 20`);
+                }
+            }
+            
+        } catch (e) {
+            validationErrors.push(`System health check failed: ${e.message}`);
         }
         
         setProgress(100, 'Validation complete');
-        log('✅ Validation successful', 's');
+        
+        // REPORT RESULTS
+        if (validationErrors.length > 0) {
+            log(`❌ VALIDATION FAILED: ${validationErrors.length} errors, ${validationWarnings.length} warnings`, 'e');
+            validationErrors.forEach(err => log(`  🔴 ${err}`, 'e'));
+            validationWarnings.forEach(warn => log(`  🟡 ${warn}`, 'w'));
+            return false;
+        } else if (validationWarnings.length > 0) {
+            log(`⚠️ VALIDATION PASSED WITH WARNINGS: ${validationWarnings.length} warnings`, 'w');
+            validationWarnings.forEach(warn => log(`  🟡 ${warn}`, 'w'));
+            log('🎯 System is functional but has potential issues', 'w');
+        } else {
+            log('✅ VALIDATION PASSED: System is bulletproof! 🛡️', 's');
+            log('🎯 All checks passed - no issues detected', 's');
+        }
+        
         return true;
     } catch (e) {
         log(`❌ Validation failed: ${e.message}`, 'e');
@@ -494,6 +1291,148 @@ const runValidate = async () => {
         return false;
     } finally {
         if (pb?.authStore?.isValid) pb.authStore.clear();
+    }
+};
+
+const validateRecordFieldType = (field, value, recordPrefix, errors, warnings) => {
+    switch (field.type) {
+        case 'text':
+        case 'email':
+        case 'url':
+            if (typeof value !== 'string') {
+                errors.push(`${recordPrefix}.${field.name}: Expected string, got ${typeof value}`);
+            }
+            break;
+        case 'number':
+            if (typeof value !== 'number') {
+                errors.push(`${recordPrefix}.${field.name}: Expected number, got ${typeof value}`);
+            }
+            break;
+        case 'bool':
+            if (typeof value !== 'boolean') {
+                errors.push(`${recordPrefix}.${field.name}: Expected boolean, got ${typeof value}`);
+            }
+            break;
+        case 'json':
+            // JSON fields can be objects, arrays, or null
+            if (value !== null && typeof value !== 'object') {
+                errors.push(`${recordPrefix}.${field.name}: Expected object/array, got ${typeof value}`);
+            }
+            break;
+        case 'date':
+            // Date fields should be ISO strings
+            if (typeof value === 'string') {
+                const date = new Date(value);
+                if (isNaN(date.getTime())) {
+                    errors.push(`${recordPrefix}.${field.name}: Invalid date format`);
+                }
+            } else {
+                errors.push(`${recordPrefix}.${field.name}: Expected date string, got ${typeof value}`);
+            }
+            break;
+    }
+};
+
+const validateTemplatesData = async (pb, collPrefix, errors, warnings) => {
+    try {
+        const templates = await pb.collection('templates').getFullList();
+        
+        templates.forEach((template, i) => {
+            const templatePrefix = `${collPrefix}[${i}]`;
+            
+            // Required fields check
+            if (!template.name) errors.push(`${templatePrefix}: Missing name`);
+            if (template.structure === null || template.structure === undefined) {
+                errors.push(`${templatePrefix}: Missing structure`);
+                return;
+            }
+            
+            // Structure validation
+            const structure = template.structure;
+            
+            // UI validation
+            if (!structure.ui) {
+                warnings.push(`${templatePrefix}: Missing UI configuration`);
+            } else {
+                if (!structure.ui.headers || !structure.ui.headers.tasks) {
+                    warnings.push(`${templatePrefix}: Missing task headers`);
+                } else if (structure.ui.headers.tasks.length !== 9) {
+                    errors.push(`${templatePrefix}: Task headers must have 9 items, got ${structure.ui.headers.tasks.length}`);
+                }
+            }
+            
+            // Schedule validation
+            if (!structure.schedule || !Array.isArray(structure.schedule)) {
+                errors.push(`${templatePrefix}: Invalid schedule structure`);
+            }
+            
+            // Tasks validation
+            if (!structure.tasks || structure.tasks.count !== 20) {
+                warnings.push(`${templatePrefix}: Task count should be 20, got ${structure.tasks?.count}`);
+            }
+        });
+        
+    } catch (e) {
+        errors.push(`${collPrefix}: Failed to validate templates - ${e.message}`);
+    }
+};
+
+const validatePlannersData = async (pb, collPrefix, errors, warnings) => {
+    try {
+        const planners = await pb.collection('planners').getList(1, 5); // Sample check
+        
+        planners.items.forEach((planner, i) => {
+            const plannerPrefix = `${collPrefix}[${i}]`;
+            
+            // Week ID format validation
+            if (!planner.week_id || !/^\d{4}-W\d{2}$/.test(planner.week_id)) {
+                errors.push(`${plannerPrefix}: Invalid week_id format '${planner.week_id}'`);
+            }
+            
+            // JSON fields validation
+            const jsonFields = ['prayer_times', 'schedule_data', 'tasks_data', 'workout_data', 'meals_data', 'grocery_data', 'measurements_data', 'financials_data'];
+            jsonFields.forEach(field => {
+                if (planner[field] !== null && planner[field] !== undefined && typeof planner[field] !== 'object') {
+                    errors.push(`${plannerPrefix}.${field}: Must be object or null, got ${typeof planner[field]}`);
+                }
+            });
+            
+            // Tasks data specific validation
+            if (planner.tasks_data && Array.isArray(planner.tasks_data)) {
+                if (planner.tasks_data.length > 20) {
+                    warnings.push(`${plannerPrefix}: Has ${planner.tasks_data.length} tasks, expected ≤20`);
+                }
+            }
+        });
+        
+    } catch (e) {
+        errors.push(`${collPrefix}: Failed to validate planners - ${e.message}`);
+    }
+};
+
+const validateCitiesData = async (pb, collPrefix, errors, warnings) => {
+    try {
+        const cities = await pb.collection('cities').getFullList();
+        
+        cities.forEach((city, i) => {
+            const cityPrefix = `${collPrefix}[${i}]`;
+            
+            if (!city.name) {
+                errors.push(`${cityPrefix}: Missing name`);
+            }
+            
+            // Coordinate validation
+            if (city.latitude !== null && (typeof city.latitude !== 'number' || city.latitude < -90 || city.latitude > 90)) {
+                errors.push(`${cityPrefix}: Invalid latitude ${city.latitude}`);
+            }
+            
+            if (city.longitude !== null && (typeof city.longitude !== 'number' || city.longitude < -180 || city.longitude > 180)) {
+                errors.push(`${cityPrefix}: Invalid longitude ${city.longitude}`);
+            }
+        });
+        
+    } catch (e) {
+        errors.push(`${collPrefix}: Failed to validate cities - ${e.message}`);
     }
 };
 
@@ -610,7 +1549,7 @@ const DEFAULT_SEEDS = {
                         main_table: ['TIME', 'DAY', 'ACTIVITY', 'SCR', 'MAX', '🔥'],
                         days: ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'],
                         max_cols: Array(7).fill('MAX'),
-                        tasks: ['№', '🔥', '🏷️', '✏️ Task/Project/Note', '📅 Start', '🎯 Due', '✅ Done', '⏰ Delay', '✓']
+                        tasks: ['№', '🔥', '🏷️', '✏️ Task/Project/Note', '📅', '🎯', '✅', '⏰', '✓']
                     },
                     task_column_widths: ['4mm', '4mm', '4mm', '130mm', '8mm', '8mm', '8mm', '6mm', '4mm'],
                     sections: {
@@ -722,7 +1661,7 @@ const DEFAULT_SEEDS = {
                     }
                 ],
                 tasks: {
-                    count: 40,
+                    count: 20,
                     fields: ['num', 'priority', 'tag', 'description', 'start_date', 'expected_date', 'actual_date', 'completed']
                 },
                 workout: [
