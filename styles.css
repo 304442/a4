@@ -152,47 +152,265 @@ td.dc:nth-child(4n+5), th.dc:nth-child(4n+5) { border-right: 1px solid #ccc; }
   text-align: center; 
 }
 
-/* Override any general table styling for task tables specifically */
-.task-table,
-.task-table * {
-  border-spacing: 0 !important;
-  border-collapse: collapse !important;
-}
-
-/* Remove inherited row styling that might add spacing */
-.task-table tr:nth-child(even) td,
-.task-table tr:nth-child(odd) td {
-  background-color: #ffffff !important;
-  margin: 0 !important;
-  padding: 0 !important;
-}
-
-/* Ensure task inputs have no extra spacing */
-.task-table .mini-input {
-  width: 100% !important;
-  height: 3mm !important;
-  padding: 0 !important;
-  border: none !important;
+/* PRIORITY & STATUS VISUAL INDICATORS */
+.task-table td:nth-child(2) { /* Priority column */
   text-align: center;
-  font-size: 7pt;
-  background-color: #e6f7ff;
-  margin: 0 !important;
-  box-sizing: border-box !important;
+  font-weight: bold;
 }
 
+.task-table td:nth-child(2) input[value="A"],
+.task-table td:nth-child(2) input[value="HIGH"] {
+  background: linear-gradient(135deg, #fee2e2, #fecaca) !important;
+  color: #dc2626;
+  border: 1px solid #f87171 !important;
+}
+
+.task-table td:nth-child(2) input[value="B"],
+.task-table td:nth-child(2) input[value="MEDIUM"] {
+  background: linear-gradient(135deg, #fef3c7, #fde68a) !important;
+  color: #d97706;
+  border: 1px solid #f59e0b !important;
+}
+
+.task-table td:nth-child(2) input[value="C"],
+.task-table td:nth-child(2) input[value="LOW"] {
+  background: linear-gradient(135deg, #d1fae5, #a7f3d0) !important;
+  color: #059669;
+  border: 1px solid #6ee7b7 !important;
+}
+
+/* TAG COLUMN STYLING */
+.task-table td:nth-child(3) input {
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* COMPLETION CHECKBOX STYLING */
+.task-table td:nth-child(9) input {
+  font-size: 12pt !important;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.task-table .completed-task {
+  background: linear-gradient(135deg, #d1fae5, #a7f3d0) !important;
+  opacity: 0.8;
+}
+
+.task-table .completed-task input {
+  color: #065f46 !important;
+  text-decoration: line-through;
+}
+
+/* TASK DESCRIPTION ENHANCEMENT */
 .task-table .task-description-input {
   text-align: left !important;
-  padding-left: 1mm !important;
+  padding-left: 2mm !important;
+  font-weight: 500;
+  color: #374151;
 }
 
-.task-table .date-input {
-  width: 8mm !important;
-  font-size: 6pt;
-  background-color: #f8f9fa;
-  border: 1px solid #dee2e6;
-  border-radius: 2px;
-  margin: 0 !important;
+.task-table .task-description-input:focus {
+  color: #111827 !important;
+  font-weight: 600;
+}
+
+/* SECTION HEADERS MODERNIZATION */
+.section-title {
+  margin-bottom: 2mm;
+  font-size: 10pt;
+  font-weight: 700;
+  color: #1f2937;
+  padding: 2mm 0;
+  border-bottom: 2px solid #e5e7eb;
+  position: relative;
+  display: flex;
+  align-items: center;
+  letter-spacing: -0.01em;
+}
+
+.section-title::before {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 40px;
+  height: 2px;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  border-radius: 1px;
+}
+
+/* MAIN SCHEDULE TABLE ENHANCEMENTS */
+table:not(.task-table) th {
+  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%) !important;
+  color: #475569 !important;
+  font-weight: 600;
+  border-bottom: 2px solid #cbd5e1 !important;
+  font-size: 8pt;
+}
+
+table:not(.task-table) tr:hover td {
+  background-color: #f1f5f9 !important;
+  transition: background-color 0.15s ease;
+}
+
+/* CURRENT DAY HIGHLIGHTING */
+.current-day {
+  background: linear-gradient(135deg, #fef3c7, #fde68a) !important;
+  position: relative;
+}
+
+.current-day::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, #f59e0b, #d97706);
+}
+
+/* WORKOUT CARDS MODERNIZATION */
+.workout-day-card {
+  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  transition: all 0.2s ease;
+}
+
+.workout-day-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  border-color: #667eea;
+}
+
+/* PROGRESS BAR ENHANCEMENTS */
+.progress-container {
+  height: 4mm;
+  background: linear-gradient(135deg, #f1f5f9, #e2e8f0);
+  border-radius: 2mm;
+  overflow: hidden;
   padding: 0 !important;
+  border: 1px solid #e2e8f0;
+}
+
+.progress-bar {
+  height: 100%;
+  border-radius: 2mm;
+  transition: all 0.4s ease;
+  position: relative;
+}
+
+.progress-bar::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+  animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+.progress-low {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+}
+
+.progress-medium {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+}
+
+.progress-high {
+  background: linear-gradient(135deg, #10b981, #059669);
+}
+
+/* STREAK INDICATORS ENHANCEMENT */
+.streak-cell {
+  font-size: 7pt;
+  color: #ea580c;
+  font-weight: 700;
+  text-align: center;
+}
+
+.has-streak {
+  background: linear-gradient(135deg, #fed7aa, #fdba74) !important;
+  border-radius: 12px;
+  position: relative;
+}
+
+.has-streak span {
+  position: relative;
+  padding: 1mm;
+}
+
+.has-streak span::after {
+  content: "🔥";
+  font-size: 8pt;
+  position: absolute;
+  top: -1px;
+  right: -6px;
+  animation: flicker 1.5s infinite alternate;
+}
+
+@keyframes flicker {
+  0% { opacity: 1; transform: scale(1); }
+  100% { opacity: 0.8; transform: scale(1.1); }
+}
+
+/* MOBILE & RESPONSIVE OPTIMIZATIONS */
+@media (max-width: 768px) {
+  .card {
+    width: 100vw;
+    height: auto;
+    padding: 3mm;
+    border-radius: 0;
+  }
+  
+  .task-table th,
+  .task-table td {
+    font-size: 6pt;
+    padding: 0.5mm !important;
+    height: 6mm !important;
+  }
+  
+  .grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ACCESSIBILITY ENHANCEMENTS */
+.task-table input:focus,
+.editable:focus {
+  outline: 3px solid #667eea;
+  outline-offset: 2px;
+}
+
+.clickable:focus {
+  outline: 2px solid #667eea;
+  outline-offset: 1px;
+}
+
+/* HIGH CONTRAST MODE SUPPORT */
+@media (prefers-contrast: high) {
+  .task-table th {
+    background: #000000 !important;
+    color: #ffffff !important;
+  }
+  
+  .task-table tbody tr:nth-child(even) {
+    background-color: #f0f0f0 !important;
+  }
+  
+  .task-table tbody tr:nth-child(odd) {
+    background-color: #ffffff !important;
+  }
 }
 
 /* Input Styling */
@@ -379,10 +597,535 @@ tr:has(.completed-task) td input:not(.completed-task) { text-decoration: line-th
   box-shadow: inset 0 0 0 1px #4299e1; resize: vertical; 
 }
 
-/* Print Styles */
+/* UNIVERSAL A4 PRINT COMPATIBILITY - WEB & MOBILE */
 @media print {
-  html, body { width: 210mm; height: 297mm; background-color: white; margin: 0; padding: 0; }
-  .card { box-shadow: none; }
-  #save-status, #sync-status, .dropdown, #notification { display: none !important; }
-  * { print-color-adjust: exact; }
+  /* FUNDAMENTAL CROSS-BROWSER PRINT SETUP */
+  html {
+    width: 210mm !important;
+    height: 297mm !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: white !important;
+    overflow: hidden !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    color-adjust: exact !important;
+  }
+  
+  body {
+    width: 210mm !important;
+    height: 297mm !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: white !important;
+    font-family: 'Arial', 'Helvetica', sans-serif !important;
+    font-size: 7pt !important;
+    line-height: 1.2 !important;
+    color: #000000 !important;
+    overflow: hidden !important;
+    position: relative !important;
+    transform: scale(1) !important;
+  }
+  
+  /* PRECISE A4 PAGE SETUP - CROSS-BROWSER */
+  @page {
+    size: A4 portrait !important;
+    margin: 5mm !important;
+    padding: 0 !important;
+    
+    /* Webkit browsers (Chrome, Safari) */
+    -webkit-size: A4 portrait !important;
+    
+    /* Firefox */
+    size: 210mm 297mm !important;
+  }
+  
+  /* MOBILE PRINT SPECIFIC ADJUSTMENTS */
+  @media print and (max-width: 768px) {
+    html, body {
+      zoom: 1 !important;
+      -webkit-text-size-adjust: 100% !important;
+      -ms-text-size-adjust: 100% !important;
+      text-size-adjust: 100% !important;
+    }
+  }
+  
+  /* SAFARI MOBILE PRINT FIX */
+  @supports (-webkit-appearance: none) {
+    @media print {
+      html {
+        -webkit-print-color-adjust: exact !important;
+        -webkit-transform: scale(1) !important;
+      }
+      
+      body {
+        -webkit-transform: scale(1) !important;
+        zoom: 1 !important;
+      }
+    }
+  }
+  
+  /* FIREFOX PRINT OPTIMIZATION */
+  @-moz-document url-prefix() {
+    @media print {
+      html, body {
+        width: 210mm !important;
+        height: 297mm !important;
+      }
+    }
+  }
+  
+  /* CARD CONTAINER - PERFECT A4 FIT */
+  .card {
+    width: 200mm !important;
+    height: 287mm !important;
+    max-width: 200mm !important;
+    max-height: 287mm !important;
+    padding: 3mm !important;
+    margin: 0 !important;
+    box-sizing: border-box !important;
+    background: white !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    page-break-inside: avoid !important;
+    overflow: hidden !important;
+    position: relative !important;
+    display: block !important;
+    transform: none !important;
+  }
+  
+  /* HIDE ALL INTERACTIVE ELEMENTS */
+  #save-status, #sync-status, .dropdown, #notification,
+  .clickable, button, .editable:hover, 
+  input[type="button"], input[type="submit"],
+  .status-indicator, .sync-indicator {
+    display: none !important;
+    visibility: hidden !important;
+  }
+  
+  /* HEADER SECTION PRINT OPTIMIZATION */
+  .card .flex.between.center.mb-1 {
+    width: 100% !important;
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    border-bottom: 1px solid #000000 !important;
+    margin-bottom: 2mm !important;
+    padding: 1mm 0 !important;
+    page-break-after: avoid !important;
+    background: white !important;
+  }
+  
+  .card h1 {
+    font-size: 10pt !important;
+    font-weight: bold !important;
+    color: #000000 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+  
+  .flex.center.text-xs {
+    background: #f8f8f8 !important;
+    border: 1px solid #cccccc !important;
+    padding: 1mm !important;
+    font-size: 6pt !important;
+    color: #000000 !important;
+    border-radius: 0 !important;
+  }
+  
+  .text-sm {
+    font-size: 7pt !important;
+    color: #000000 !important;
+    font-weight: normal !important;
+  }
+  
+  /* MAIN SCHEDULE TABLE PRINT */
+  table:not(.task-table) {
+    width: 100% !important;
+    max-width: 194mm !important;
+    border-collapse: collapse !important;
+    border-spacing: 0 !important;
+    margin: 1mm 0 !important;
+    page-break-inside: avoid !important;
+    background: white !important;
+    table-layout: fixed !important;
+  }
+  
+  table:not(.task-table) th {
+    background: #e8e8e8 !important;
+    color: #000000 !important;
+    border: 1px solid #000000 !important;
+    font-weight: bold !important;
+    text-align: center !important;
+    padding: 0.5mm !important;
+    font-size: 5pt !important;
+    line-height: 1.1 !important;
+    height: 4mm !important;
+    overflow: hidden !important;
+    word-wrap: break-word !important;
+  }
+  
+  table:not(.task-table) td {
+    border: 1px solid #cccccc !important;
+    padding: 0.3mm !important;
+    font-size: 5pt !important;
+    line-height: 1.1 !important;
+    height: 3mm !important;
+    background: white !important;
+    text-align: center !important;
+    overflow: hidden !important;
+    word-wrap: break-word !important;
+  }
+  
+  table:not(.task-table) tr:nth-child(even) td {
+    background: #f5f5f5 !important;
+  }
+  
+  table:not(.task-table) tr.total td {
+    background: #e8e8e8 !important;
+    font-weight: bold !important;
+  }
+  
+  /* CURRENT DAY HIGHLIGHTING */
+  .current-day {
+    background: #ffffcc !important;
+    color: #000000 !important;
+    font-weight: bold !important;
+    border: 2px solid #000000 !important;
+  }
+  
+  /* TASK TABLE ULTIMATE PRINT OPTIMIZATION */
+  .task-table {
+    width: 100% !important;
+    max-width: 194mm !important;
+    border-collapse: collapse !important;
+    border-spacing: 0 !important;
+    background: white !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    margin: 2mm 0 !important;
+    page-break-inside: avoid !important;
+    table-layout: fixed !important;
+    font-size: 6pt !important;
+  }
+  
+  /* TASK TABLE HEADERS */
+  .task-table th {
+    background: #d0d0d0 !important;
+    color: #000000 !important;
+    border: 1px solid #000000 !important;
+    font-weight: bold !important;
+    text-align: center !important;
+    padding: 0.5mm !important;
+    height: 5mm !important;
+    font-size: 6pt !important;
+    line-height: 1.1 !important;
+    page-break-inside: avoid !important;
+    overflow: hidden !important;
+    word-wrap: break-word !important;
+  }
+  
+  /* TASK TABLE COLUMN WIDTHS - PRECISE A4 */
+  .task-table th:nth-child(1), .task-table td:nth-child(1) { 
+    width: 8mm !important;
+  }
+  
+  .task-table th:nth-child(2), .task-table td:nth-child(2) { 
+    width: 8mm !important;
+  }
+  
+  .task-table th:nth-child(3), .task-table td:nth-child(3) { 
+    width: 8mm !important;
+  }
+  
+  .task-table th:nth-child(4), .task-table td:nth-child(4) { 
+    width: 130mm !important;
+    text-align: left !important;
+  }
+  
+  .task-table th:nth-child(5), .task-table td:nth-child(5) { 
+    width: 10mm !important;
+  }
+  
+  .task-table th:nth-child(6), .task-table td:nth-child(6) { 
+    width: 10mm !important;
+  }
+  
+  .task-table th:nth-child(7), .task-table td:nth-child(7) { 
+    width: 10mm !important;
+  }
+  
+  .task-table th:nth-child(8), .task-table td:nth-child(8) { 
+    width: 8mm !important;
+  }
+  
+  .task-table th:nth-child(9), .task-table td:nth-child(9) { 
+    width: 6mm !important;
+  }
+  
+  /* TASK TABLE ROWS */
+  .task-table tbody tr {
+    background: white !important;
+    height: 5mm !important;
+    page-break-inside: avoid !important;
+    border: none !important;
+  }
+  
+  .task-table tbody tr:nth-child(even) {
+    background: #f8f8f8 !important;
+  }
+  
+  .task-table tbody tr:nth-child(odd) {
+    background: white !important;
+  }
+  
+  .task-table td {
+    border: 1px solid #cccccc !important;
+    padding: 0.3mm !important;
+    margin: 0 !important;
+    height: 5mm !important;
+    line-height: 1.1 !important;
+    font-size: 5pt !important;
+    vertical-align: middle !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+    background: inherit !important;
+  }
+  
+  /* INPUT FIELDS - SHOW VALUES ONLY */
+  .task-table input, input {
+    border: none !important;
+    background: transparent !important;
+    font-size: 5pt !important;
+    font-family: inherit !important;
+    color: #000000 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    width: 100% !important;
+    height: auto !important;
+    box-shadow: none !important;
+    outline: none !important;
+    appearance: none !important;
+    -webkit-appearance: none !important;
+    -moz-appearance: none !important;
+  }
+  
+  .task-table .task-description-input {
+    text-align: left !important;
+    padding-left: 0.5mm !important;
+    font-weight: normal !important;
+  }
+  
+  /* STATUS AND PRIORITY INDICATORS */
+  .delay-negative {
+    background: #e6f7e6 !important;
+    color: #000000 !important;
+    border: 1px solid #cccccc !important;
+    font-weight: bold !important;
+  }
+  
+  .delay-positive {
+    background: #ffe6e6 !important;
+    color: #000000 !important;
+    border: 1px solid #cccccc !important;
+    font-weight: bold !important;
+  }
+  
+  .delay-zero {
+    background: #fff2e6 !important;
+    color: #000000 !important;
+    border: 1px solid #cccccc !important;
+    font-weight: bold !important;
+  }
+  
+  .completed-task, .task-completed {
+    background: #f0f0f0 !important;
+    text-decoration: line-through !important;
+    color: #666666 !important;
+  }
+  
+  /* SECTION HEADERS */
+  .section-title {
+    color: #000000 !important;
+    font-size: 8pt !important;
+    font-weight: bold !important;
+    margin: 2mm 0 1mm 0 !important;
+    padding: 1mm 0 !important;
+    border-bottom: 2px solid #000000 !important;
+    background: transparent !important;
+    page-break-after: avoid !important;
+    width: 100% !important;
+  }
+  
+  .section-title::before {
+    display: none !important;
+  }
+  
+  /* SECTIONS LAYOUT */
+  .section {
+    margin: 2mm 0 !important;
+    page-break-inside: avoid !important;
+    width: 100% !important;
+  }
+  
+  /* WORKOUT GRID PRINT */
+  .grid {
+    display: grid !important;
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 1mm !important;
+    width: 100% !important;
+    page-break-inside: avoid !important;
+  }
+  
+  .workout-day-card {
+    background: #f8f8f8 !important;
+    border: 1px solid #cccccc !important;
+    border-radius: 0 !important;
+    padding: 1mm !important;
+    page-break-inside: avoid !important;
+  }
+  
+  .workout-day-name {
+    font-size: 7pt !important;
+    font-weight: bold !important;
+    color: #000000 !important;
+    text-align: center !important;
+    margin-bottom: 1mm !important;
+  }
+  
+  .exercise {
+    font-size: 5pt !important;
+    line-height: 1.1 !important;
+    margin: 0.5mm 0 !important;
+    display: flex !important;
+    justify-content: space-between !important;
+  }
+  
+  .exercise-name {
+    font-size: 5pt !important;
+    flex: 1 !important;
+    margin-right: 1mm !important;
+  }
+  
+  .exercise-inputs {
+    font-size: 5pt !important;
+    white-space: nowrap !important;
+  }
+  
+  /* LISTS AND TEXT */
+  .list {
+    font-size: 5pt !important;
+    line-height: 1.2 !important;
+    margin: 1mm 0 !important;
+    padding-left: 2mm !important;
+  }
+  
+  .list-item {
+    margin: 0.5mm 0 !important;
+    page-break-inside: avoid !important;
+  }
+  
+  /* INLINE ELEMENTS */
+  .inline-measurement, .inline-financial {
+    font-size: 5pt !important;
+    margin-right: 2mm !important;
+    display: inline-block !important;
+  }
+  
+  .inline-input {
+    border-bottom: 1px solid #cccccc !important;
+    background: transparent !important;
+    color: #000000 !important;
+    font-size: 5pt !important;
+  }
+  
+  /* PROGRESS INDICATORS */
+  .progress-container {
+    display: none !important;
+  }
+  
+  .streak-cell {
+    font-size: 5pt !important;
+    color: #000000 !important;
+    font-weight: bold !important;
+    text-align: center !important;
+  }
+  
+  .has-streak {
+    background: #fff2e6 !important;
+    color: #000000 !important;
+    border: 1px solid #cccccc !important;
+  }
+  
+  /* PREVENT PAGE BREAKS */
+  .task-table thead {
+    page-break-after: avoid !important;
+  }
+  
+  .task-table tbody {
+    page-break-before: avoid !important;
+  }
+  
+  /* FORCE CONTENT TO FIT */
+  .section:nth-child(n+4) {
+    font-size: 5pt !important;
+  }
+  
+  /* MOBILE PRINT SPECIFIC */
+  @media print and (max-width: 768px) {
+    .card {
+      transform: scale(0.95) !important;
+      transform-origin: top left !important;
+    }
+    
+    .task-table th, .task-table td {
+      font-size: 4pt !important;
+      padding: 0.2mm !important;
+    }
+    
+    table:not(.task-table) th, table:not(.task-table) td {
+      font-size: 4pt !important;
+      padding: 0.2mm !important;
+    }
+  }
+  
+  /* REMOVE ALL ANIMATIONS AND EFFECTS */
+  *, *::before, *::after {
+    animation: none !important;
+    transition: none !important;
+    transform: none !important;
+    box-shadow: none !important;
+    text-shadow: none !important;
+    filter: none !important;
+  }
+  
+  /* BLACK AND WHITE PRINTER COMPATIBILITY */
+  @media print and (monochrome) {
+    .task-table th {
+      background: #e0e0e0 !important;
+    }
+    
+    .task-table tbody tr:nth-child(even) {
+      background: #f5f5f5 !important;
+    }
+    
+    .current-day, .delay-negative, .delay-positive, .delay-zero,
+    .has-streak, .workout-day-card {
+      background: #f0f0f0 !important;
+      border: 1px solid #000000 !important;
+    }
+    
+    .completed-task {
+      background: #e8e8e8 !important;
+    }
+  }
+  
+  /* WEBKIT BROWSERS FINAL ADJUSTMENTS */
+  @media print and (-webkit-min-device-pixel-ratio: 0) {
+    .card {
+      -webkit-transform: scale(1) !important;
+      zoom: 1 !important;
+    }
+  }
 }
