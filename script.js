@@ -393,9 +393,8 @@ function plannerApp() {
           if (activity) activity.maxScore = parseInt(value) || 0;
         },
         workoutDayName: (i) => { if (this.workoutPlan[i]) this.workoutPlan[i].name = value; },
-        exercisePrefix: (indices) => { 
-          const ex = this.workoutPlan[indices.dayIdx]?.exercises[indices.exIdx];
-          if (ex) ex.prefix = value;
+        exercisePrefix: (indices) => {
+          // Prefix functionality removed - no longer needed
         },
         exerciseName: (indices) => {
           const ex = this.workoutPlan[indices.dayIdx]?.exercises[indices.exIdx];
