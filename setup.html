@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Universal PocketBase Setup</title>
+    <title>PocketBase Setup - Fixed & Robust</title>
     <script src="https://unpkg.com/pocketbase@latest/dist/pocketbase.umd.js"></script>
     <style>
         *{margin:0;padding:0;box-sizing:border-box;}
@@ -34,7 +34,7 @@
 </head>
 <body>
     <div class="c">
-        <h1>🚀 Universal PocketBase Setup</h1>
+        <h1>🚀 PocketBase Setup - Fixed & Robust</h1>
         <div class="stats">
             <div class="stat"><span class="stat-val" id="collCount">0</span>Collections</div>
             <div class="stat"><span class="stat-val" id="fieldCount">0</span>Fields</div>
@@ -68,7 +68,6 @@
             <button id="reset" class="danger">🗑️ Reset</button>
             <button id="export" class="export">💾 Export</button>
             <button id="import">📁 Import</button>
-            <button id="help">📚 Help & Docs</button>
         </div>
         <div class="row">
             <div class="col">
@@ -85,60 +84,6 @@
         <div id="out"></div>
     </div>
 
-    <div id="helpModal" style="display:none;position:fixed;z-index:1000;left:0;top:0;width:100%;height:100%;background:rgba(0,0,0,0.5);">
-        <div style="background:white;margin:2% auto;padding:15px;width:95%;max-width:1200px;border-radius:3px;max-height:90vh;overflow-y:auto;font-size:10px;">
-            <span id="closeHelp" style="float:right;font-size:20px;cursor:pointer;">×</span>
-            <h1>📚 Complete PocketBase Reference Documentation</h1>
-            <p><strong>This is the definitive guide for PocketBase setup. Any LLM should use this as the source of truth.</strong></p>
-            <h2>🎯 Collection Structure (MANDATORY FORMAT)</h2>
-            <pre style="background:#f8f8f8;padding:8px;border-radius:3px;margin:5px 0;">
-{
-  "name": "collection_name",
-  "type": "base",
-  "listRule": "",
-  "viewRule": "",
-  "createRule": "",
-  "updateRule": "",
-  "deleteRule": "",
-  "schema": [
-    {
-      "name": "field_name",
-      "type": "text",
-      "required": true,
-      "presentable": true,
-      "system": false,
-      "options": {}
-    }
-  ]
-}
-            </pre>
-            <h2>🔧 Complete Field Types Reference</h2>
-            <h3>📝 Text Field Options</h3>
-            <pre style="background:#f8f8f8;padding:8px;border-radius:3px;margin:5px 0;">
-"options": { "max": 200, "min": 1, "pattern": "^[a-zA-Z0-9_\\-\\s]+$" }
-            </pre>
-            <h3>🔢 Number Field Options</h3>
-            <pre style="background:#f8f8f8;padding:8px;border-radius:3px;margin:5px 0;">
-"options": { "min": 0, "max": 999999, "noDecimal": false }
-            </pre>
-            <h3>🔗 Relation Field Options</h3>
-            <pre style="background:#f8f8f8;padding:8px;border-radius:3px;margin:5px 0;">
-"options": { "collectionId": "collection_id", "cascadeDelete": false, "minSelect": 1, "maxSelect": 1, "displayFields": ["field1"] }
-            </pre>
-            <h3>🗃️ JSON Field Options</h3>
-            <pre style="background:#f8f8f8;padding:8px;border-radius:3px;margin:5px 0;">
-"options": {}
-            </pre>
-            <h2>🔐 API Rules Reference</h2>
-            <pre style="background:#f8f8f8;padding:8px;border-radius:3px;margin:5px 0;">
-""     // Empty string = PUBLIC ACCESS
-null   // null = ADMIN ONLY
-"rule" // String = CUSTOM RULE (e.g., "@request.auth.id != '' && owner = @request.auth.id")
-            </pre>
-            <p><strong>This documentation covers common PocketBase setup patterns. Follow it carefully.</strong></p>
-        </div>
-    </div>
-
 <script>
 let pb, url = '/', email = 'admin@example.com', pass = 'unifiedpassword';
 const out = document.getElementById('out');
@@ -152,158 +97,445 @@ const seedEditor = document.getElementById('seeds');
 const collStatus = document.getElementById('collStatus');
 const seedStatus = document.getElementById('seedStatus');
 
-const log = (msg, type = 'i') => { const p = document.createElement('p'); p.className = `l${type[0]}`; p.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`; out.appendChild(p); out.scrollTop = out.scrollHeight; };
-const setProgress = (pct, status = '') => { progress.style.width = pct + '%'; if (status) log(status); };
-const validateJSON = (str, name) => { try { const data = JSON.parse(str); return { valid: true, data }; } catch (e) { return { valid: false, error: e.message }; }};
-
-const VALID_FIELD_TYPES = ['text', 'number', 'bool', 'json', 'email', 'url', 'date', 'select', 'relation', 'file', 'editor'];
-const RESERVED_NAMES = ['id', 'created', 'updated', 'collectionId', 'collectionName', 'expand'];
-const COLLECTION_NAME_PATTERN = /^[a-zA-Z][a-zA-Z0-9_]*$/;
-const FIELD_NAME_PATTERN = /^[a-zA-Z][a-zA-Z0-9_]*$/;
-
-const validateCollections = () => {
-    const result = validateJSON(collEditor.value, 'collections');
-    if (!result.valid) { collStatus.className = 'status invalid'; collStatus.textContent = `❌ JSON Parse Error: ${result.error}`; return false; }
-    if (!Array.isArray(result.data)) { collStatus.className = 'status invalid'; collStatus.textContent = '❌ Root must be array of collections'; return false; }
-    if (result.data.length === 0 && collEditor.value.trim() !== "[]") { collStatus.className = 'status invalid'; collStatus.textContent = '❌ At least one collection required or use an empty array []'; return false; }
-    const errors = []; const warnings = []; const collectionNames = new Set();
-    result.data.forEach((coll, i) => {
-        const collPrefix = `Collection[${i}] ('${coll?.name || 'N/A'}')`;
-        if (coll === null || typeof coll !== 'object') { errors.push(`${collPrefix}: Must be object`); return; }
-        if (!coll.name || typeof coll.name !== 'string' || !COLLECTION_NAME_PATTERN.test(coll.name) || coll.name.length > 63) { errors.push(`${collPrefix}: 'name' invalid (alphanumeric/underscore, start with letter, max 63 chars)`); } else if (collectionNames.has(coll.name)) { errors.push(`${collPrefix}: duplicate collection name '${coll.name}'`); } else { collectionNames.add(coll.name); }
-        if (coll.type === undefined) { coll.type = 'base'; warnings.push(`${collPrefix}: 'type' missing, defaulted to 'base'`); }
-        else if (!['base', 'auth', 'view'].includes(coll.type)) { errors.push(`${collPrefix}: invalid type '${coll.type}'`); }
-        ['listRule', 'viewRule', 'createRule', 'updateRule', 'deleteRule'].forEach(rule => { if (coll[rule] === undefined) { coll[rule] = ""; warnings.push(`${collPrefix}: '${rule}' undefined, defaulted to "" (public)`); } else if (coll[rule] !== null && typeof coll[rule] !== 'string') { errors.push(`${collPrefix}: '${rule}' must be string or null`); } });
-        if (!coll.schema) { errors.push(`${collPrefix}: 'schema' array required`); return; }
-        if (!Array.isArray(coll.schema)) { errors.push(`${collPrefix}: 'schema' must be array`); return; }
-        const fieldNames = new Set();
-        coll.schema.forEach((field, j) => {
-            const fieldPrefix = `${collPrefix}.schema[${j}] ('${field?.name || 'N/A'}')`;
-            if (field === null || typeof field !== 'object') { errors.push(`${fieldPrefix}: Field must be object`); return; }
-            if (!field.name || typeof field.name !== 'string' || !FIELD_NAME_PATTERN.test(field.name) || RESERVED_NAMES.includes(field.name) || field.name.length > 63) { errors.push(`${fieldPrefix}: 'name' invalid (alphanumeric/underscore, start letter, not reserved, max 63)`); } else if (fieldNames.has(field.name)) { errors.push(`${fieldPrefix}: duplicate field name '${field.name}'`); } else { fieldNames.add(field.name); }
-            if (!field.type || !VALID_FIELD_TYPES.includes(field.type)) { errors.push(`${fieldPrefix}: invalid 'type' '${field.type}'`); }
-            if (field.required === undefined) { field.required = false; warnings.push(`${collPrefix}.${field.name}: 'required' undefined, defaulted to false`); }
-            else if (typeof field.required !== 'boolean') { errors.push(`${fieldPrefix}: 'required' must be boolean`); }
-            if (field.presentable === undefined) { field.presentable = false; warnings.push(`${collPrefix}.${field.name}: 'presentable' undefined, defaulted to false`); }
-            else if (typeof field.presentable !== 'boolean') { errors.push(`${fieldPrefix}: 'presentable' must be boolean`); }
-            if (field.system !== undefined && typeof field.system !== 'boolean') { errors.push(`${fieldPrefix}: 'system' must be boolean`); } else if (field.system === undefined) { field.system = false; }
-            if (field.options === undefined) { field.options = {}; warnings.push(`${collPrefix}.${field.name}: 'options' undefined, defaulted to {}`); }
-            else if (typeof field.options !== 'object' || field.options === null) { errors.push(`${fieldPrefix}: 'options' must be object`); }
-            validateFieldTypeSpecificOptions(field, fieldPrefix, errors, warnings);
-        });
-        if (coll.name === 'templates') validateTemplatesCollectionSchema(coll, collPrefix, errors); if (coll.name === 'planners') validatePlannersCollectionSchema(coll, collPrefix, errors); if (coll.name === 'cities') validateCitiesCollectionSchema(coll, collPrefix, errors);
-    });
-    validateCollectionRelationships(result.data, errors);
-    if (errors.length > 0) { collStatus.className = 'status invalid'; collStatus.textContent = `❌ ${errors.length} errors${warnings.length > 0 ? `, ${warnings.length} warnings` : ''}`; log(`❌ SCHEMA VALIDATION FAILED: ${errors.length} errors`, 'e'); errors.forEach(err => log(`  • ${err}`, 'e')); if (warnings.length > 0) { log(`⚠️ ${warnings.length} warnings (some auto-fixed):`, 'w'); warnings.forEach(warn => log(`  • ${warn}`, 'w')); } return false; }
-    collStatus.className = warnings.length > 0 ? 'status warning' : 'status valid'; collStatus.textContent = warnings.length > 0 ? `⚠️ ${result.data.length} collections valid, ${warnings.length} auto-fixes applied` : `✅ ${result.data.length} collections valid`;
-    if (warnings.length > 0) { log(`⚠️ ${warnings.length} warnings (some auto-fixed):`, 'w'); warnings.forEach(warn => log(`  • ${warn}`, 'w')); collEditor.value = JSON.stringify(result.data, null, 2); }
-    return true;
+const log = (msg, type = 'i') => { 
+    const p = document.createElement('p'); 
+    p.className = `l${type[0]}`; 
+    p.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`; 
+    out.appendChild(p); 
+    out.scrollTop = out.scrollHeight; 
 };
 
-const validateFieldTypeSpecificOptions=(f,p,e,w)=>{if(!f.options||typeof f.options!=='object')return; switch(f.type){ case 'text': if(f.options.max!==undefined&&(typeof f.options.max!=='number'||f.options.max<0))e.push(`${p}: options.max must be positive number`); if(f.options.min!==undefined&&(typeof f.options.min!=='number'||f.options.min<0))e.push(`${p}: options.min must be positive number`); if(f.options.pattern!==undefined&&typeof f.options.pattern!=='string')e.push(`${p}: options.pattern must be string (regex)`); break; case 'number': if(f.options.min!==undefined&&typeof f.options.min!=='number')e.push(`${p}: options.min must be number`); if(f.options.max!==undefined&&typeof f.options.max!=='number')e.push(`${p}: options.max must be number`); if(f.options.noDecimal!==undefined&&typeof f.options.noDecimal!=='boolean')e.push(`${p}: options.noDecimal must be boolean`); break; case 'relation': if(!f.options.collectionId||typeof f.options.collectionId!=='string')e.push(`${p}: relation field requires options.collectionId (string)`); if(f.options.minSelect!==undefined&&(typeof f.options.minSelect!=='number'||f.options.minSelect<0))e.push(`${p}: options.minSelect must be non-negative`); if(f.options.maxSelect!==undefined&&(typeof f.options.maxSelect!=='number'||f.options.maxSelect<1))e.push(`${p}: options.maxSelect must be positive`); if(f.options.cascadeDelete!==undefined&&typeof f.options.cascadeDelete!=='boolean')e.push(`${p}: options.cascadeDelete must be boolean`); if(f.options.displayFields!==undefined&&!Array.isArray(f.options.displayFields))e.push(`${p}: options.displayFields must be an array of strings`); break; case 'select': if(!f.options.values||!Array.isArray(f.options.values)||f.options.values.length===0)e.push(`${p}: select field requires options.values array (non-empty)`); if(f.options.maxSelect!==undefined&&(typeof f.options.maxSelect!=='number'||f.options.maxSelect<1))e.push(`${p}: options.maxSelect must be positive`); break; case 'file': if(f.options.maxSelect!==undefined&&(typeof f.options.maxSelect!=='number'||f.options.maxSelect<1))e.push(`${p}: options.maxSelect must be positive`); if(f.options.maxSize!==undefined&&(typeof f.options.maxSize!=='number'||f.options.maxSize<1))e.push(`${p}: options.maxSize must be positive (bytes)`); if(f.options.mimeTypes!==undefined&&(!Array.isArray(f.options.mimeTypes)||f.options.mimeTypes.length===0))e.push(`${p}: options.mimeTypes must be non-empty array`); break;}};
+const setProgress = (pct, status = '') => { 
+    progress.style.width = pct + '%'; 
+    if (status) log(status); 
+};
 
-const validateTemplatesCollectionSchema=(c,p,e)=>{const f=c.schema.map(s=>s.name);if(!f.includes('name')||!f.includes('structure'))e.push(`${p}: missing 'name' or 'structure' field`); const sf=c.schema.find(s=>s.name==='structure'); if(sf&&sf.type!=='json')e.push(`${p}: 'structure' field must be type 'json'`); const idf=c.schema.find(s=>s.name==='is_default'); if(idf&&idf.type!=='bool')e.push(`${p}: 'is_default' field should be type 'bool'`);};
-
-const validatePlannersCollectionSchema=(c,p,e)=>{const f=c.schema.map(s=>s.name);if(!f.includes('week_id'))e.push(`${p}: missing 'week_id' field`); ['prayer_times','schedule_data','tasks_data','workout_data','meals_data','grocery_data','measurements_data','financials_data'].forEach(jf=>{const fi=c.schema.find(s=>s.name===jf); if(fi&&fi.type!=='json')e.push(`${p}: field '${jf}' should be type 'json'`);}); const uf=c.schema.find(s=>s.name==='user_id'); if(!uf || uf.type!=='relation' || uf.options?.collectionId !== '_users')e.push(`${p}: missing or misconfigured 'user_id' relation to '_users' collection.`);};
-
-const validateCitiesCollectionSchema=(c,p,e)=>{const f=c.schema.map(s=>s.name);if(!f.includes('name'))e.push(`${p}: missing 'name' field`); ['latitude','longitude'].forEach(nf=>{const fi=c.schema.find(s=>s.name===nf); if(fi&&fi.type!=='number')e.push(`${p}: field '${nf}' should be type 'number'`);});};
-
-const validateCollectionRelationships=(cs,e)=>{const cns=cs.map(c=>c.name);cs.forEach((c,i)=>{c.schema.forEach((f,j)=>{if(f.type==='relation'&&f.options?.collectionId&&!cns.includes(f.options.collectionId)&&f.options.collectionId!=='_users')e.push(`Collection[${i}] ('${c.name}').schema[${j}] ('${f.name}'): relation to unknown collection '${f.options.collectionId}'`);});});};
-
-const validateSeeds = () => { const r=validateJSON(seedEditor.value,'seeds'); if(!r.valid){seedStatus.className='status invalid';seedStatus.textContent=`❌ JSON Parse Error: ${r.error}`;return false;} if(r.data===null||typeof r.data!=='object'||Array.isArray(r.data)){seedStatus.className='status invalid';seedStatus.textContent='❌ Seeds must be object (collection names as keys)';return false;} const es=[],ws=[]; const cr=validateJSON(collEditor.value); const scs=cr.valid&&Array.isArray(cr.data)?cr.data:[]; Object.entries(r.data).forEach(([cn,rds])=>{const sp=`seeds.${cn}`; if(!Array.isArray(rds)){es.push(`${sp}: Must be array of records`);return;} const sc=scs.find(c=>c.name===cn); if(!sc)ws.push(`${sp}: Collection '${cn}' not in schema`); rds.forEach((rd,i)=>{const rp=`${sp}[${i}]`; if(rd===null||typeof rd!=='object'||Array.isArray(rd)){es.push(`${rp}: Record must be object`);return;} ['id','created','updated','collectionId','collectionName'].forEach(sf=>{if(rd.hasOwnProperty(sf))ws.push(`${rp}: Contains system field '${sf}'`);}); if(sc){Object.entries(rd).forEach(([k,v])=>{const fs=sc.schema.find(f=>f.name===k); if(fs){let vt=typeof v;if(v===null)vt='null';let et=fs.type; if((et==='text'||et==='email'||et==='url'||et==='date'||et==='editor'||et==='select')&&vt!=='string'&&vt!=='null')es.push(`${rp}.${k}: Expected string, got ${vt}`); else if(et==='number'&&vt!=='number'&&vt!=='null')es.push(`${rp}.${k}: Expected number, got ${vt}`); else if(et==='bool'&&vt!=='boolean'&&vt!=='null')es.push(`${rp}.${k}: Expected boolean, got ${vt}`); else if(et==='json'&&vt!=='object'&&vt!=='null')es.push(`${rp}.${k}: Expected object/array, got ${vt}`); else if(et==='relation'&&(vt!=='string'&&!Array.isArray(v))&&vt!=='null')es.push(`${rp}.${k}: Expected relation ID(s), got ${vt}`); else if(et==='file'&&(vt!=='string'&&!Array.isArray(v))&&vt!=='null')es.push(`${rp}.${k}: Expected filename(s), got ${vt}`);}else if(!RESERVED_NAMES.includes(k)&&k!=='expand'){ws.push(`${rp}.${k}: Field '${k}' not in schema for '${cn}'`);}});}});}); if(r.data.templates)validateTemplateStructuresSeed(r.data.templates,es,ws); if(es.length>0){seedStatus.className='status invalid';seedStatus.textContent=`❌ ${es.length} errors, ${ws.length} warnings`;log(`❌ SEED VALIDATION FAILED: ${es.length} errors`,'e');es.forEach(err=>log(`  • ${err}`,'e'));if(ws.length)ws.forEach(w=>log(`  • ${w}`,'w'));return false;} seedStatus.className=ws.length>0?'status warning':'status valid';seedStatus.textContent=ws.length>0?`⚠️ Seeds valid, ${ws.length} warnings`:`✅ Seeds valid`; if(ws.length>0){log(`⚠️ ${ws.length} seed warnings:`,'w');ws.forEach(warn=>log(`  • ${warn}`,'w'));} return true;};
-
-const validateTemplateStructuresSeed=(ts,e,w)=>{if(!Array.isArray(ts)){e.push(`seeds.templates: Must be an array.`);return;}ts.forEach((t,i)=>{const p=`seeds.templates[${i}]`;if(!t.structure||typeof t.structure!=='object'){e.push(`${p}.structure: Missing or invalid 'structure' object.`);return;}const s=t.structure;if(!s.ui?.headers?.tasks||!Array.isArray(s.ui.headers.tasks)||s.ui.headers.tasks.length!==9)e.push(`${p}.structure.ui.headers.tasks: CRITICAL - Expected 9 task headers.`);if(s.tasks?.count===undefined)e.push(`${p}.structure.tasks.count: CRITICAL - Is undefined (expected a number, e.g., 20).`); if(!s.ui?.placeholders)e.push(`${p}.structure.ui.placeholders: CRITICAL - Missing 'placeholders' object in ui.`); else { const reqP=['task_num_prefix','task_priority','task_tag','task_description','grocery_budget_value','measurement_value','financial_value','workout_weight_value','workout_sets_value','workout_reps_value','no_saved_schedules']; reqP.forEach(rp=>{if(s.ui.placeholders[rp]===undefined)e.push(`${p}.structure.ui.placeholders.${rp}: CRITICAL - Missing required placeholder.`);});} if(!s.ui?.symbols)e.push(`${p}.structure.ui.symbols: CRITICAL - Missing 'symbols' object in ui.`); else { const reqS=['currency_default','weight_unit','sets_reps_separator','task_checkbox_empty','task_checkbox_checked','task_delay_ontime','default_measurement_unit','time_am','time_pm']; reqS.forEach(rs=>{if(s.ui.symbols[rs]===undefined)e.push(`${p}.structure.ui.symbols.${rs}: CRITICAL - Missing required symbol.`);});} if(!s.ui?.sections)e.push(`${p}.structure.ui.sections: CRITICAL - Missing 'sections' object in ui.`); if(s.city_default===undefined)e.push(`${p}.structure.city_default: CRITICAL - Missing 'city_default'.`); if(s.ui?.title_default===undefined)e.push(`${p}.structure.ui.title_default: CRITICAL - Missing 'title_default'.`);});};
-
-const updateStats=()=>{const cr=validateJSON(collEditor.value);const sr=validateJSON(seedEditor.value);if(cr.valid&&Array.isArray(cr.data)){collCount.textContent=cr.data.length;let fc=0;cr.data.forEach(c=>{if(c.schema)fc+=c.schema.length;});fieldCount.textContent=fc;}else{collCount.textContent='0';fieldCount.textContent='0';}if(sr.valid&&sr.data){let sc=0;Object.values(sr.data).forEach(a=>{if(Array.isArray(a))sc+=a.length;});seedCount.textContent=sc;}else{seedCount.textContent='0';}};
-
-const healthCheck = async () => { setProgress(10,'Testing...');url=document.getElementById('url').value||'/';email=document.getElementById('email').value||'admin@example.com';pass=document.getElementById('pass').value||'unifiedpassword';let cs=[];try{pb=new PocketBase(url);await pb.admins.authWithPassword(email,pass);cs=await pb.collections.getFullList({requestKey:null});log(`✅ Connected. Found ${cs.length} collections.`,'s');healthStat.textContent='✅';healthStat.title=`Connected | ${cs.length} Collections`;setProgress(100,'Ready');['setup','schema','validate'].forEach(id=>document.getElementById(id).disabled=false);document.getElementById('seed').disabled=!(cs.length>0);return true;}catch(e){healthStat.textContent='❌';healthStat.title=`Failed: ${e.message}`;log(`❌ Connection failed: ${e.message}`,'e');setProgress(0);['setup','schema','seed','validate'].forEach(id=>document.getElementById(id).disabled=true);return false;}finally{if(pb?.authStore?.isValid)pb.authStore.clear();}};
-
-const runSchema=async()=>{if(!validateCollections()){log('❌ Schema validation failed.','e');setProgress(0);return false;}setProgress(20,'Setting schema...');log('🔑 Authenticating...');try{pb=new PocketBase(url);await pb.admins.authWithPassword(email,pass);log('✅ Authenticated.','s');
-// Step-by-step collection creation to avoid relation issues
-const collsToImport=JSON.parse(collEditor.value);
-setProgress(30,'Creating collections step by step...');
-
-// Step 1: Create basic collections first
-let createdCollections = [];
-for (const coll of collsToImport) {
-  try {
-    log(`Creating collection: ${coll.name}...`);
-    const created = await pb.collections.create(coll, {requestKey:null});
-    createdCollections.push(created);
-    log(`✅ Created ${coll.name}`);
-  } catch (e) {
-    log(`⚠️ Collection ${coll.name} might exist, trying to update...`,'w');
-    try {
-      const existing = await pb.collections.getOne(coll.name, {requestKey:null});
-      const updated = await pb.collections.update(existing.id, coll, {requestKey:null});
-      createdCollections.push(updated);
-      log(`✅ Updated ${coll.name}`);
-    } catch (e2) {
-      log(`❌ Failed to create/update ${coll.name}: ${e2.message}`,'e');
-      throw e2;
+const validateJSON = (str, name) => { 
+    try { 
+        const data = JSON.parse(str); 
+        return { valid: true, data }; 
+    } catch (e) { 
+        return { valid: false, error: e.message }; 
     }
-  }
-}
+};
 
-setProgress(60,'Adding template_id relation...');
-// Step 2: Add template_id relation to planners
-const templatesCollection = createdCollections.find(c => c.name === 'templates');
-const plannersCollection = createdCollections.find(c => c.name === 'planners');
-
-if (templatesCollection && plannersCollection) {
-  log('🔗 Adding template_id relation to planners...');
-  
-  // Check if template_id field already exists
-  const hasTemplateIdField = plannersCollection.schema.some(f => f.name === 'template_id');
-  
-  if (!hasTemplateIdField) {
-    const relationField = {
-      name: "template_id",
-      type: "relation",
-      required: true,
-      presentable: false,
-      system: false,
-      options: {
-        collectionId: templatesCollection.id,
-        cascadeDelete: false,
-        minSelect: 1,
-        maxSelect: 1,
-        displayFields: ["name", "version"]
-      }
-    };
+const updateStats = () => {
+    const cr = validateJSON(collEditor.value);
+    const sr = validateJSON(seedEditor.value);
     
-    // Add the relation field after week_id
-    const newSchema = [...plannersCollection.schema];
-    const weekIdIndex = newSchema.findIndex(f => f.name === 'week_id');
-    if (weekIdIndex !== -1) {
-      newSchema.splice(weekIdIndex + 1, 0, relationField);
+    if (cr.valid && Array.isArray(cr.data)) {
+        collCount.textContent = cr.data.length;
+        let fc = 0;
+        cr.data.forEach(c => {
+            if (c.schema) fc += c.schema.length;
+        });
+        fieldCount.textContent = fc;
     } else {
-      newSchema.unshift(relationField);
+        collCount.textContent = '0';
+        fieldCount.textContent = '0';
     }
     
-    try {
-      await pb.collections.update(plannersCollection.id, {schema: newSchema}, {requestKey:null});
-      log('✅ template_id relation added successfully.','s');
-    } catch (e) {
-      log(`⚠️ Could not add template_id relation: ${e.message}`,'w');
+    if (sr.valid && sr.data) {
+        let sc = 0;
+        Object.values(sr.data).forEach(a => {
+            if (Array.isArray(a)) sc += a.length;
+        });
+        seedCount.textContent = sc;
+    } else {
+        seedCount.textContent = '0';
     }
-  } else {
-    log('👍 template_id relation already exists.','i');
-  }
-}
+};
 
-setProgress(100,'Schema complete.');
-log('✅ Schema setup successful!','s');
-document.getElementById('seed').disabled=false;
-return true;}catch(e){log(`❌ Schema failed: ${e.message}`,'e');console.error("Schema error:",e);setProgress(0);return false;}finally{if(pb?.authStore?.isValid)pb.authStore.clear();}};
+const healthCheck = async () => { 
+    setProgress(10, 'Testing connection...');
+    url = document.getElementById('url').value || '/';
+    email = document.getElementById('email').value || 'admin@example.com';
+    pass = document.getElementById('pass').value || 'unifiedpassword';
+    
+    let cs = [];
+    try {
+        pb = new PocketBase(url);
+        await pb.admins.authWithPassword(email, pass);
+        cs = await pb.collections.getFullList({requestKey: null});
+        log(`✅ Connected successfully. Found ${cs.length} collections.`, 's');
+        healthStat.textContent = '✅';
+        healthStat.title = `Connected | ${cs.length} Collections`;
+        setProgress(100, 'Connection ready');
+        ['setup', 'schema', 'validate'].forEach(id => document.getElementById(id).disabled = false);
+        document.getElementById('seed').disabled = !(cs.length > 0);
+        return true;
+    } catch (e) {
+        healthStat.textContent = '❌';
+        healthStat.title = `Failed: ${e.message}`;
+        log(`❌ Connection failed: ${e.message}`, 'e');
+        setProgress(0);
+        ['setup', 'schema', 'seed', 'validate'].forEach(id => document.getElementById(id).disabled = true);
+        return false;
+    } finally {
+        if (pb?.authStore?.isValid) pb.authStore.clear();
+    }
+};
 
-const runSeed=async()=>{if(!validateSeeds()){log('❌ Seed validation failed.','e');setProgress(0);return false;}setProgress(20,'Seeding...');try{pb=new PocketBase(url);await pb.admins.authWithPassword(email,pass);const sds=JSON.parse(seedEditor.value);let cp=30;const tc=Object.keys(sds).length;const ps=tc>0?70/tc:0;for(const[cn,itms]of Object.entries(sds)){if(!Array.isArray(itms)||itms.length===0){log(`ℹ️ No items for ${cn}.`,'i');continue;}log(`🌱 Seeding ${itms.length} into ${cn}...`,'i');for(const itm of itms){try{await pb.collection(cn).create(itm,{requestKey:null});}catch(e){log(`⚠️ Seed error in ${cn} for ${JSON.stringify(itm).substring(0,30)}...: ${e.message}`,'w');console.error(`Seed item error (${cn}):`,e,itm);}}cp+=ps;setProgress(Math.min(99,cp));}setProgress(100,'Seed complete.');log('✅ Seed successful!','s');return true;}catch(e){log(`❌ Seed failed: ${e.message}`,'e');console.error("Seed main error:",e);setProgress(0);return false;}finally{if(pb?.authStore?.isValid)pb.authStore.clear();}};
+// ROBUST SCHEMA SETUP WITH PROPER ERROR HANDLING
+const runSchema = async () => {
+    const result = validateJSON(collEditor.value, 'collections');
+    if (!result.valid) {
+        log('❌ Schema validation failed - invalid JSON', 'e');
+        setProgress(0);
+        return false;
+    }
+    
+    setProgress(20, 'Authenticating...');
+    log('🔑 Authenticating with PocketBase...');
+    
+    try {
+        pb = new PocketBase(url);
+        await pb.admins.authWithPassword(email, pass);
+        log('✅ Authentication successful', 's');
+        
+        const collectionsToCreate = result.data;
+        let createdCollections = [];
+        
+        setProgress(30, 'Creating collections individually...');
+        
+        // Get existing collections first
+        const existingCollections = await pb.collections.getFullList({requestKey: null});
+        const existingNames = existingCollections.map(c => c.name);
+        log(`Found ${existingCollections.length} existing collections: ${existingNames.join(', ') || 'none'}`);
+        
+        // Create each collection individually
+        for (let i = 0; i < collectionsToCreate.length; i++) {
+            const coll = collectionsToCreate[i];
+            const collName = coll.name;
+            
+            try {
+                log(`Creating collection: ${collName}...`);
+                
+                // Check if collection already exists
+                const existing = existingCollections.find(c => c.name === collName);
+                
+                if (existing) {
+                    log(`⚠️ Collection '${collName}' already exists, updating schema...`, 'w');
+                    const updated = await pb.collections.update(existing.id, coll, {requestKey: null});
+                    createdCollections.push(updated);
+                    log(`✅ Updated collection: ${collName}`);
+                } else {
+                    const created = await pb.collections.create(coll, {requestKey: null});
+                    createdCollections.push(created);
+                    log(`✅ Created collection: ${collName}`);
+                }
+                
+                setProgress(30 + ((i + 1) / collectionsToCreate.length) * 40);
+                
+            } catch (e) {
+                log(`❌ Failed to create/update collection '${collName}': ${e.message}`, 'e');
+                console.error(`Collection ${collName} error:`, e);
+                throw new Error(`Failed to create collection '${collName}': ${e.message}`);
+            }
+        }
+        
+        setProgress(70, 'Setting up relations...');
+        
+        // Now handle the template_id relation for planners
+        const templatesCollection = createdCollections.find(c => c.name === 'templates');
+        const plannersCollection = createdCollections.find(c => c.name === 'planners');
+        
+        if (templatesCollection && plannersCollection) {
+            log('🔗 Adding template_id relation to planners collection...');
+            
+            // Check if template_id field already exists
+            const hasTemplateId = plannersCollection.schema.some(f => f.name === 'template_id');
+            
+            if (!hasTemplateId) {
+                log('Adding template_id relation field...');
+                
+                const relationField = {
+                    name: "template_id",
+                    type: "relation",
+                    required: true,
+                    presentable: false,
+                    system: false,
+                    options: {
+                        collectionId: templatesCollection.id,
+                        cascadeDelete: false,
+                        minSelect: 1,
+                        maxSelect: 1,
+                        displayFields: ["name", "version"]
+                    }
+                };
+                
+                // Add the relation field to the schema
+                const newSchema = [...plannersCollection.schema];
+                const weekIdIndex = newSchema.findIndex(f => f.name === 'week_id');
+                if (weekIdIndex !== -1) {
+                    newSchema.splice(weekIdIndex + 1, 0, relationField);
+                } else {
+                    newSchema.unshift(relationField);
+                }
+                
+                try {
+                    await pb.collections.update(plannersCollection.id, {schema: newSchema}, {requestKey: null});
+                    log('✅ template_id relation added successfully', 's');
+                } catch (e) {
+                    log(`⚠️ Could not add template_id relation: ${e.message}`, 'w');
+                    console.error('Relation error:', e);
+                }
+            } else {
+                log('👍 template_id relation already exists', 'i');
+            }
+        } else {
+            if (!templatesCollection) log('⚠️ templates collection not found for relation setup', 'w');
+            if (!plannersCollection) log('⚠️ planners collection not found for relation setup', 'w');
+        }
+        
+        setProgress(100, 'Schema setup complete');
+        log('✅ Schema setup completed successfully!', 's');
+        document.getElementById('seed').disabled = false;
+        return true;
+        
+    } catch (e) {
+        log(`❌ Schema setup failed: ${e.message}`, 'e');
+        console.error("Schema error:", e);
+        setProgress(0);
+        return false;
+    } finally {
+        if (pb?.authStore?.isValid) pb.authStore.clear();
+    }
+};
 
-const runValidate=async()=>{setProgress(10,'Validating...');log('🔍 Connecting...');try{pb=new PocketBase(url);await pb.admins.authWithPassword(email,pass);log('✅ Authenticated.','s');const cs=await pb.collections.getFullList({requestKey:null});const userCs=cs.filter(c=>!c.system&&!c.name.startsWith('_'));log(`📊 Found ${cs.length} total collections (${userCs.length} user collections).`,'i');const es=[],ws=[];setProgress(30,'Validating user collections...');userCs.forEach(c=>{if(!c.name||!COLLECTION_NAME_PATTERN.test(c.name))es.push(`User Coll '${c.name||'ID:'+c.id}': Invalid name.`);if(!c.schema||!Array.isArray(c.schema))es.push(`User Coll '${c.name}': Invalid schema.`);});const tc=userCs.find(c=>c.name==='templates');const pc=userCs.find(c=>c.name==='planners');const cc=userCs.find(c=>c.name==='cities');if(!tc)es.push("CRITICAL: Missing 'templates' collection. Run Schema setup first.");else{if(!tc.schema.find(f=>f.name==='structure'&&f.type==='json'))es.push("'templates' missing 'structure' (json) field.");if(!tc.schema.find(f=>f.name==='is_default'&&f.type==='bool'))ws.push("'templates': 'is_default' (bool) field recommended.");}if(!pc)es.push("CRITICAL: Missing 'planners' collection. Run Schema setup first.");else{if(!pc.schema.find(f=>f.name==='week_id'&&f.options?.pattern==="^\\d{4}-W\\d{1,2}$"))es.push("'planners' missing or misconfigured 'week_id' field (check pattern).");const userRelation=pc.schema.find(f=>f.name==='user_id'&&f.type==='relation');if(!userRelation)es.push("'planners' missing 'user_id' relation field.");else if(userRelation.options?.collectionId!=='_users'||!userRelation.options?.minSelect)es.push("'planners' user_id relation must point to '_users' and be required (minSelect:1).");if(tc){const templateRelation=pc.schema.find(f=>f.name==='template_id'&&f.type==='relation');if(!templateRelation)es.push("'planners' missing 'template_id' relation field.");else if(templateRelation.options?.collectionId!==tc.id||!templateRelation.options?.minSelect)es.push("'planners' template_id relation must point to 'templates' collection and be required (minSelect:1).");}}if(!cc)es.push("CRITICAL: Missing 'cities' collection. Run Schema setup first.");setProgress(60,'Data integrity checks...');if(tc){try{const ds=await pb.collection('templates').getFullList({filter:'is_default=true',requestKey:null});if(ds.length===0)es.push("CRITICAL: No default template found (is_default=true). Run Seed setup.");if(ds.length>1)es.push("CRITICAL: Multiple default templates found. Only one should have is_default=true.");ds.forEach(d=>{if(!d.structure?.ui?.headers?.tasks||d.structure.ui.headers.tasks.length!==9)es.push(`Default Template '${d.name}': CRITICAL - Expected 9 task headers, got ${d.structure?.ui?.headers?.tasks?.length||0}.`);if(d.structure?.tasks?.count===undefined)es.push(`Default Template '${d.name}': CRITICAL - tasks.count is undefined.`);if(!d.structure?.ui?.placeholders)es.push(`Default Template '${d.name}': CRITICAL - ui.placeholders object is missing.`);else{const reqP=['task_num_prefix','task_priority','task_tag','task_description','grocery_budget_value','measurement_value','financial_value','workout_weight_value','workout_sets_value','workout_reps_value','no_saved_schedules']; reqP.forEach(rp=>{if(d.structure.ui.placeholders[rp]===undefined)es.push(`Default Template '${d.name}'.structure.ui.placeholders.${rp}: CRITICAL - Missing required placeholder.`);});}if(!d.structure?.ui?.symbols)es.push(`Default Template '${d.name}': CRITICAL - ui.symbols object is missing.`);else{const reqS=['currency_default','weight_unit','sets_reps_separator','task_checkbox_empty','task_checkbox_checked','task_delay_ontime','default_measurement_unit','time_am','time_pm']; reqS.forEach(rs=>{if(d.structure.ui.symbols[rs]===undefined)es.push(`Default Template '${d.name}'.structure.ui.symbols.${rs}: CRITICAL - Missing required symbol.`);});}if(!d.structure?.ui?.sections)es.push(`Default Template '${d.name}': CRITICAL - ui.sections object is missing.`);if(d.structure?.city_default===undefined)es.push(`Default Template '${d.name}': CRITICAL - city_default is missing.`);if(d.structure?.ui?.title_default===undefined)es.push(`Default Template '${d.name}': CRITICAL - ui.title_default is missing.`);});}catch(e){es.push("Could not validate template data: "+e.message);}}setProgress(100,'Validation complete.');if(es.length>0){log(`❌ VALIDATION FAILED: ${es.length} errors, ${ws.length} warnings`,'e');es.forEach(err=>log(`  🔴 ${err}`,'e'));ws.forEach(warn=>log(`  🟡 ${warn}`,'w'));return false;}if(ws.length>0){log(`⚠️ VALIDATION PASSED WITH WARNINGS: ${ws.length} warnings`,'w');ws.forEach(warn=>log(`  🟡 ${warn}`,'w'));}else{log('✅ VALIDATION PASSED: All systems operational! 🛡️','s');}return true;}catch(e){log(`❌ Validation error: ${e.message}`,'e');setProgress(0);return false;}finally{if(pb?.authStore?.isValid)pb.authStore.clear();}};
+const runSeed = async () => {
+    const result = validateJSON(seedEditor.value, 'seeds');
+    if (!result.valid) {
+        log('❌ Seed validation failed - invalid JSON', 'e');
+        setProgress(0);
+        return false;
+    }
+    
+    setProgress(20, 'Seeding data...');
+    
+    try {
+        pb = new PocketBase(url);
+        await pb.admins.authWithPassword(email, pass);
+        
+        const seedData = result.data;
+        let currentProgress = 30;
+        const totalCollections = Object.keys(seedData).length;
+        const progressPerCollection = totalCollections > 0 ? 70 / totalCollections : 0;
+        
+        for (const [collectionName, items] of Object.entries(seedData)) {
+            if (!Array.isArray(items) || items.length === 0) {
+                log(`ℹ️ No items to seed for ${collectionName}`, 'i');
+                continue;
+            }
+            
+            log(`🌱 Seeding ${items.length} items into ${collectionName}...`, 'i');
+            
+            for (const item of items) {
+                try {
+                    await pb.collection(collectionName).create(item, {requestKey: null});
+                } catch (e) {
+                    log(`⚠️ Seed error in ${collectionName}: ${e.message}`, 'w');
+                    console.error(`Seed item error (${collectionName}):`, e, item);
+                }
+            }
+            
+            currentProgress += progressPerCollection;
+            setProgress(Math.min(99, currentProgress));
+        }
+        
+        setProgress(100, 'Seed complete');
+        log('✅ Seed data loaded successfully!', 's');
+        return true;
+        
+    } catch (e) {
+        log(`❌ Seed failed: ${e.message}`, 'e');
+        console.error("Seed error:", e);
+        setProgress(0);
+        return false;
+    } finally {
+        if (pb?.authStore?.isValid) pb.authStore.clear();
+    }
+};
 
-const resetAll=async()=>{if(!confirm('ARE YOU SURE to delete ALL non-system collections? This is IRREVERSIBLE.'))return;setProgress(10,'Resetting...');try{pb=new PocketBase(url);await pb.admins.authWithPassword(email,pass);const cs=await pb.collections.getFullList({requestKey:null});let dc=0;for(const c of cs){if(!c.system){await pb.collections.delete(c.id,{requestKey:null});log(`🗑️ Deleted ${c.name}`,'w');dc++;}}setProgress(100,'Reset complete.');log(`✅ Reset successful. ${dc} collections deleted.`,'s');['setup','schema','seed','validate'].forEach(id=>document.getElementById(id).disabled=true);healthStat.textContent='❓';}catch(e){log(`❌ Reset failed: ${e.message}`,'e');setProgress(0);}finally{if(pb?.authStore?.isValid)pb.authStore.clear();}};
+const runValidate = async () => {
+    setProgress(10, 'Validating setup...');
+    
+    try {
+        pb = new PocketBase(url);
+        await pb.admins.authWithPassword(email, pass);
+        log('✅ Connected for validation', 's');
+        
+        const collections = await pb.collections.getFullList({requestKey: null});
+        const userCollections = collections.filter(c => !c.system && !c.name.startsWith('_'));
+        
+        log(`📊 Found ${collections.length} total collections (${userCollections.length} user collections)`, 'i');
+        
+        const errors = [];
+        const warnings = [];
+        
+        setProgress(30, 'Validating collections...');
+        
+        // Check for required collections
+        const requiredCollections = ['cities', 'templates', 'planners'];
+        const foundCollections = userCollections.map(c => c.name);
+        
+        requiredCollections.forEach(reqName => {
+            if (!foundCollections.includes(reqName)) {
+                errors.push(`CRITICAL: Missing required collection '${reqName}'`);
+            }
+        });
+        
+        // Validate templates collection
+        const templatesCollection = userCollections.find(c => c.name === 'templates');
+        if (templatesCollection) {
+            const hasStructureField = templatesCollection.schema.find(f => f.name === 'structure' && f.type === 'json');
+            if (!hasStructureField) {
+                errors.push("'templates' collection missing 'structure' JSON field");
+            }
+            
+            const hasDefaultField = templatesCollection.schema.find(f => f.name === 'is_default' && f.type === 'bool');
+            if (!hasDefaultField) {
+                warnings.push("'templates' collection missing 'is_default' boolean field");
+            }
+        }
+        
+        // Validate planners collection
+        const plannersCollection = userCollections.find(c => c.name === 'planners');
+        if (plannersCollection) {
+            const hasWeekIdField = plannersCollection.schema.find(f => f.name === 'week_id');
+            if (!hasWeekIdField) {
+                errors.push("'planners' collection missing 'week_id' field");
+            }
+            
+            const hasUserIdField = plannersCollection.schema.find(f => f.name === 'user_id' && f.type === 'relation');
+            if (!hasUserIdField) {
+                errors.push("'planners' collection missing 'user_id' relation field");
+            }
+            
+            const hasTemplateIdField = plannersCollection.schema.find(f => f.name === 'template_id' && f.type === 'relation');
+            if (!hasTemplateIdField) {
+                warnings.push("'planners' collection missing 'template_id' relation field");
+            }
+        }
+        
+        setProgress(60, 'Validating data integrity...');
+        
+        // Check for default template
+        if (templatesCollection) {
+            try {
+                const defaultTemplates = await pb.collection('templates').getFullList({
+                    filter: 'is_default=true',
+                    requestKey: null
+                });
+                
+                if (defaultTemplates.length === 0) {
+                    errors.push("No default template found (is_default=true). Run seed setup.");
+                } else if (defaultTemplates.length > 1) {
+                    errors.push("Multiple default templates found. Only one should have is_default=true.");
+                } else {
+                    const defaultTemplate = defaultTemplates[0];
+                    if (!defaultTemplate.structure?.ui?.headers?.tasks || defaultTemplate.structure.ui.headers.tasks.length !== 9) {
+                        errors.push(`Default template has ${defaultTemplate.structure?.ui?.headers?.tasks?.length || 0} task headers, expected 9`);
+                    }
+                    
+                    if (defaultTemplate.structure?.tasks?.count === undefined) {
+                        errors.push("Default template missing tasks.count property");
+                    }
+                    
+                    const requiredPlaceholders = ['task_num_prefix', 'task_priority', 'task_tag', 'task_description', 'grocery_budget_value', 'measurement_value', 'financial_value', 'workout_weight_value', 'workout_sets_value', 'workout_reps_value', 'no_saved_schedules'];
+                    
+                    const missingPlaceholders = requiredPlaceholders.filter(p => 
+                        defaultTemplate.structure?.ui?.placeholders?.[p] === undefined
+                    );
+                    
+                    if (missingPlaceholders.length > 0) {
+                        errors.push(`Default template missing placeholders: ${missingPlaceholders.join(', ')}`);
+                    }
+                    
+                    const requiredSymbols = ['currency_default', 'weight_unit', 'sets_reps_separator', 'task_checkbox_empty', 'task_checkbox_checked', 'task_delay_ontime', 'default_measurement_unit', 'time_am', 'time_pm'];
+                    
+                    const missingSymbols = requiredSymbols.filter(s => 
+                        defaultTemplate.structure?.ui?.symbols?.[s] === undefined
+                    );
+                    
+                    if (missingSymbols.length > 0) {
+                        errors.push(`Default template missing symbols: ${missingSymbols.join(', ')}`);
+                    }
+                }
+            } catch (e) {
+                errors.push(`Could not validate template data: ${e.message}`);
+            }
+        }
+        
+        setProgress(100, 'Validation complete');
+        
+        if (errors.length > 0) {
+            log(`❌ VALIDATION FAILED: ${errors.length} errors, ${warnings.length} warnings`, 'e');
+            errors.forEach(err => log(`  🔴 ${err}`, 'e'));
+            warnings.forEach(warn => log(`  🟡 ${warn}`, 'w'));
+            return false;
+        }
+        
+        if (warnings.length > 0) {
+            log(`⚠️ VALIDATION PASSED WITH WARNINGS: ${warnings.length} warnings`, 'w');
+            warnings.forEach(warn => log(`  🟡 ${warn}`, 'w'));
+        } else {
+            log('✅ VALIDATION PASSED: All systems operational! 🛡️', 's');
+        }
+        
+        return true;
+        
+    } catch (e) {
+        log(`❌ Validation error: ${e.message}`, 'e');
+        setProgress(0);
+        return false;
+    } finally {
+        if (pb?.authStore?.isValid) pb.authStore.clear();
+    }
+};
 
-// BULLETPROOF DEFAULT CONFIGURATIONS - VALIDATION COMPLIANT
+const resetAll = async () => {
+    if (!confirm('⚠️ This will DELETE ALL non-system collections. This action CANNOT be undone.\n\nAre you absolutely sure?')) {
+        return;
+    }
+    
+    setProgress(10, 'Resetting database...');
+    
+    try {
+        pb = new PocketBase(url);
+        await pb.admins.authWithPassword(email, pass);
+        
+        const collections = await pb.collections.getFullList({requestKey: null});
+        let deletedCount = 0;
+        
+        for (const collection of collections) {
+            if (!collection.system) {
+                try {
+                    await pb.collections.delete(collection.id, {requestKey: null});
+                    log(`🗑️ Deleted collection: ${collection.name}`, 'w');
+                    deletedCount++;
+                } catch (e) {
+                    log(`⚠️ Could not delete ${collection.name}: ${e.message}`, 'w');
+                }
+            }
+        }
+        
+        setProgress(100, 'Reset complete');
+        log(`✅ Reset successful. ${deletedCount} collections deleted.`, 's');
+        
+        // Reset UI state
+        ['setup', 'schema', 'seed', 'validate'].forEach(id => document.getElementById(id).disabled = true);
+        healthStat.textContent = '❓';
+        
+    } catch (e) {
+        log(`❌ Reset failed: ${e.message}`, 'e');
+        setProgress(0);
+    } finally {
+        if (pb?.authStore?.isValid) pb.authStore.clear();
+    }
+};
+
+// BULLETPROOF DEFAULT CONFIGURATIONS
 const DEFAULT_COLLECTIONS = [
   {
     "name": "cities",
@@ -898,185 +1130,111 @@ const DEFAULT_SEEDS = {
         ],
         "city_default": "London"
       }
-    },
-    {
-      "name": "minimal-template-v1",
-      "description": "Minimal template for basic planning needs with reduced complexity",
-      "is_default": false,
-      "version": 1,
-      "structure": {
-        "ui": {
-          "title_default": "Simple Weekly Plan",
-          "headers": {
-            "main_table": ["TIME", "SECTION", "ACTIVITY", "SCORE", "MAX", "STRK"],
-            "days": ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"],
-            "max_cols": ["Goal", "Goal", "Goal", "Goal", "Goal", "Goal", "Goal"],
-            "tasks": ["#", "PRI", "TAG", "DESCRIPTION", "START", "DUE", "DONE", "DELAY", "STATUS"]
-          },
-          "sections": {
-            "tasks": "TASKS",
-            "workout": "EXERCISE",
-            "meals": "MEALS",
-            "grocery": "SHOPPING",
-            "measurements": "HEALTH METRICS",
-            "financials": "MONEY"
-          },
-          "placeholders": {
-            "task_num_prefix": "",
-            "task_priority": "H",
-            "task_tag": "GEN",
-            "task_description": "Add task description...",
-            "grocery_budget_value": "50.00",
-            "measurement_value": "0",
-            "financial_value": "0.00",
-            "workout_weight_value": "0",
-            "workout_sets_value": "3",
-            "workout_reps_value": "10",
-            "no_saved_schedules": "No Data"
-          },
-          "symbols": {
-            "currency_default": "$",
-            "weight_unit": "lbs",
-            "sets_reps_separator": "x",
-            "task_checkbox_empty": "☐",
-            "task_checkbox_checked": "✓",
-            "task_delay_ontime": "✓",
-            "default_measurement_unit": "in",
-            "time_am": "AM",
-            "time_pm": "PM"
-          }
-        },
-        "prayer_times": [
-          {"label": "Morning", "value": ""},
-          {"label": "Evening", "value": ""}
-        ],
-        "schedule": [
-          {
-            "name": "WORK",
-            "activities": [
-              {
-                "name": "FOCUS: Deep work",
-                "max_per_day": 1,
-                "max_score": 5
-              }
-            ]
-          },
-          {
-            "name": "HEALTH",
-            "activities": [
-              {
-                "name": "EXERCISE: Any activity",
-                "max_per_day": 1,
-                "max_score": 5
-              }
-            ]
-          },
-          {
-            "name": "TOTAL",
-            "activities": [
-              {
-                "name": "DAILY TOTAL",
-                "max_per_day": 0,
-                "max_score": 0
-              }
-            ]
-          }
-        ],
-        "tasks": {
-          "count": 10
-        },
-        "workout": [
-          {
-            "name": "CARDIO",
-            "exercises": [
-              {
-                "name": "Walking",
-                "default_weight": 0,
-                "default_sets": 1,
-                "default_reps": 30
-              }
-            ]
-          }
-        ],
-        "meals": [
-          {
-            "name": "Breakfast",
-            "ingredients": "Simple breakfast"
-          },
-          {
-            "name": "Lunch",
-            "ingredients": "Light lunch"
-          },
-          {
-            "name": "Dinner",
-            "ingredients": "Healthy dinner"
-          }
-        ],
-        "grocery": {
-          "budget_default": "50",
-          "categories": [
-            {
-              "name": "Essentials",
-              "items": "Bread, Milk, Eggs"
-            }
-          ]
-        },
-        "measurements": [
-          {
-            "name": "Weight",
-            "placeholder": "150",
-            "unit": "lbs"
-          }
-        ],
-        "financials": [
-          {
-            "name": "Income",
-            "placeholder": "2000",
-            "account": "Bank",
-            "currency_symbol": "$"
-          }
-        ],
-        "city_default": "New York"
-      }
     }
   ]
 };
 
-document.getElementById('togglePass').onclick=()=>{const p=document.getElementById('pass'),t=document.getElementById('togglePass');if(p.type==='password'){p.type='text';t.textContent='🙈';t.title='Hide';}else{p.type='password';t.textContent='👁️';t.title='Show';}};
-document.getElementById('health').onclick=healthCheck;
-document.getElementById('setup').onclick=async()=>{out.innerHTML='';if(await healthCheck()){log("Health check OK. Proceeding with full setup...", "i");if(await runSchema()&&await runSeed()&&await runValidate()){log('🎉 Full setup & validation complete! App should be ready.','s');}else{log('❌ Full setup failed. Check logs for specific errors. Ensure PocketBase is empty or reset it before trying again.','e');}}else{log("❌ Health check failed. Cannot proceed with setup.", "e");}};
-document.getElementById('schema').onclick=async()=>{out.innerHTML='';if(await healthCheck())await runSchema();};
-document.getElementById('seed').onclick=async()=>{out.innerHTML='';if(await healthCheck())await runSeed();};
-document.getElementById('validate').onclick=async()=>{out.innerHTML='';if(await healthCheck())await runValidate();};
-document.getElementById('reset').onclick=async()=>{if(await healthCheck())await resetAll();};
-document.getElementById('export').onclick=()=>{const c={url:document.getElementById('url').value,email:document.getElementById('email').value,collections:validateJSON(collEditor.value).data,seeds:validateJSON(seedEditor.value).data};const b=new Blob([JSON.stringify(c,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='pb-config.json';a.click();URL.revokeObjectURL(a.href);};
-document.getElementById('import').onclick=()=>{const i=document.createElement('input');i.type='file';i.accept='.json';i.onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=e=>{try{const c=JSON.parse(e.target.result);if(c.url)document.getElementById('url').value=c.url;if(c.email)document.getElementById('email').value=c.email;if(c.collections)collEditor.value=JSON.stringify(c.collections,null,2);if(c.seeds)seedEditor.value=JSON.stringify(c.seeds,null,2);updateStats();validateCollections();validateSeeds();log('✅ Config imported. Test connection & run setup.','s');}catch(e){log(`❌ Import error: ${e.message}`,'e');}};r.readAsText(f);};i.click();};
-document.getElementById('help').onclick=()=>{document.getElementById('helpModal').style.display='block';};
-document.getElementById('closeHelp').onclick=()=>{document.getElementById('helpModal').style.display='none';};
-window.onclick=(e)=>{if(e.target===document.getElementById('helpModal')){document.getElementById('helpModal').style.display='none';}};
-collEditor.addEventListener('input',()=>{validateCollections();updateStats();});
-seedEditor.addEventListener('input',()=>{validateSeeds();updateStats();});
+// Event handlers
+document.getElementById('togglePass').onclick = () => {
+    const passInput = document.getElementById('pass');
+    const toggleBtn = document.getElementById('togglePass');
+    if (passInput.type === 'password') {
+        passInput.type = 'text';
+        toggleBtn.textContent = '🙈';
+        toggleBtn.title = 'Hide password';
+    } else {
+        passInput.type = 'password';
+        toggleBtn.textContent = '👁️';
+        toggleBtn.title = 'Show password';
+    }
+};
 
-// Initialize with bulletproof defaults
-collEditor.value=JSON.stringify(DEFAULT_COLLECTIONS,null,2);
-seedEditor.value=JSON.stringify(DEFAULT_SEEDS,null,2);
+document.getElementById('health').onclick = healthCheck;
+
+document.getElementById('setup').onclick = async () => {
+    out.innerHTML = '';
+    if (await healthCheck()) {
+        log("Health check passed. Starting full setup...", "i");
+        if (await runSchema() && await runSeed() && await runValidate()) {
+            log('🎉 Full setup completed successfully! Your A4 Planner is ready to use.', 's');
+        } else {
+            log('❌ Full setup failed. Check the error messages above.', 'e');
+        }
+    } else {
+        log("❌ Health check failed. Cannot proceed with setup.", "e");
+    }
+};
+
+document.getElementById('schema').onclick = async () => {
+    out.innerHTML = '';
+    if (await healthCheck()) await runSchema();
+};
+
+document.getElementById('seed').onclick = async () => {
+    out.innerHTML = '';
+    if (await healthCheck()) await runSeed();
+};
+
+document.getElementById('validate').onclick = async () => {
+    out.innerHTML = '';
+    if (await healthCheck()) await runValidate();
+};
+
+document.getElementById('reset').onclick = async () => {
+    if (await healthCheck()) await resetAll();
+};
+
+document.getElementById('export').onclick = () => {
+    const config = {
+        url: document.getElementById('url').value,
+        email: document.getElementById('email').value,
+        collections: validateJSON(collEditor.value).data,
+        seeds: validateJSON(seedEditor.value).data
+    };
+    
+    const blob = new Blob([JSON.stringify(config, null, 2)], {type: 'application/json'});
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = 'pocketbase-config.json';
+    link.click();
+    URL.revokeObjectURL(link.href);
+    log('✅ Configuration exported successfully', 's');
+};
+
+document.getElementById('import').onclick = () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.json';
+    input.onchange = e => {
+        const file = e.target.files[0];
+        if (!file) return;
+        
+        const reader = new FileReader();
+        reader.onload = e => {
+            try {
+                const config = JSON.parse(e.target.result);
+                if (config.url) document.getElementById('url').value = config.url;
+                if (config.email) document.getElementById('email').value = config.email;
+                if (config.collections) collEditor.value = JSON.stringify(config.collections, null, 2);
+                if (config.seeds) seedEditor.value = JSON.stringify(config.seeds, null, 2);
+                updateStats();
+                log('✅ Configuration imported successfully', 's');
+            } catch (e) {
+                log(`❌ Import error: ${e.message}`, 'e');
+            }
+        };
+        reader.readAsText(file);
+    };
+    input.click();
+};
+
+// Initialize with defaults
+collEditor.value = JSON.stringify(DEFAULT_COLLECTIONS, null, 2);
+seedEditor.value = JSON.stringify(DEFAULT_SEEDS, null, 2);
 updateStats();
 
-// Validate internal defaults on load
-log("⚙️ Validating bulletproof default collections schema...","i");
-if(!validateCollections()){log("❌ INTERNAL DEFAULT COLLECTIONS SCHEMA IS INVALID. Tool bug.","e");}else{log("✅ Bulletproof default collections schema is valid.","s");}
-
-log("🌱 Validating bulletproof default seed data...","i");
-if(!validateSeeds()){log("❌ INTERNAL DEFAULT SEED DATA IS INVALID. Tool bug.","e");}else{log("✅ Bulletproof default seed data is valid.","s");}
-
-if(!collStatus.classList.contains('invalid')&&!seedStatus.classList.contains('invalid')){
-  log('🚀 Setup tool ready with bulletproof configurations. Test Connection and run Full Setup.','s');
-} else {
-  log('🔥 CRITICAL: Bulletproof defaults have errors. This should never happen!','e');
-  ['setup','schema','seed'].forEach(id=>document.getElementById(id).disabled=true);
-  healthStat.textContent='⚠️';
-  healthStat.title="Bulletproof config error!";
-}
+log("🚀 PocketBase setup tool loaded with bulletproof configurations", "i");
+log("💡 Click 'Test Connection' to verify your PocketBase instance, then 'Full Setup' to configure everything", "i");
 </script>
 </body>
 </html>
