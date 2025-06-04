@@ -1,225 +1,422 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=210mm, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>A4 Planner</title>
-  <script src="pocketbase.umd.js"></script>
-  <script defer src="script.js"></script>
-  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.9/dist/cdn.min.js"></script>
-  <link rel="stylesheet" href="styles.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PocketBase Setup</title>
+    <script src="https://cdn.jsdelivr.net/npm/pocketbase@latest/dist/pocketbase.umd.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif; 
+            background: #fff; color: #333; padding: 10px; min-height: 100vh; line-height: 1.3;
+        }
+        .container { max-width: 100%; }
+        h1 { color: #333; margin-bottom: 10px; font-size: 1.2em; font-weight: 400; }
+        .info-box { border: 1px solid #e0e0e0; padding: 8px; margin-bottom: 10px; color: #666; font-size: 13px; }
+        .form-group { margin-bottom: 8px; }
+        label { display: block; margin-bottom: 3px; color: #333; font-weight: 500; font-size: 13px; }
+        input, textarea {
+            width: 100%; padding: 6px; background: #fff; border: 1px solid #ddd;
+            color: #333; font-size: 13px;
+        }
+        input:focus, textarea:focus { outline: none; border-color: #333; }
+        textarea { min-height: 60px; resize: vertical; font-family: monospace; }
+        button {
+            width: 100%; padding: 8px; margin-top: 10px; background: #fff;
+            border: 1px solid #333; color: #333; cursor: pointer; font-size: 13px;
+        }
+        button:hover { background: #333; color: #fff; }
+        #logContainer { margin-top: 15px; }
+        #logContainer h2 { color: #333; margin-bottom: 5px; font-weight: 400; font-size: 1.1em; }
+        pre#logOutput {
+            background: #f8f8f8; border: 1px solid #e0e0e0; padding: 8px;
+            max-height: 200px; overflow-y: auto; white-space: pre-wrap; 
+            font-size: 11px; line-height: 1.2;
+        }
+        .log-entry { padding: 1px 0; }
+        .log-entry.error { color: #d73027; }
+        .log-entry.success { color: #1a9641; }
+        .log-entry.warning { color: #f46d43; }
+        .log-entry.info { color: #4575b4; }
+    </style>
 </head>
-<body x-data="plannerApp()" x-init="init()">
-  <div id="save-status" :class="'status-' + saveStatus" x-text="saveStatus === 'saving' ? 'Saving...' : (saveStatus === 'error' ? 'Error!' : 'Saved')"></div>
-  <div id="sync-status" :class="pendingSync.length > 0 ? 'status-pending' : 'status-synced'" x-show="pendingSync.length > 0 || !isOnline">
-    <span x-text="isOnline ? (pendingSync.length > 0 ? 'Pending: ' + pendingSync.length : '') : 'Offline'"></span>
-  </div>
-  <div id="notification" :class="{ 'show': showNotification }" x-text="notificationMessage"></div>
-  <div class="card">
-    <div class="flex between center mb-1">
-      <h1 class="text-sm bold editable" @dblclick="editInline($event, 'plannerTitle', null, plannerTitle)" x-text="plannerTitle"></h1>
-      <div class="flex center text-xs">
-        <template x-for="(time, i) in times" :key="i">
-          <div class="flex center">
-            <span class="editable" @dblclick="editInline($event, 'timeLabel', i, time.label)" x-text="time.label + ':'"></span>
-            <input type="text" class="mini-input time-value-input" x-model="time.value" @change="saveData()">
-          </div>
-        </template>
-        <span class="ml-1">|</span>
-        <span class="clickable ml-1" x-text="city" @click="toggleCitySelector($event)"></span>
-      </div>
-      <div class="text-sm">
-        <span class="clickable" x-text="currentWeek" @click="toggleWeekSelector($event)"></span> (<span x-text="dateRange"></span>)
-      </div>
+<body>
+    <div class="container">
+        <h1>PocketBase Setup</h1>
+        
+        <div class="info-box">
+            Normalized schema: Templates as single source of truth, planners store only user data.
+        </div>
+
+        <div class="form-group">
+            <label for="pbUrl">URL:</label>
+            <input type="text" id="pbUrl" value="/">
+        </div>
+        <div class="form-group">
+            <label for="adminEmail">Email:</label>
+            <input type="text" id="adminEmail" placeholder="admin@example.com">
+        </div>
+        <div class="form-group">
+            <label for="adminPassword">Password:</label>
+            <input type="password" id="adminPassword">
+        </div>
+        <div class="form-group">
+            <label for="schemaJson">Schema:</label>
+            <textarea id="schemaJson" rows="6"></textarea>
+        </div>
+         <div class="form-group">
+            <label for="seedDataJson">Seed Data:</label>
+            <textarea id="seedDataJson" rows="8"></textarea>
+        </div>
+
+        <button id="setupButton">EXECUTE</button>
+
+        <div id="logContainer">
+            <h2>Output</h2>
+            <pre id="logOutput"></pre>
+        </div>
     </div>
 
-    <table>
-      <thead>
-        <tr>
-          <th style="width:18mm" class="editable" @dblclick="editInline($event, 'mainTableHeader', 0, uiConfig.mainTableHeaders?.[0])" x-text="uiConfig.mainTableHeaders?.[0]"></th>
-          <th style="width:18mm" class="editable" @dblclick="editInline($event, 'mainTableHeader', 1, uiConfig.mainTableHeaders?.[1])" x-text="uiConfig.mainTableHeaders?.[1]"></th>
-          <th class="ac editable" @dblclick="editInline($event, 'mainTableHeader', 2, uiConfig.mainTableHeaders?.[2])" x-text="uiConfig.mainTableHeaders?.[2]"></th>
-          <template x-for="(dayKey, i) in ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN']" :key="dayKey">
-            <th class="dc editable" :class="{'current-day': i === (currentDay || 7) - 1}" @dblclick="editInline($event, 'dayHeader', i, uiConfig.dayHeaders?.[i])" x-text="uiConfig.dayHeaders?.[i]"></th>
-            <th class="dc editable" :class="{'current-day': i === (currentDay || 7) - 1}" @dblclick="editInline($event, 'maxHeader', i, uiConfig.maxHeaders?.[i])" x-text="uiConfig.maxHeaders?.[i]"></th>
-          </template>
-          <th class="dc editable" @dblclick="editInline($event, 'mainTableHeader', 3, uiConfig.mainTableHeaders?.[3])" x-text="uiConfig.mainTableHeaders?.[3]"></th>
-          <th class="dc editable" @dblclick="editInline($event, 'mainTableHeader', 4, uiConfig.mainTableHeaders?.[4])" x-text="uiConfig.mainTableHeaders?.[4]"></th>
-          <th class="dc editable" @dblclick="editInline($event, 'mainTableHeader', 5, uiConfig.mainTableHeaders?.[5])" x-text="uiConfig.mainTableHeaders?.[5]"></th>
-        </tr>
-      </thead>
-      <tbody>
-        <template x-for="(section, sIdx) in schedule.slice().reverse()" :key="section.id">
-          <template x-for="(activity, aIdx) in section.activities" :key="activity.id">
-            <tr :class="{'total': section.name === 'TOTAL'}">
-              <td class="bold editable" @dblclick="editInline($event, 'sectionName', sIdx, section.name)" x-text="aIdx === 0 ? section.name : ''"></td>
-              <td class="bold editable" @dblclick="editInline($event, 'activityPrefix', {sIdx, aIdx, activityId: activity.id}, activity.name.split(':')[0].trim())" x-text="activity.name.includes(':') ? activity.name.split(':')[0] : ''"></td>
-              <td class="ac editable" @dblclick="editInline($event, 'activityName', {sIdx, aIdx, activityId: activity.id}, activity.name.includes(':') ? activity.name.split(':')[1].trim() : activity.name)">
-                <span x-text="activity.name.includes(':') ? activity.name.split(':')[1].trim() : activity.name"></span>
-              </td>
-              <template x-for="(day, i) in ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']" :key="day">
-                <td class="dc" :class="{'current-day': i === (currentDay || 7) - 1}">
-                  <template x-if="activity.days && activity.days[day]">
-                    <input type="number" class="mini-input" x-model.number="activity.days[day].value" :min="0" :max="activity.days[day].max < 10 ? 9 : 99" @input="validateNumberInput($event); calculateScores(); saveData()" :readonly="section.name === 'TOTAL'">
-                  </template>
-                </td>
-                <td class="dc editable" :class="{'current-day': i === (currentDay || 7) - 1}" @dblclick="editInline($event, 'maxValue', {sIdx, aIdx, day, activityId: activity.id}, activity.days?.[day]?.max || '')" x-text="activity.days?.[day]?.max || ''"></td>
-              </template>
-              <td class="dc" :class="{ 'score-low': activity.maxScore > 0 && (activity.score / activity.maxScore) < 0.33, 'score-medium': activity.maxScore > 0 && (activity.score / activity.maxScore) >= 0.33 && (activity.score / activity.maxScore) < 0.66, 'score-high': activity.maxScore > 0 && (activity.score / activity.maxScore) >= 0.66 }">
-                <input type="number" class="mini-input" x-model.number="activity.score" readonly>
-              </td>
-              <td class="dc editable" @dblclick="editInline($event, 'maxScore', {sIdx, aIdx, activityId: activity.id}, activity.maxScore)" x-text="activity.maxScore"></td>
-              <td class="dc streak-cell" :class="{'has-streak': activity.streaks?.current > 2}">
-                <span x-text="activity.streaks?.current > 0 ? activity.streaks.current : ''"></span>
-              </td>
-            </tr>
-          </template>
-          <tr x-if="section.name === 'TOTAL' && section.activities?.length > 0 && section.activities[0].maxScore > 0">
-            <td colspan="19" class="progress-container">
-              <div class="progress-bar" :style="`width: ${Math.min(100, (section.activities[0].score / section.activities[0].maxScore) * 100)}%;`" :class="{ 'progress-low': (section.activities[0].score / section.activities[0].maxScore) < 0.33, 'progress-medium': (section.activities[0].score / section.activities[0].maxScore) >= 0.33 && (section.activities[0].score / section.activities[0].maxScore) < 0.66, 'progress-high': (section.activities[0].score / section.activities[0].maxScore) >= 0.66 }"></div>
-            </td>
-          </tr>
-        </template>
-      </tbody>
-    </table>
+<script>
+const generateId = (prefix = 'id') => `${prefix}_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
 
-    <div class="section">
-      <h3 class="section-title editable" @dblclick="editInline($event, 'sectionTitle', 'tasks', uiConfig.sectionTitles?.tasks)" x-text="uiConfig.sectionTitles?.tasks"></h3>
-      <table>
-        <thead>
-          <tr>
-            <th style="width:5mm" class="editable" @dblclick="editInline($event, 'taskHeader', 0, uiConfig.taskHeaders?.[0])" x-text="uiConfig.taskHeaders?.[0]"></th>
-            <th style="width:5mm" class="editable" @dblclick="editInline($event, 'taskHeader', 1, uiConfig.taskHeaders?.[1])" x-text="uiConfig.taskHeaders?.[1]"></th>
-            <th style="width:5mm" class="editable" @dblclick="editInline($event, 'taskHeader', 2, uiConfig.taskHeaders?.[2])" x-text="uiConfig.taskHeaders?.[2]"></th>
-            <th style="text-align:left" class="editable" @dblclick="editInline($event, 'taskHeader', 3, uiConfig.taskHeaders?.[3])" x-text="uiConfig.taskHeaders?.[3]"></th>
-            <th style="width:12mm" class="editable" @dblclick="editInline($event, 'taskHeader', 4, uiConfig.taskHeaders?.[4])" x-text="uiConfig.taskHeaders?.[4]"></th>
-            <th style="width:12mm" class="editable" @dblclick="editInline($event, 'taskHeader', 5, uiConfig.taskHeaders?.[5])" x-text="uiConfig.taskHeaders?.[5]"></th>
-            <th style="width:12mm" class="editable" @dblclick="editInline($event, 'taskHeader', 6, uiConfig.taskHeaders?.[6])" x-text="uiConfig.taskHeaders?.[6]"></th>
-            <th style="width:8mm" class="editable" @dblclick="editInline($event, 'taskHeader', 7, uiConfig.taskHeaders?.[7])" x-text="uiConfig.taskHeaders?.[7]"></th>
-            <th style="width:5mm" class="editable" @dblclick="editInline($event, 'taskHeader', 8, uiConfig.taskHeaders?.[8])" x-text="uiConfig.taskHeaders?.[8]"></th>
-          </tr>
-        </thead>
-        <tbody>
-          <template x-for="(task, i) in tasks" :key="task.id || i">
-            <tr :class="{'task-completed': task.completed === '✓', 'task-delayed': getTaskDelay(task) > 0, 'task-early': getTaskDelay(task) < 0}">
-              <td><input type="text" class="mini-input" x-model="task.num" :placeholder="i + 1" @change="validateTextInput($event); saveData();"></td>
-              <td><input type="text" class="mini-input" x-model="task.priority" placeholder="A" @change="validateTextInput($event); saveData();"></td>
-              <td><input type="text" class="mini-input" x-model="task.tag" placeholder="W" @change="validateTextInput($event); saveData();"></td>
-              <td><input type="text" class="mini-input task-description-input" x-model="task.description" placeholder="Task description" @change="validateTextInput($event); saveData();"></td>
-              <td><input type="date" class="mini-input date-input" x-model="task.startDate" @change="calculateTaskDelay(task); saveData();"></td>
-              <td><input type="date" class="mini-input date-input" x-model="task.expectedDate" @change="calculateTaskDelay(task); saveData();"></td>
-              <td><input type="date" class="mini-input date-input" x-model="task.actualDate" @change="calculateTaskDelay(task); saveData();"></td>
-              <td class="dc delay-cell" :class="{'delay-negative': getTaskDelay(task) < 0, 'delay-positive': getTaskDelay(task) > 0, 'delay-zero': getTaskDelay(task) === 0}">
-                <span x-text="formatDelay(getTaskDelay(task))"></span>
-              </td>
-              <td><input type="text" class="mini-input" x-model="task.completed" @click.prevent="toggleTaskCompletion(task)" :class="{'completed-task': task.completed === '✓'}" placeholder="☐"></td>
-            </tr>
-          </template>
-        </tbody>
-      </table>
-    </div>
+// Normalized schema - single source of truth
+const schema = [
+  { 
+    name: "templates", type: "base", system: false, 
+    listRule: null, viewRule: null, createRule: "", updateRule: "", deleteRule: "", options: {},
+    fields: [
+      {name: "name", type: "text", required: true, unique: true, presentable: true, options: {pattern: "^[a-zA-Z0-9_\\-]+$"}},
+      {name: "description", type: "text", required: false, options: {}}, 
+      {name: "is_default", type: "bool", required: false, options: {}},
+      {name: "version", type: "number", required: false, options: {min:1}}, 
+      {name: "structure", type: "json", required: true, options: {maxSize: 5242880}}
+    ]
+  },
+  { 
+    name: "planners", type: "base", system: false, 
+    listRule: null, viewRule: null, createRule: "", updateRule: "", deleteRule: "", options: {},
+    fields: [
+      {name: "week_id", type: "text", required: true, unique: true, presentable: true, options: {}},
+      {name: "template_id", type: "relation", required: true, options: {collectionId: "", cascadeDelete: false, minSelect: null, maxSelect: 1, displayFields: ["name"]}},
+      {name: "title", type: "text", required: false, options: {}},
+      {name: "city", type: "text", required: false, options: {}},
+      {name: "date_range", type: "text", required: false, options: {}},
+      {name: "prayer_times", type: "json", required: false, options: {maxSize: 1048576}},
+      {name: "schedule_data", type: "json", required: false, options: {maxSize: 5242880}},
+      {name: "tasks_data", type: "json", required: false, options: {maxSize: 5242880}},
+      {name: "workout_data", type: "json", required: false, options: {maxSize: 5242880}},
+      {name: "meals_data", type: "json", required: false, options: {maxSize: 5242880}},
+      {name: "grocery_data", type: "json", required: false, options: {maxSize: 5242880}},
+      {name: "measurements_data", type: "json", required: false, options: {maxSize: 5242880}},
+      {name: "financials_data", type: "json", required: false, options: {maxSize: 5242880}}
+    ]
+  }
+];
 
-    <div class="section">
-      <h3 class="section-title editable" @dblclick="editInline($event, 'sectionTitle', 'workout', uiConfig.sectionTitles?.workout)" x-text="uiConfig.sectionTitles?.workout"></h3>
-      <div class="grid">
-        <template x-for="(day, dayIdx) in workoutPlan" :key="day.id || dayIdx">
-          <div class="p-1 workout-day-card">
-            <p class="bold text-center mb-1 editable workout-day-name" @dblclick="editInline($event, 'workoutDayName', dayIdx, day.name)" x-text="day.name"></p>
-            <template x-for="(ex, exIdx) in day.exercises" :key="ex.id || exIdx">
-              <div class="exercise">
-                <div class="exercise-name editable" :title="ex.prefix + ex.name" @dblclick="editInline($event, 'exerciseName', {dayIdx, exIdx}, ex.name)">
-                  <span class="editable" @dblclick.stop="editInline($event, 'exercisePrefix', {dayIdx, exIdx}, ex.prefix)" x-text="ex.prefix"></span>
-                  <span x-text="ex.name"></span>:
-                </div>
-                <div class="exercise-inputs">
-                  <input type="number" class="mini-input" x-model.number="ex.weight" @input="validateNumberInput($event); saveData();" :placeholder="ex.defaultWeight">
-                  <span class="exercise-unit">kg,</span>
-                  <input type="number" class="mini-input sets" x-model.number="ex.sets" @input="validateNumberInput($event); saveData();" :placeholder="ex.defaultSets">
-                  <span class="exercise-unit">×</span>
-                  <input type="number" class="mini-input reps" x-model.number="ex.reps" @input="validateNumberInput($event); saveData();" :placeholder="ex.defaultReps">
-                </div>
-              </div>
-            </template>
-          </div>
-        </template>
-      </div>
-    </div>
+// Template seed data
+const seedData = [
+    {
+        collection: "templates",
+        identifierField: "name",
+        data: [
+            {
+                name: "enhanced-weekly-v3", 
+                description: "Enhanced weekly planner with project management - normalized", 
+                is_default: true, 
+                version: 3,
+                structure: {
+                    ui: {
+                        title_default: "My Weekly Plan & Projects",
+                        headers: {
+                            main_table: ['TIME', 'DAY', 'ACTIVITY', 'SCR', 'MAX', '🔥'],
+                            days: ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'],
+                            max_cols: Array(7).fill('MAX'),
+                            tasks: ['№', '🔥', '🏷️', '✏️ Task/Project', '📅 Start', '🎯 Due', '✅ Done', '⏰ Delay', '✓']
+                        },
+                        sections: {
+                            tasks: 'TASKS & PROJECT MANAGEMENT',
+                            workout: 'WORKOUT PLAN',
+                            meals: 'MEAL PREP',
+                            grocery: 'GROCERY LIST',
+                            measurements: 'BODY MEASUREMENTS',
+                            financials: 'MONTH/1ST: FINANCIAL'
+                        }
+                    },
+                    prayer_times: [
+                        { label: 'Q', value: '' }, { label: 'F', value: '' }, { label: 'D', value: '' }, 
+                        { label: 'A', value: '' }, { label: 'M', value: '' }, { label: 'I', value: '' }
+                    ],
+                    schedule: [
+                        { 
+                            name: 'QIYAM', 
+                            activities: [ 
+                                { name: 'DAILY: Wakeup early', max_per_day: 1, max_score: 7 },
+                                { name: 'DAILY: Qiyam/Tahajjud', max_per_day: 1, max_score: 7 },
+                                { name: 'DAILY: Nutty Pudding', max_per_day: 1, max_score: 7 }
+                            ]
+                        },
+                        { 
+                            name: 'FAJR', 
+                            activities: [ 
+                                { name: 'DAILY: Fajr prayer', max_per_day: 1, max_score: 7 },
+                                { name: 'DAILY: Quran - 1 Juz', max_per_day: 1, max_score: 7 },
+                                { name: 'DAILY: 5min Cold Shower', max_per_day: 1, max_score: 7 }
+                            ]
+                        },
+                        { 
+                            name: '7AM - 9AM', 
+                            activities: [ 
+                                { name: 'MON/THU: COMMUTE', days: ['mon', 'thu'], max_per_day: 1, max_score: 2 },
+                                { name: 'TUE/WED/FRI: Reading/Study', days: ['tue', 'wed', 'fri'], max_per_day: 1, max_score: 3 },
+                                { name: 'SAT: Errands, Grocery, Meal prep', days: ['sat'], max_per_day: 3, max_score: 3 },
+                                { name: 'SUN: House cleaning, laundry', days: ['sun'], max_per_day: 2, max_score: 2 }
+                            ]
+                        },
+                        { 
+                            name: 'TOTAL', 
+                            activities: [ 
+                                { name: 'DAILY POINTS', max_per_day: 0, max_score: 0 }
+                            ]
+                        }
+                    ],
+                    tasks: {
+                        count: 15,
+                        fields: ['num', 'priority', 'tag', 'description', 'start_date', 'expected_date', 'actual_date', 'completed']
+                    },
+                    workout: [
+                        { 
+                            name: 'TUESDAY', 
+                            exercises: [ 
+                                { name: 'Incline Dumbbell Press', default_weight: 30, default_sets: 3, default_reps: 12 },
+                                { name: 'Barbell Squats', default_weight: 80, default_sets: 3, default_reps: 8 },
+                                { name: 'DB Chest-Supported Row', default_weight: 25, default_sets: 3, default_reps: 12 }
+                            ]
+                        },
+                        { 
+                            name: 'WEDNESDAY', 
+                            exercises: [ 
+                                { name: 'Barbell Bench Press', default_weight: 70, default_sets: 3, default_reps: 6 },
+                                { name: 'Romanian Deadlift', default_weight: 90, default_sets: 3, default_reps: 8 },
+                                { name: 'Lat Pulldown', default_weight: 60, default_sets: 3, default_reps: 12 }
+                            ]
+                        },
+                        { 
+                            name: 'FRIDAY', 
+                            exercises: [ 
+                                { name: 'Seated DB Shoulder Press', default_weight: 20, default_sets: 3, default_reps: 12 },
+                                { name: 'Dumbbell Row', default_weight: 25, default_sets: 3, default_reps: 12 },
+                                { name: 'Barbell Hip Thrust', default_weight: 100, default_sets: 3, default_reps: 15 }
+                            ]
+                        }
+                    ],
+                    meals: [
+                        { name: 'Nutty Pudding', ingredients: 'Berries ½c, Cherries 3, Macadamia nuts 45g...' },
+                        { name: 'Super Veggie', ingredients: 'Broccoli 250g, Cauliflower 150g, Mushrooms 50g...' },
+                        { name: 'Third Meal', ingredients: 'Sweet Potato 350g, Protein 100g, Avocado ½...' }
+                    ],
+                    grocery: {
+                        budget_default: '120',
+                        categories: [
+                            { name: 'Produce', items: 'Broccoli, Cauliflower, Mushrooms...' },
+                            { name: 'Protein', items: 'Lentils, Protein powder, Milk...' }
+                        ]
+                    },
+                    measurements: [
+                        { name: 'Weight', placeholder: '75kg' },
+                        { name: 'Chest', placeholder: '42in' },
+                        { name: 'Waist', placeholder: '34in' }
+                    ],
+                    financials: [
+                        { name: 'Rent', placeholder: '850', account: 'Cash' },
+                        { name: 'Allowance', placeholder: '850', account: 'Revolut' },
+                        { name: 'Savings', placeholder: '3800', account: 'HSBCUK' }
+                    ],
+                    city_default: "London"
+                }
+            }
+        ]
+    }
+];
 
-    <div class="section">
-      <h3 class="section-title editable" @dblclick="editInline($event, 'sectionTitle', 'meals', uiConfig.sectionTitles?.meals)" x-text="uiConfig.sectionTitles?.meals"></h3>
-      <ul class="list text-xs">
-        <template x-for="(meal, i) in meals" :key="meal.id || i">
-          <li class="list-item">
-            <span class="bold editable" @dblclick="editInline($event, 'mealName', i, meal.name)" x-text="meal.name + ':'"></span>
-            <span class="editable" @dblclick="editInline($event, 'mealIngredients', i, meal.ingredients)" x-text="meal.ingredients"></span>
-          </li>
-        </template>
-      </ul>
-    </div>
+// UI setup
+document.getElementById('schemaJson').value = JSON.stringify(schema, null, 2);
+document.getElementById('seedDataJson').value = JSON.stringify(seedData, null, 2);
 
-    <div class="section">
-      <h3 class="section-title editable" @dblclick="editInline($event, 'sectionTitle', 'grocery', uiConfig.sectionTitles?.grocery)">
-        <span x-text="uiConfig.sectionTitles?.grocery"></span>
-        <input type="text" class="mini-input grocery-budget-input" x-model="groceryBudget" placeholder="£120" @change="validateTextInput($event); saveData();">
-      </h3>
-      <ul class="list text-xs">
-        <template x-for="(cat, i) in groceryList" :key="cat.id || i">
-          <li class="list-item">
-            <span class="bold editable" @dblclick="editInline($event, 'groceryCategoryName', i, cat.name)" x-text="cat.name + ':'"></span>
-            <span class="editable" @dblclick="editInline($event, 'groceryCategoryItems', i, cat.items)" x-text="cat.items"></span>
-          </li>
-        </template>
-      </ul>
-    </div>
+function logMessage(message, type = 'info') {
+    const p = document.createElement('p');
+    p.className = `log-entry ${type}`;
+    p.textContent = message;
+    document.getElementById('logOutput').appendChild(p);
+    document.getElementById('logOutput').scrollTop = document.getElementById('logOutput').scrollHeight;
+}
 
-    <div class="section">
-      <h3 class="section-title editable" @dblclick="editInline($event, 'sectionTitle', 'measurements', uiConfig.sectionTitles?.measurements)" x-text="uiConfig.sectionTitles?.measurements"></h3>
-      <div class="form-row text-xs">
-        <template x-for="(m, i) in bodyMeasurements" :key="m.id || i">
-          <div class="form-field">
-            <span class="form-label editable" @dblclick="editInline($event, 'measurementName', i, m.name)" x-text="m.name + ':'"></span>
-            <input type="text" class="mini-input measurement-value-input" x-model="m.value" :placeholder="m.placeholder" @change="validateTextInput($event); saveData();">
-          </div>
-        </template>
-      </div>
-    </div>
+document.getElementById('setupButton').addEventListener('click', async () => {
+    const logOutput = document.getElementById('logOutput');
+    logOutput.innerHTML = '';
+    
+    const pbUrl = document.getElementById('pbUrl').value.trim();
+    const adminEmail = document.getElementById('adminEmail').value.trim();
+    const adminPassword = document.getElementById('adminPassword').value;
 
-    <div class="section">
-      <h3 class="section-title editable" @dblclick="editInline($event, 'sectionTitle', 'financials', uiConfig.sectionTitles?.financials)" x-text="uiConfig.sectionTitles?.financials"></h3>
-      <div class="form-row text-xs">
-        <template x-for="(item, i) in financials" :key="item.id || i">
-          <div class="form-field">
-            <span class="form-label editable" @dblclick="editInline($event, 'financialName', i, item.name)" x-text="item.name + ':'"></span>
-            £<input type="text" class="mini-input financial-value-input" x-model="item.value" :placeholder="item.placeholder" @change="validateTextInput($event); saveData();">
-            <span class="editable" @dblclick="editInline($event, 'financialAccount', i, item.account)" x-text="item.account"></span>
-          </div>
-        </template>
-      </div>
-    </div>
-  </div>
+    if (!pbUrl || !adminEmail || !adminPassword) {
+        logMessage('URL, Email, and Password are required.', 'error');
+        return;
+    }
 
-  <div class="dropdown" :class="{'show': showCitySelector}" :style="`top: ${dropdownPosition.top}px; left: ${dropdownPosition.left}px;`">
-    <div class="dropdown-content">
-      <template x-for="cityItem in cityOptions" :key="cityItem.name">
-        <div class="dropdown-item" @click="selectCity(cityItem)" x-text="cityItem.name"></div>
-      </template>
-    </div>
-  </div>
+    let collectionsSchema, seedDataConfig;
+    try {
+        collectionsSchema = JSON.parse(document.getElementById('schemaJson').value);
+        if (!Array.isArray(collectionsSchema)) throw new Error('Schema must be an array.');
+    } catch (e) {
+        logMessage('Schema parse error: ' + e.message, 'error');
+        return;
+    }
 
-  <div class="dropdown" :class="{'show': showWeekSelector}" :style="`top: ${dropdownPosition.top}px; left: ${dropdownPosition.left}px;`">
-    <div class="dropdown-content">
-      <template x-if="savedWeeks.length > 0">
-        <template x-for="week in savedWeeks" :key="week.iso_week">
-          <div class="flex between center dropdown-item" :class="{'current': week.isCurrent}">
-            <span @click="confirmLoadWeek(week.iso_week)" x-text="`${week.iso_week} (${week.dateRange})`"></span>
-            <span @click="confirmDeleteWeek(week.iso_week)" class="delete-week-btn">×</span>
-          </div>
-        </template>
-      </template>
-      <template x-if="savedWeeks.length === 0">
-        <div class="dropdown-item-empty">No saved schedules</div>
-      </template>
-    </div>
-  </div>
+    try {
+        seedDataConfig = JSON.parse(document.getElementById('seedDataJson').value);
+        if (!Array.isArray(seedDataConfig)) throw new Error('Seed data must be an array.');
+    } catch (e) {
+        logMessage('Seed data parse error: ' + e.message, 'error');
+        return;
+    }
+
+    const pb = new PocketBase(pbUrl);
+    try {
+        logMessage(`Authenticating ${adminEmail}...`);
+        await pb.admins.authWithPassword(adminEmail, adminPassword);
+        logMessage('Authentication successful.', 'success');
+
+        logMessage('\n--- Processing Collections ---', 'info');
+        let templatesCollectionId = null;
+        
+        for (const colDef of collectionsSchema) {
+            if (!colDef.name) {
+                logMessage('Skipping collection without name.', 'warning');
+                continue;
+            }
+            
+            logMessage(`Processing: ${colDef.name}`);
+            const payload = {
+                name: colDef.name, type: colDef.type || 'base', system: colDef.system || false,
+                listRule: colDef.listRule !== undefined ? colDef.listRule : null,
+                viewRule: colDef.viewRule !== undefined ? colDef.viewRule : null,
+                createRule: colDef.createRule !== undefined ? colDef.createRule : "",
+                updateRule: colDef.updateRule !== undefined ? colDef.updateRule : "",
+                deleteRule: colDef.deleteRule !== undefined ? colDef.deleteRule : "",
+                options: colDef.options || {}, fields: [], indexes: []
+            };
+            
+            if (colDef.fields && Array.isArray(colDef.fields)) {
+                payload.fields = colDef.fields.map(f => ({
+                    name: f.name, type: f.type, required: f.required || false,
+                    system: f.system || false, options: f.options || {}
+                }));
+                
+                colDef.fields.forEach(f => {
+                    if (f.unique) {
+                        payload.indexes.push(`CREATE UNIQUE INDEX idx_uniq_${colDef.name.replace(/\W/g, '_')}_${f.name.replace(/\W/g, '_')} ON {{${colDef.name}}} (${f.name})`);
+                    }
+                });
+                
+                if (payload.indexes.length === 0) delete payload.indexes;
+            }
+            
+            try {
+                let existing = null;
+                try {
+                    existing = await pb.collections.getOne(colDef.name);
+                } catch (e) {
+                    // Not found
+                }
+                
+                if (existing) {
+                    logMessage(`Collection "${colDef.name}" exists. Updating.`, 'warning');
+                    const updatePayload = { ...payload };
+                    delete updatePayload.name;
+                    delete updatePayload.type;
+                    delete updatePayload.indexes;
+                    if (updatePayload.fields) {
+                        updatePayload.fields = updatePayload.fields.filter(f => !f.system);
+                    }
+                    const updated = await pb.collections.update(existing.id, updatePayload);
+                    logMessage(`Updated "${updated.name}".`, 'success');
+                    if (colDef.name === 'templates') templatesCollectionId = updated.id;
+                } else {
+                    const created = await pb.collections.create(payload);
+                    logMessage(`Created "${created.name}".`, 'success');
+                    if (colDef.name === 'templates') templatesCollectionId = created.id;
+                }
+            } catch (e) {
+                logMessage(`Error with "${colDef.name}": ${e.message}`, 'error');
+                if (e.data?.data) logMessage(JSON.stringify(e.data.data, null, 2), 'error');
+            }
+        }
+
+        // Update planners collection relation
+        if (templatesCollectionId) {
+            try {
+                const plannersCollection = await pb.collections.getOne('planners');
+                const templateField = plannersCollection.fields.find(f => f.name === 'template_id');
+                if (templateField) {
+                    templateField.options.collectionId = templatesCollectionId;
+                    await pb.collections.update(plannersCollection.id, { fields: plannersCollection.fields });
+                    logMessage('Updated planners template relation.', 'success');
+                }
+            } catch (e) {
+                logMessage('Relation update warning: ' + e.message, 'warning');
+            }
+        }
+
+        logMessage('--- Collections processed ---', 'info');
+
+        logMessage('\n--- Processing Seed Data ---', 'info');
+        for (const seedConfig of seedDataConfig) {
+            if (!seedConfig.collection || !seedConfig.data || !Array.isArray(seedConfig.data) || !seedConfig.identifierField) {
+                logMessage('Invalid seed config.', 'warning');
+                continue;
+            }
+            
+            logMessage(`Seeding: ${seedConfig.collection}`);
+            for (const recordData of seedConfig.data) {
+                const identifierValue = recordData[seedConfig.identifierField];
+                if (identifierValue === undefined) {
+                    logMessage(`Missing identifier field.`, 'warning');
+                    continue;
+                }
+                
+                logMessage(`Record ${seedConfig.identifierField} = "${identifierValue}"`);
+                try {
+                    const filter = `${seedConfig.identifierField} = "${identifierValue}"`;
+                    await pb.collection(seedConfig.collection).getFirstListItem(filter);
+                    logMessage(`Exists. Skipping.`, 'warning');
+                } catch (e) {
+                    if (e.status === 404) {
+                        try {
+                            await pb.collection(seedConfig.collection).create(recordData);
+                            logMessage(`Created.`, 'success');
+                        } catch (crE) {
+                            logMessage(`Creation error: ${crE.message}`, 'error');
+                            if (crE.data?.data) logMessage(JSON.stringify(crE.data.data, null, 2), 'error');
+                        }
+                    } else {
+                        logMessage(`Check error: ${e.message}`, 'error');
+                    }
+                }
+            }
+        }
+        
+        logMessage('--- Seed data processed ---', 'info');
+        logMessage('\nSetup complete. Templates are single source of truth.', 'success');
+    } catch (e) {
+        logMessage('Setup error: ' + e.message, 'error');
+        if (e.data?.data) logMessage(JSON.stringify(e.data.data, null, 2), 'error');
+    } finally {
+        pb.authStore.clear();
+        logMessage('Session cleared.', 'info');
+    }
+});
+</script>
 </body>
 </html>
