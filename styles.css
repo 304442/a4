@@ -539,7 +539,7 @@ tr:first-child td { border-top: 1px solid #ccc; }
 td.bold:not(:empty) { border-left: 2px solid #aaa; }
 tr:has(td.bold:not(:empty)):not(:first-child) { border-top: 2px solid #f0f0f0; }
 
-/* Exercise Layout */
+/* Exercise Layout - NO BULLETS */
 .exercise { 
   display: flex; justify-content: space-between; align-items: center; 
   height: 3mm; margin-bottom: 0.5mm; position: relative; 
@@ -547,13 +547,14 @@ tr:has(td.bold:not(:empty)):not(:first-child) { border-top: 2px solid #f0f0f0; }
 .exercise-name { 
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap; 
   flex-grow: 1; margin-right: 0.5mm; cursor: pointer; font-size: 7pt; 
+  font-weight: 500; color: #374151;
 }
 .exercise-name:hover { background-color: #f0f7ff; }
 .exercise-inputs { display: flex; align-items: center; }
 .exercise-inputs input { width: 4mm; height: 3mm; font-size: 7pt; }
 .exercise-inputs input.sets { width: 2mm; }
 .exercise-inputs input.reps { width: 3mm; }
-.exercise-unit { margin: 0 0.5mm; font-size: 7pt; }
+.exercise-unit { margin: 0 0.5mm; font-size: 7pt; color: #6b7280; }
 .workout-day-card { background-color: #f9fafb; }
 .workout-day-name { font-size: 7pt; }
 
@@ -675,13 +676,13 @@ tr:has(.completed-task) td input:not(.completed-task) { text-decoration: line-th
     }
   }
   
-  /* CARD CONTAINER - PERFECT A4 FIT */
+  /* ULTRA COMPACT PRINT LAYOUT */
   .card {
-    width: 200mm !important;
-    height: 287mm !important;
-    max-width: 200mm !important;
-    max-height: 287mm !important;
-    padding: 3mm !important;
+    width: 206mm !important;
+    height: 293mm !important;
+    max-width: 206mm !important;
+    max-height: 293mm !important;
+    padding: 1mm !important;
     margin: 0 !important;
     box-sizing: border-box !important;
     background: white !important;
@@ -692,6 +693,259 @@ tr:has(.completed-task) td input:not(.completed-task) { text-decoration: line-th
     position: relative !important;
     display: block !important;
     transform: none !important;
+  }
+  
+  /* COMPACT HEADER */
+  .card .flex.between.center.mb-1 {
+    width: 100% !important;
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    border-bottom: 1px solid #000000 !important;
+    margin-bottom: 0.5mm !important;
+    padding: 0.5mm 0 !important;
+    page-break-after: avoid !important;
+    background: white !important;
+  }
+  
+  .card h1 {
+    font-size: 8pt !important;
+    font-weight: bold !important;
+    color: #000000 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    line-height: 1 !important;
+  }
+  
+  .flex.center.text-xs {
+    background: #f8f8f8 !important;
+    border: 1px solid #cccccc !important;
+    padding: 0.3mm !important;
+    font-size: 4pt !important;
+    color: #000000 !important;
+    border-radius: 0 !important;
+    line-height: 1 !important;
+  }
+  
+  .text-sm {
+    font-size: 4pt !important;
+    color: #000000 !important;
+    font-weight: normal !important;
+    line-height: 1 !important;
+  }
+  
+  /* ULTRA COMPACT MAIN SCHEDULE TABLE */
+  table:not(.task-table) {
+    width: 100% !important;
+    max-width: 204mm !important;
+    border-collapse: collapse !important;
+    border-spacing: 0 !important;
+    margin: 0.3mm 0 !important;
+    page-break-inside: avoid !important;
+    background: white !important;
+    table-layout: fixed !important;
+  }
+  
+  table:not(.task-table) th {
+    background: #e8e8e8 !important;
+    color: #000000 !important;
+    border: 1px solid #000000 !important;
+    font-weight: bold !important;
+    text-align: center !important;
+    padding: 0.2mm !important;
+    font-size: 3.5pt !important;
+    line-height: 1 !important;
+    height: 2.5mm !important;
+    overflow: hidden !important;
+    word-wrap: break-word !important;
+  }
+  
+  table:not(.task-table) td {
+    border: 1px solid #cccccc !important;
+    padding: 0.1mm !important;
+    font-size: 3.5pt !important;
+    line-height: 1 !important;
+    height: 2mm !important;
+    background: white !important;
+    text-align: center !important;
+    overflow: hidden !important;
+    word-wrap: break-word !important;
+  }
+  
+  /* ULTRA COMPACT TASK TABLE */
+  .task-table {
+    width: 100% !important;
+    max-width: 204mm !important;
+    border-collapse: collapse !important;
+    border-spacing: 0 !important;
+    background: white !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    margin: 0.5mm 0 !important;
+    page-break-inside: avoid !important;
+    table-layout: fixed !important;
+    font-size: 4pt !important;
+  }
+  
+  .task-table th {
+    background: #d0d0d0 !important;
+    color: #000000 !important;
+    border: 1px solid #000000 !important;
+    font-weight: bold !important;
+    text-align: center !important;
+    padding: 0.2mm !important;
+    height: 3mm !important;
+    font-size: 4pt !important;
+    line-height: 1 !important;
+    page-break-inside: avoid !important;
+    overflow: hidden !important;
+    word-wrap: break-word !important;
+  }
+  
+  /* ULTRA COMPACT TASK COLUMN WIDTHS */
+  .task-table th:nth-child(1), .task-table td:nth-child(1) { width: 4mm !important; }
+  .task-table th:nth-child(2), .task-table td:nth-child(2) { width: 4mm !important; }
+  .task-table th:nth-child(3), .task-table td:nth-child(3) { width: 4mm !important; }
+  .task-table th:nth-child(4), .task-table td:nth-child(4) { width: 160mm !important; text-align: left !important; }
+  .task-table th:nth-child(5), .task-table td:nth-child(5) { width: 6mm !important; }
+  .task-table th:nth-child(6), .task-table td:nth-child(6) { width: 6mm !important; }
+  .task-table th:nth-child(7), .task-table td:nth-child(7) { width: 6mm !important; }
+  .task-table th:nth-child(8), .task-table td:nth-child(8) { width: 5mm !important; }
+  .task-table th:nth-child(9), .task-table td:nth-child(9) { width: 4mm !important; }
+  
+  .task-table tbody tr {
+    background: white !important;
+    height: 3mm !important;
+    page-break-inside: avoid !important;
+    border: none !important;
+  }
+  
+  .task-table td {
+    border: 1px solid #cccccc !important;
+    padding: 0.1mm !important;
+    margin: 0 !important;
+    height: 3mm !important;
+    line-height: 1 !important;
+    font-size: 3.5pt !important;
+    vertical-align: middle !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+    background: inherit !important;
+  }
+  
+  .task-table input, input {
+    border: none !important;
+    background: transparent !important;
+    font-size: 3.5pt !important;
+    font-family: inherit !important;
+    color: #000000 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    width: 100% !important;
+    height: auto !important;
+    box-shadow: none !important;
+    outline: none !important;
+    line-height: 1 !important;
+  }
+  
+  /* COMPACT SECTIONS */
+  .section-title {
+    color: #000000 !important;
+    font-size: 5pt !important;
+    font-weight: bold !important;
+    margin: 0.5mm 0 0.3mm 0 !important;
+    padding: 0.3mm 0 !important;
+    border-bottom: 1px solid #000000 !important;
+    background: transparent !important;
+    page-break-after: avoid !important;
+    width: 100% !important;
+    line-height: 1 !important;
+  }
+  
+  .section {
+    margin: 0.3mm 0 !important;
+    page-break-inside: avoid !important;
+    width: 100% !important;
+  }
+  
+  /* ULTRA COMPACT WORKOUT GRID */
+  .grid {
+    display: grid !important;
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 0.3mm !important;
+    width: 100% !important;
+    page-break-inside: avoid !important;
+  }
+  
+  .workout-day-card {
+    background: #f8f8f8 !important;
+    border: 1px solid #cccccc !important;
+    border-radius: 0 !important;
+    padding: 0.3mm !important;
+    page-break-inside: avoid !important;
+  }
+  
+  .workout-day-name {
+    font-size: 4pt !important;
+    font-weight: bold !important;
+    color: #000000 !important;
+    text-align: center !important;
+    margin-bottom: 0.3mm !important;
+    line-height: 1 !important;
+  }
+  
+  .exercise {
+    font-size: 3pt !important;
+    line-height: 1 !important;
+    margin: 0.2mm 0 !important;
+    display: flex !important;
+    justify-content: space-between !important;
+  }
+  
+  .exercise-name {
+    font-size: 3pt !important;
+    flex: 1 !important;
+    margin-right: 0.3mm !important;
+    font-weight: normal !important;
+    line-height: 1 !important;
+  }
+  
+  .exercise-inputs {
+    font-size: 3pt !important;
+    white-space: nowrap !important;
+    line-height: 1 !important;
+  }
+  
+  /* COMPACT LISTS */
+  .list {
+    font-size: 3pt !important;
+    line-height: 1.1 !important;
+    margin: 0.3mm 0 !important;
+    padding-left: 1mm !important;
+  }
+  
+  .list-item {
+    margin: 0.2mm 0 !important;
+    page-break-inside: avoid !important;
+    line-height: 1.1 !important;
+  }
+  
+  /* COMPACT INLINE ELEMENTS */
+  .inline-measurement, .inline-financial {
+    font-size: 3pt !important;
+    margin-right: 1mm !important;
+    display: inline-block !important;
+    line-height: 1 !important;
+  }
+  
+  .inline-input {
+    border-bottom: 1px solid #cccccc !important;
+    background: transparent !important;
+    color: #000000 !important;
+    font-size: 3pt !important;
+    padding: 0 !important;
+    line-height: 1 !important;
   }
   
   /* HIDE ALL INTERACTIVE ELEMENTS */
@@ -1006,6 +1260,7 @@ tr:has(.completed-task) td input:not(.completed-task) { text-decoration: line-th
     font-size: 5pt !important;
     flex: 1 !important;
     margin-right: 1mm !important;
+    font-weight: normal !important;
   }
   
   .exercise-inputs {
