@@ -48,11 +48,13 @@ html, body {
   }
 }
 
-/* CARD LAYOUT - STRICT A4 */
+/* CARD LAYOUT - STRICT A4 CENTERED */
 body { 
   display: flex; 
-  justify-content: flex-start; 
+  justify-content: center; 
   align-items: flex-start; 
+  min-height: 100vh;
+  padding: 10px !important;
 }
 
 .card { 
@@ -66,12 +68,17 @@ body {
   box-shadow: 0 4px 6px rgba(0,0,0,0.1); 
   background-color: white; 
   position: relative; 
-  margin: 0 auto !important;
+  margin: 0 !important;
   box-sizing: border-box !important;
 }
 
-/* MOBILE CARD LOCK */
+/* MOBILE CARD LOCK - CENTERED */
 @media (max-width: 768px) {
+  body {
+    justify-content: flex-start !important;
+    padding: 5px !important;
+  }
+  
   .card {
     width: 210mm !important;
     height: 297mm !important;
@@ -102,10 +109,11 @@ td.dc, th.dc { border-right: 1px solid #e0e0e0; }
 td.dc:nth-child(4n+5), th.dc:nth-child(4n+5) { border-right: 1px solid #ccc; }
 .current-day { background-color: #fff8e1 !important; }
 
-/* TASK TABLE - ZERO SPACING EVERYWHERE */
+/* TASK TABLE - BULLETPROOF FIXED LAYOUT */
 .task-table {
   border-collapse: collapse !important;
-  width: 100%;
+  width: 200mm !important;
+  table-layout: fixed !important;
   margin-top: 1mm !important;
   border-spacing: 0 !important;
   line-height: 1 !important;
@@ -168,51 +176,97 @@ td.dc:nth-child(4n+5), th.dc:nth-child(4n+5) { border-right: 1px solid #ccc; }
   line-height: 1 !important;
 }
 
-/* OPTIMIZED TASK COLUMN WIDTHS - NARROW TAG, WIDE DESCRIPTION */
+/* BULLETPROOF TASK COLUMN WIDTHS - OVERRIDE EVERYTHING */
 .task-table th:nth-child(1), .task-table td:nth-child(1) { 
   width: 6mm !important; 
+  max-width: 6mm !important;
+  min-width: 6mm !important;
   text-align: center; 
 }
 
 .task-table th:nth-child(2), .task-table td:nth-child(2) { 
   width: 6mm !important; 
+  max-width: 6mm !important;
+  min-width: 6mm !important;
   text-align: center; 
 }
 
 .task-table th:nth-child(3), .task-table td:nth-child(3) { 
   width: 4mm !important; /* NARROWER TAG COLUMN */
+  max-width: 4mm !important;
+  min-width: 4mm !important;
   text-align: center; 
 }
 
 .task-table th:nth-child(4), .task-table td:nth-child(4) { 
   width: 147mm !important; /* WIDEST DESCRIPTION COLUMN */
+  max-width: 147mm !important;
+  min-width: 147mm !important;
   text-align: left;
   padding-left: 1mm !important;
 }
 
 .task-table th:nth-child(5), .task-table td:nth-child(5) { 
   width: 8mm !important; 
+  max-width: 8mm !important;
+  min-width: 8mm !important;
   text-align: center; 
 }
 
 .task-table th:nth-child(6), .task-table td:nth-child(6) { 
   width: 8mm !important; 
+  max-width: 8mm !important;
+  min-width: 8mm !important;
   text-align: center; 
 }
 
 .task-table th:nth-child(7), .task-table td:nth-child(7) { 
   width: 8mm !important; 
+  max-width: 8mm !important;
+  min-width: 8mm !important;
   text-align: center; 
 }
 
 .task-table th:nth-child(8), .task-table td:nth-child(8) { 
   width: 6mm !important; 
+  max-width: 6mm !important;
+  min-width: 6mm !important;
   text-align: center; 
 }
 
 .task-table th:nth-child(9), .task-table td:nth-child(9) { 
   width: 4mm !important; 
+  max-width: 4mm !important;
+  min-width: 4mm !important;
   text-align: center; 
+}
+
+/* OVERRIDE ANY INLINE STYLES FROM JAVASCRIPT */
+.task-table th[style*="width"], .task-table td[style*="width"] {
+  width: unset !important;
+}
+
+.task-table th:nth-child(1)[style], .task-table td:nth-child(1)[style] { width: 6mm !important; max-width: 6mm !important; }
+.task-table th:nth-child(2)[style], .task-table td:nth-child(2)[style] { width: 6mm !important; max-width: 6mm !important; }
+.task-table th:nth-child(3)[style], .task-table td:nth-child(3)[style] { width: 4mm !important; max-width: 4mm !important; }
+.task-table th:nth-child(4)[style], .task-table td:nth-child(4)[style] { width: 147mm !important; max-width: 147mm !important; text-align: left !important; }
+.task-table th:nth-child(5)[style], .task-table td:nth-child(5)[style] { width: 8mm !important; max-width: 8mm !important; }
+.task-table th:nth-child(6)[style], .task-table td:nth-child(6)[style] { width: 8mm !important; max-width: 8mm !important; }
+.task-table th:nth-child(7)[style], .task-table td:nth-child(7)[style] { width: 8mm !important; max-width: 8mm !important; }
+.task-table th:nth-child(8)[style], .task-table td:nth-child(8)[style] { width: 6mm !important; max-width: 6mm !important; }
+.task-table th:nth-child(9)[style], .task-table td:nth-child(9)[style] { width: 4mm !important; max-width: 4mm !important; }
+
+/* WORD WRAP AND OVERFLOW CONTROL */
+.task-table td {
+  word-wrap: break-word !important;
+  overflow: hidden !important;
+  white-space: normal !important;
+}
+
+.task-table td:nth-child(4) {
+  white-space: normal !important;
+  word-wrap: break-word !important;
+  overflow-wrap: break-word !important;
 }
 
 /* PRIORITY & STATUS VISUAL INDICATORS */
@@ -280,14 +334,14 @@ td.dc:nth-child(4n+5), th.dc:nth-child(4n+5) { border-right: 1px solid #ccc; }
   font-weight: 600;
 }
 
-/* SECTION HEADERS */
+/* SECTION HEADERS - NO UNDERLINES */
 .section-title {
   margin-bottom: 2mm !important;
   font-size: 10pt;
   font-weight: 700;
   color: #1f2937;
   padding: 2mm 0 !important;
-  border-bottom: 2px solid #e5e7eb;
+  border-bottom: none !important;
   position: relative;
   display: flex;
   align-items: center;
@@ -295,14 +349,7 @@ td.dc:nth-child(4n+5), th.dc:nth-child(4n+5) { border-right: 1px solid #ccc; }
 }
 
 .section-title::before {
-  content: '';
-  position: absolute;
-  bottom: -2px;
-  left: 0;
-  width: 40px;
-  height: 2px;
-  background: linear-gradient(135deg, #667eea, #764ba2);
-  border-radius: 1px;
+  display: none !important;
 }
 
 /* MAIN SCHEDULE TABLE ENHANCEMENTS */
@@ -376,11 +423,12 @@ tr:has(.mini-input:focus) td { background-color: #f0f7ff !important; }
 .delay-positive { color: #721c24; background-color: #f8d7da !important; }
 .delay-zero { color: #856404; background-color: #fff3cd !important; }
 
-/* SECTION LAYOUT */
+/* SECTION LAYOUT - CLEAN TITLES */
 .section { margin-top: 2mm !important; }
 .section-title { 
   margin-bottom: 1mm !important; font-size: 8pt; font-weight: bold; 
-  position: relative; display: flex; align-items: center; 
+  position: relative; display: flex; align-items: center;
+  border-bottom: none !important;
 }
 .inline-title { 
   display: flex; align-items: center; flex-wrap: wrap; gap: 2mm;
