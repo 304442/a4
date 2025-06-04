@@ -6,23 +6,23 @@
   font-family: monospace; 
 }
 
-html, body { 
-  width: 210mm !important; 
-  height: 297mm !important; 
-  min-width: 210mm !important; 
-  min-height: 297mm !important; 
-  max-width: 210mm !important; 
-  max-height: 297mm !important; 
+html { 
+  width: 100vw !important; 
+  height: 100vh !important; 
   background-color: #f0f0f0; 
-  overflow-x: hidden !important;
+  overflow-x: auto !important;
   overflow-y: auto !important;
   -webkit-text-size-adjust: 100%; 
 }
 
 body { 
-  display: flex; 
-  justify-content: center; 
-  align-items: flex-start; 
+  width: 100% !important;
+  min-height: 100vh !important;
+  background-color: #f0f0f0; 
+  display: flex !important; 
+  justify-content: center !important; 
+  align-items: flex-start !important;
+  padding: 10px !important;
 }
 
 /* A4 CARD - FIXED SIZE ALWAYS */
@@ -46,15 +46,90 @@ body {
   width: 18mm !important; 
 }
 
-/* TASK TABLE - ZERO SPACING BETWEEN ROWS */
+/* FIXED TASK TABLE COLUMN WIDTHS - FORCE WITH !IMPORTANT */
 .task-table {
-  border-collapse: collapse !important;
-  width: 100% !important;
-  margin-top: 1mm !important;
+  border-collapse: separate !important;
   border-spacing: 0 !important;
+  width: 200mm !important;
+  margin-top: 1mm !important;
   table-layout: fixed !important;
 }
 
+.task-table col:nth-child(1) { width: 6mm !important; }
+.task-table col:nth-child(2) { width: 6mm !important; }
+.task-table col:nth-child(3) { width: 4mm !important; }
+.task-table col:nth-child(4) { width: 150mm !important; }
+.task-table col:nth-child(5) { width: 8mm !important; }
+.task-table col:nth-child(6) { width: 8mm !important; }
+.task-table col:nth-child(7) { width: 8mm !important; }
+.task-table col:nth-child(8) { width: 6mm !important; }
+.task-table col:nth-child(9) { width: 4mm !important; }
+
+.task-table th:nth-child(1), .task-table td:nth-child(1) { 
+  width: 6mm !important; 
+  min-width: 6mm !important;
+  max-width: 6mm !important;
+  text-align: center !important; 
+}
+
+.task-table th:nth-child(2), .task-table td:nth-child(2) { 
+  width: 6mm !important; 
+  min-width: 6mm !important;
+  max-width: 6mm !important;
+  text-align: center !important; 
+}
+
+.task-table th:nth-child(3), .task-table td:nth-child(3) { 
+  width: 4mm !important; 
+  min-width: 4mm !important;
+  max-width: 4mm !important;
+  text-align: center !important; 
+}
+
+.task-table th:nth-child(4), .task-table td:nth-child(4) { 
+  width: 150mm !important; 
+  min-width: 150mm !important;
+  max-width: 150mm !important;
+  text-align: left !important;
+  padding-left: 1mm !important;
+}
+
+.task-table th:nth-child(5), .task-table td:nth-child(5) { 
+  width: 8mm !important; 
+  min-width: 8mm !important;
+  max-width: 8mm !important;
+  text-align: center !important; 
+}
+
+.task-table th:nth-child(6), .task-table td:nth-child(6) { 
+  width: 8mm !important; 
+  min-width: 8mm !important;
+  max-width: 8mm !important;
+  text-align: center !important; 
+}
+
+.task-table th:nth-child(7), .task-table td:nth-child(7) { 
+  width: 8mm !important; 
+  min-width: 8mm !important;
+  max-width: 8mm !important;
+  text-align: center !important; 
+}
+
+.task-table th:nth-child(8), .task-table td:nth-child(8) { 
+  width: 6mm !important; 
+  min-width: 6mm !important;
+  max-width: 6mm !important;
+  text-align: center !important; 
+}
+
+.task-table th:nth-child(9), .task-table td:nth-child(9) { 
+  width: 4mm !important; 
+  min-width: 4mm !important;
+  max-width: 4mm !important;
+  text-align: center !important; 
+}
+
+/* TASK TABLE HEADERS AND ROWS */
 .task-table th {
   background-color: #e6e6e6 !important;
   border-right: 1px solid #ccc !important;
@@ -99,53 +174,6 @@ body {
 .task-table .task-row td:last-child,
 .task-table tbody tr td:last-child {
   border-right: none !important;
-}
-
-/* FIXED TASK TABLE COLUMN WIDTHS */
-.task-table th:nth-child(1), .task-table td:nth-child(1) { 
-  width: 6mm !important; 
-  text-align: center !important; 
-}
-
-.task-table th:nth-child(2), .task-table td:nth-child(2) { 
-  width: 6mm !important; 
-  text-align: center !important; 
-}
-
-.task-table th:nth-child(3), .task-table td:nth-child(3) { 
-  width: 4mm !important; 
-  text-align: center !important; 
-}
-
-.task-table th:nth-child(4), .task-table td:nth-child(4) { 
-  width: 150mm !important; 
-  text-align: left !important;
-  padding-left: 1mm !important;
-}
-
-.task-table th:nth-child(5), .task-table td:nth-child(5) { 
-  width: 8mm !important; 
-  text-align: center !important; 
-}
-
-.task-table th:nth-child(6), .task-table td:nth-child(6) { 
-  width: 8mm !important; 
-  text-align: center !important; 
-}
-
-.task-table th:nth-child(7), .task-table td:nth-child(7) { 
-  width: 8mm !important; 
-  text-align: center !important; 
-}
-
-.task-table th:nth-child(8), .task-table td:nth-child(8) { 
-  width: 6mm !important; 
-  text-align: center !important; 
-}
-
-.task-table th:nth-child(9), .task-table td:nth-child(9) { 
-  width: 4mm !important; 
-  text-align: center !important; 
 }
 
 /* MAIN SCHEDULE TABLE */
@@ -725,9 +753,8 @@ table:not(.task-table) tr:has(.completed-task) td input:not(.completed-task) {
 /* MOBILE RESPONSIVE - MAINTAIN A4 SIZE */
 @media (max-width: 768px) {
   html, body {
-    width: 210mm !important;
-    height: 297mm !important;
-    min-width: 210mm !important;
+    width: 100vw !important;
+    height: 100vh !important;
     overflow-x: auto !important;
   }
   
