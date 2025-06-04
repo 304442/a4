@@ -122,8 +122,7 @@
             <p class="bold text-center mb-1 editable workout-day-name" @dblclick="editField($event, 'workoutDayName', day.name, dayIdx)" x-text="day.name"></p>
             <template x-for="(ex, exIdx) in day.exercises" :key="ex.id || exIdx">
               <div class="exercise">
-                <div class="exercise-name editable" :title="ex.prefix + ex.name" @dblclick="editField($event, 'exerciseName', ex.name, {dayIdx, exIdx})">
-                  <span class="editable" @dblclick.stop="editField($event, 'exercisePrefix', ex.prefix, {dayIdx, exIdx})" x-text="ex.prefix"></span>
+                <div class="exercise-name editable" :title="ex.name" @dblclick="editField($event, 'exerciseName', ex.name, {dayIdx, exIdx})">
                   <span x-text="ex.name"></span>:
                 </div>
                 <div class="exercise-inputs">
