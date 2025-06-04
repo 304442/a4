@@ -105,24 +105,24 @@ td.dc:nth-child(4n+5), th.dc:nth-child(4n+5) { border-right: 1px solid #ccc; }
   border-spacing: 0 !important;
 }
 
-/* Task Table Column Widths - SUPER WIDE TASK COLUMN */
+/* Task Table Column Widths - MAXIMUM WIDTH FOR TASK DESCRIPTION */
 .task-table th:nth-child(1), .task-table td:nth-child(1) { 
-  width: 4mm !important; 
+  width: 6mm !important; 
   text-align: center; 
 }
 
 .task-table th:nth-child(2), .task-table td:nth-child(2) { 
-  width: 4mm !important; 
+  width: 6mm !important; 
   text-align: center; 
 }
 
 .task-table th:nth-child(3), .task-table td:nth-child(3) { 
-  width: 4mm !important; 
+  width: 6mm !important; 
   text-align: center; 
 }
 
 .task-table th:nth-child(4), .task-table td:nth-child(4) { 
-  width: 130mm !important; 
+  width: 145mm !important; 
   text-align: left;
   padding-left: 1mm !important;
 }
