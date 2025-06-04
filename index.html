@@ -87,6 +87,17 @@
     <div class="section">
       <h3 class="section-title editable" @dblclick="editField($event, 'sectionTitle', uiConfig.sectionTitles?.tasks, 'tasks')" x-text="uiConfig.sectionTitles?.tasks"></h3>
       <table class="task-table">
+        <colgroup>
+          <col style="width: 6mm;">
+          <col style="width: 6mm;">
+          <col style="width: 4mm;">
+          <col style="width: 150mm;">
+          <col style="width: 8mm;">
+          <col style="width: 8mm;">
+          <col style="width: 8mm;">
+          <col style="width: 6mm;">
+          <col style="width: 4mm;">
+        </colgroup>
         <thead>
           <tr>
             <template x-for="(header, i) in uiConfig.taskHeaders" :key="i">
