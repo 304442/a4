@@ -574,4 +574,131 @@ function plannerApp() {
     async confirmLoadWeek(iw){
       if(!this.isOnline && iw !== this.currentWeek && !this.loadFromLocalStorage(iw).success){ 
         this.showMessage('Week not available offline', true);
-        return;
+        return; 
+      }
+      if(this.editingField)this.saveEdit();
+      if((this.hasSignificantChanges() || this.hasUnsavedLocalChanges) && iw!==this.currentWeek){
+        if(!confirm("Unsaved changes detected. Save before loading new week?")){ 
+          this.loadWeek(iw); 
+          return; 
+        }
+        try{ 
+          await this.saveData(); 
+        } catch(e){
+          console.warn('Save failed before loading week:', e);
+        }
+      }
+      this.loadWeek(iw);
+    },
+
+    hasSignificantChanges:()=>(!lastSavedState||JSON.stringify(this.getCurrentUserData())!==lastSavedState),
+
+    async saveToPocketbase(wId,uD){
+      try{ const ex=await pb.collection('planners').getFirstListItem(`week_id="${wId}"`,{requestKey:null}); await pb.collection('planners').update(ex.id,uD,{requestKey:null}); }
+      catch(e){ if(e.status===404){ await pb.collection('planners').create(uD,{requestKey:null}); } else{ throw e; }}
+    },
+
+    async deleteFromPocketbase(wId){
+      try{ const ex=await pb.collection('planners').getFirstListItem(`week_id="${wId}"`,{requestKey:null}); await pb.collection('planners').delete(ex.id,{requestKey:null}); }
+      catch(e){ if(e.status!==404){ throw e; }}
+    },
+
+    async fetchSavedWeeks(){
+      if (!this.isOnline) { 
+        // Load from local storage manifest
+        try {
+          const manifest = JSON.parse(localStorage.getItem(this.localStoragePrefix + 'manifest') || '{}');
+          const localWeeks = Object.entries(manifest).map(([weekId, data]) => ({
+            iso_week: weekId,
+            dateRange: this.getWeekDateRange(this.parseISOWeek(weekId)),
+            source: 'local',
+            isCurrent: weekId === this.getCurrentIsoWeek(),
+            hasUnsavedChanges: data.hasUnsavedChanges
+          }));
+          this.savedWeeks = localWeeks.sort((a, b) => {
+            if (a.isCurrent && !b.isCurrent) return -1;
+            if (!a.isCurrent && b.isCurrent) return 1;
+            return b.iso_week.localeCompare(a.iso_week);
+          });
+        } catch (error) {
+          console.error('Failed to load local weeks:', error);
+          this.savedWeeks = [];
+        }
+        return; 
+      }
+      
+      const wm=new Map(),ci=this.getCurrentIsoWeek();
+      const addW=(i,dr,s,isc,hasUnsaved=false)=>{ if(!i||typeof i!=='string'||!i.match(/^\d{4}-W\d{1,2}$/))return; let ndr=dr; if(!ndr){try{ndr=this.getWeekDateRange(this.parseISOWeek(i));}catch(e){ndr="Invalid Date";}} wm.set(i,{iso_week:i,dateRange:ndr,source:s,isCurrent:isc,hasUnsavedChanges:hasUnsaved}); };
+      try{addW(ci,this.getWeekDateRange(this.parseISOWeek(ci)),'current',true,this.hasUnsavedLocalChanges);}catch(e){addW(ci,"Error",'current',true,this.hasUnsavedLocalChanges);}
+      
+      try {
+        const rs=await pb.collection('planners').getFullList({sort:'-week_id',fields:'week_id,date_range',requestKey:null});
+        rs.forEach(r=>addW(r.week_id,r.date_range,'pocketbase',r.week_id===ci));
+      } catch (error) {
+        console.warn('Failed to fetch saved weeks from server:', error);
+      }
+      
+      // Also include local-only weeks
+      try {
+        const manifest = JSON.parse(localStorage.getItem(this.localStoragePrefix + 'manifest') || '{}');
+        Object.entries(manifest).forEach(([weekId, data]) => {
+          if (!wm.has(weekId)) {
+            addW(weekId, this.getWeekDateRange(this.parseISOWeek(weekId)), 'local', weekId === ci, data.hasUnsavedChanges);
+          }
+        });
+      } catch (error) {
+        console.error('Failed to include local weeks:', error);
+      }
+      
+      this.savedWeeks=Array.from(wm.values()).sort((a,b)=>{ if(a.isCurrent&&!b.isCurrent)return-1; if(!a.isCurrent&&b.isCurrent)return 1; return b.iso_week.localeCompare(a.iso_week); });
+    },
+
+    async deleteWeek(iw){
+      if (this.isOnline) {
+        try {
+          await this.deleteFromPocketbase(iw);
+        } catch (error) {
+          console.warn('Failed to delete from server:', error);
+        }
+      }
+      
+      // Always clear local storage
+      this.clearLocalStorage(iw);
+      
+      // Remove from sync queue if present
+      this.syncQueue = this.syncQueue.filter(item => item.weekId !== iw);
+      try {
+        localStorage.setItem(this.localStoragePrefix + 'syncQueue', JSON.stringify(this.syncQueue));
+      } catch (error) {
+        console.error('Failed to update sync queue:', error);
+      }
+      
+      this.savedWeeks=this.savedWeeks.filter(w=>w.iso_week!==iw);
+      if(this.currentWeek===iw){ 
+        this.loadWeek(this.getCurrentIsoWeek(),true); 
+      }
+    },
+
+    async confirmDeleteWeek(iw){
+      if(confirm(`Delete week ${iw}? This will remove both local and server data.`)){ 
+        await this.deleteWeek(iw); 
+      }
+    },
+
+    getCurrentIsoWeek:()=>{const d=new Date();d.setUTCHours(0,0,0,0);d.setUTCDate(d.getUTCDate()+4-(d.getUTCDay()||7));const y=d.getUTCFullYear();const w1=new Date(Date.UTC(y,0,1));return`${y}-W${Math.ceil((((d.getTime()-w1.getTime())/864e5)+1)/7).toString().padStart(2,'0')}`;},
+    parseISOWeek(iso){const m=iso.match(/^(\d{4})-W(\d{1,2})$/);const y=parseInt(m[1]),w=parseInt(m[2]);const s=new Date(Date.UTC(y,0,1+(w-1)*7));const d=s.getUTCDay()||7;const sd=s;if(d<=4)sd.setUTCDate(s.getUTCDate()-d+1);else sd.setUTCDate(s.getUTCDate()+8-d);const thu=new Date(sd.valueOf());thu.setUTCDate(thu.getUTCDate()+3);if(thu.getUTCFullYear()!==y&&w<50){sd.setUTCFullYear(y-1);sd.setUTCDate(sd.getUTCDate()+((new Date(Date.UTC(y-1,0,4)).getUTCDay()||7)<=4?0:7));}else if(thu.getUTCFullYear()!==y&&w>2){sd.setUTCFullYear(y+1);sd.setUTCDate(sd.getUTCDate()-((new Date(Date.UTC(y+1,0,4)).getUTCDay()||7)<=4?0:7));}return sd;},
+    getWeekDateRange(mon){const s=new Date(mon.getTime()),e=new Date(mon.getTime());e.setUTCDate(s.getUTCDate()+6);return`${this.formatDate(s)}-${this.formatDate(e)}`;},
+    formatDate(d){return`${(d.getUTCMonth()+1).toString().padStart(2,'0')}/${d.getUTCDate().toString().padStart(2,'0')}`;},
+
+    showMessage(msg,isErr=false){
+        if (typeof Alpine !== 'undefined' && Alpine.store && Alpine.store('globals')?.suppressMessages) return;
+        this.notificationMessage=msg; this.showNotification=true;
+        const el=document.getElementById('notification');
+        if(el){ el.classList.remove('status-error','status-success'); el.classList.add(isErr?'status-error':'status-success');}
+        clearTimeout(this.notificationTimeout);
+        this.notificationTimeout=setTimeout(()=>this.showNotification=false,isErr?8000:5000);
+    },
+
+    calculateScores(){const dt={mon:0,tue:0,wed:0,thu:0,fri:0,sat:0,sun:0};const dK=Object.keys(dt);if(!this.schedule || this.schedule.length === 0) return;this.schedule.forEach(s=>{if(s.name==='TOTAL')return;s.activities.forEach(a=>{let as=0;Object.entries(a.days||{}).forEach(([d,dat])=>{const v=Number(dat.value)||0;if(v>0&&(dat.max||0)>0){dt[d]=(dt[d]||0)+v;as+=v;}});a.score=as;a.streaks=a.streaks||{current:0,longest:0};const ti=this.currentDay===0?6:this.currentDay-1;let cs=0;for(let i=0;i<7;i++){const dio=(ti-i+7)%7;const dk=dK[dio];if(a.days&&a.days[dk]&&(Number(a.days[dk].value)||0)>0&&(a.days[dk].max||0)>0)cs++;else if(a.days&&a.days[dk])break;}a.streaks.current=cs;a.streaks.longest=Math.max(a.streaks.longest||0,cs);});});const ts=this.schedule.find(s=>s.name==='TOTAL');if(ts?.activities?.[0]){const ta=ts.activities[0];let gts=0,gms=0;Object.entries(dt).forEach(([d,t])=>{if(ta.days?.[d])ta.days[d].value=t;gts+=t;});this.schedule.forEach(s=>{if(s.name!=='TOTAL')s.activities.forEach(act=>gms+=(act.maxScore||0));});ta.score=gts;ta.maxScore=gms;}}
+  };
+}
