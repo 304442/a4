@@ -135,6 +135,7 @@ tr:has(td.bold:not(:empty)):not(:first-child) { border-top: 2px solid #f0f0f0; }
 .progress-high { background-color: #28a745; }
 
 /* Task Table Columns */
+.section table { table-layout: fixed; width: 100%; }
 .section table th:nth-child(1), .section table td:nth-child(1), 
 .section table th:nth-child(2), .section table td:nth-child(2), 
 .section table th:nth-child(3), .section table td:nth-child(3), 
@@ -143,7 +144,8 @@ tr:has(td.bold:not(:empty)):not(:first-child) { border-top: 2px solid #f0f0f0; }
 .section table th:nth-child(6), .section table td:nth-child(6), 
 .section table th:nth-child(7), .section table td:nth-child(7) { width: 8mm; text-align: center; }
 .section table th:nth-child(8), .section table td:nth-child(8) { width: 6mm; text-align: center; }
-.section table th:nth-child(4), .section table td:nth-child(4) { width: auto; text-align: left; }
+.section table th:nth-child(4), .section table td:nth-child(4) { text-align: left; }
+.section table td:nth-child(4) input { width: 100%; }
 
 /* Responsive */
 @media screen and (max-width: 1200px) {
