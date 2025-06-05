@@ -93,7 +93,7 @@ th.editable:hover { background-color: #d4edda !important; }
 td.editable:hover { background-color: #f0f7ff !important; }
 
 /* Dropdown System */
-.dropdown { position: fixed; top: 50px; right: 20px; background-color: white; border-radius: 3px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); font-size: 7pt; z-index: 1000; display: none; }
+.dropdown { position: absolute; background-color: white; border-radius: 3px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); font-size: 7pt; z-index: 1000; display: none; top: 100%; left: 0; min-width: 120px; }
 .dropdown--show { display: block; }
 .dropdown__content { max-height: 150px; overflow-y: auto; }
 .dropdown__item { padding: 3px 6px; cursor: pointer; white-space: nowrap; }
