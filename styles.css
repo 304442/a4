@@ -54,8 +54,8 @@ tr:has(.input:focus) td { background-color: #f0f7ff !important; }
 tr:has(.task-done) td, tr:has(.task-done) td input:not(.task-done) { text-decoration: line-through; color: #6c757d; }
 
 /* Layout */
-.section { margin-top: 2mm; border-radius: 2px; background-color: #fafafa; padding: 1mm; }
-.title { margin-bottom: 1mm; font-size: 8pt; font-weight: bold; position: relative; display: flex; align-items: center; color: #2d3748; text-transform: uppercase; letter-spacing: 0.5px; }
+.section { margin-top: 0.5mm; border-radius: 2px; background-color: #fafafa; padding: 1mm; }
+.title { margin-bottom: 0mm; font-size: 8pt; font-weight: bold; position: relative; display: flex; align-items: center; color: #2d3748; text-transform: uppercase; letter-spacing: 0.5px; }
 .title--inline { display: flex; align-items: center; flex-wrap: wrap; gap: 2mm; }
 .inline { display: inline-flex; align-items: center; margin-right: 4mm; margin-bottom: 1mm; white-space: nowrap; }
 .label { font-weight: bold; margin-right: 1mm; cursor: pointer; font-size: 7pt; }
