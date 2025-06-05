@@ -1015,6 +1015,21 @@ function plannerApp() {
       return `${(date.getUTCMonth() + 1).toString().padStart(2, '0')}/${date.getUTCDate().toString().padStart(2, '0')}`;
     },
 
+    // Format dates to MM/DD for display
+    formatDateForInput(dateString) {
+      if (!dateString) return '';
+      const date = new Date(dateString + 'T00:00:00');
+      return `${(date.getMonth() + 1).toString().padStart(2, '0')}/${date.getDate().toString().padStart(2, '0')}`;
+    },
+
+    // Parse MM/DD back to full date (assumes current year)
+    parseDateFromInput(mmddString) {
+      if (!mmddString || !mmddString.includes('/')) return '';
+      const [month, day] = mmddString.split('/');
+      const currentYear = new Date().getFullYear();
+      return `${currentYear}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+    },
+
     showMessage(message) {
       this.notificationMessage = message;
       this.showNotification = true;
