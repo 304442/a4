@@ -40,16 +40,16 @@
     <table>
       <thead>
         <tr>
-          <th style="width:18mm" class="editable" @dblclick="editField($event, 'header', uiConfig.mainTableHeaders?.[0], 'main', 0)" x-text="uiConfig.mainTableHeaders?.[0]"></th>
-          <th style="width:18mm" class="editable" @dblclick="editField($event, 'header', uiConfig.mainTableHeaders?.[1], 'main', 1)" x-text="uiConfig.mainTableHeaders?.[1]"></th>
-          <th class="ac editable" @dblclick="editField($event, 'header', uiConfig.mainTableHeaders?.[2], 'main', 2)" x-text="uiConfig.mainTableHeaders?.[2]"></th>
+          <th style="width:18mm">T</th>
+          <th style="width:18mm">D</th>
+          <th class="ac">ACTIVITY</th>
           <template x-for="(dayKey, i) in ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN']" :key="dayKey">
-            <th class="dc editable" :class="{'current-day': i === (currentDay || 7) - 1}" @dblclick="editField($event, 'header', uiConfig.dayHeaders?.[i], 'day', i)" x-text="uiConfig.dayHeaders?.[i]"></th>
-            <th class="dc editable" :class="{'current-day': i === (currentDay || 7) - 1}" @dblclick="editField($event, 'header', uiConfig.maxHeaders?.[i], 'max', i)" x-text="uiConfig.maxHeaders?.[i]"></th>
+            <th class="dc" :class="{'current-day': i === (currentDay || 7) - 1}" x-text="['M', 'T', 'W', 'T', 'F', 'S', 'S'][i]"></th>
+            <th class="dc" :class="{'current-day': i === (currentDay || 7) - 1}">MAX</th>
           </template>
-          <th class="dc editable" @dblclick="editField($event, 'header', uiConfig.mainTableHeaders?.[3], 'main', 3)" x-text="uiConfig.mainTableHeaders?.[3]"></th>
-          <th class="dc editable" @dblclick="editField($event, 'header', uiConfig.mainTableHeaders?.[4], 'main', 4)" x-text="uiConfig.mainTableHeaders?.[4]"></th>
-          <th class="dc editable" @dblclick="editField($event, 'header', uiConfig.mainTableHeaders?.[5], 'main', 5)" x-text="uiConfig.mainTableHeaders?.[5]"></th>
+          <th class="dc">S</th>
+          <th class="dc">M</th>
+          <th class="dc">🔥</th>
         </tr>
       </thead>
       <tbody>
@@ -69,7 +69,7 @@
                 </td>
                 <td class="dc editable" :class="{'current-day': i === (currentDay || 7) - 1}" @dblclick="editField($event, 'maxValue', activity.days?.[day]?.max || '', {sIdx, aIdx, day})" x-text="activity.days?.[day]?.max || ''"></td>
               </template>
-              <td class="dc" :class="getScoreClass(activity)">
+              <td class="dc">
                 <input type="number" class="input" x-model.number="activity.score" readonly>
               </td>
               <td class="dc editable" @dblclick="editField($event, 'maxScore', activity.maxScore, {sIdx, aIdx})" x-text="activity.maxScore"></td>
@@ -80,7 +80,7 @@
           </template>
           <tr x-if="section.name === 'TOTAL' && section.activities?.length > 0 && section.activities[0].maxScore > 0">
             <td colspan="19" class="progress">
-              <div class="progress__bar" :style="getProgressStyle(section.activities[0])" :class="getProgressClass(section.activities[0])"></div>
+              <div class="progress__bar" :style="`width: ${section.activities[0].maxScore > 0 ? Math.min(100, (section.activities[0].score / section.activities[0].maxScore) * 100) : 0}%`" :class="section.activities[0].maxScore > 0 ? (section.activities[0].score / section.activities[0].maxScore < 0.33 ? 'progress--low' : section.activities[0].score / section.activities[0].maxScore < 0.66 ? 'progress--medium' : 'progress--high') : ''"></div>
             </td>
           </tr>
         </template>
@@ -89,18 +89,24 @@
 
     <!-- Tasks Section -->
     <div class="section">
-      <h3 class="title editable" @dblclick="editField($event, 'sectionTitle', uiConfig.sectionTitles?.tasks, 'tasks')" x-text="uiConfig.sectionTitles?.tasks"></h3>
+      <h3 class="title">TASKS & PROJECT MANAGEMENT</h3>
       <table>
         <thead>
           <tr>
-            <template x-for="(header, i) in uiConfig.taskHeaders" :key="i">
-              <th class="editable" @dblclick="editField($event, 'header', header, 'task', i)" x-text="header"></th>
-            </template>
+            <th>#</th>
+            <th>P</th>
+            <th>T</th>
+            <th>Task</th>
+            <th>Start</th>
+            <th>Expected</th>
+            <th>Actual</th>
+            <th>Delay</th>
+            <th>✓</th>
           </tr>
         </thead>
         <tbody>
           <template x-for="(task, i) in tasks" :key="task.id || i">
-            <tr :class="getTaskRowClass(task)">
+            <tr :class="[task.completed === '✓' ? 'green' : '', getTaskDelay(task) > 0 ? 'red' : getTaskDelay(task) < 0 ? 'blue' : ''].filter(Boolean).join(' ')">
               <td><input type="text" class="input" x-model="task.num" :placeholder="i + 1" @change="saveData()"></td>
               <td><input type="text" class="input" x-model="task.priority" placeholder="A" @change="saveData()"></td>
               <td><input type="text" class="input" x-model="task.tag" placeholder="W" @change="saveData()"></td>
@@ -108,7 +114,7 @@
               <td><input type="date" class="input input--date" x-model="task.startDate" @change="calculateTaskDelay(task); saveData();"></td>
               <td><input type="date" class="input input--date" x-model="task.expectedDate" @change="calculateTaskDelay(task); saveData();"></td>
               <td><input type="date" class="input input--date" x-model="task.actualDate" @change="calculateTaskDelay(task); saveData();"></td>
-              <td class="dc cell cell--bold" :class="getDelayClass(task)">
+              <td class="dc cell cell--bold" :class="getTaskDelay(task) < 0 ? 'green' : getTaskDelay(task) > 0 ? 'red' : 'yellow'">
                 <span x-text="formatDelay(getTaskDelay(task))"></span>
               </td>
               <td><input type="text" class="input" x-model="task.completed" @click.prevent="toggleTaskCompletion(task)" :class="{'task-done': task.completed === '✓'}" placeholder="☐"></td>
@@ -120,7 +126,7 @@
 
     <!-- Workout Section -->
     <div class="section">
-      <h3 class="title editable" @dblclick="editField($event, 'sectionTitle', uiConfig.sectionTitles?.workout, 'workout')" x-text="uiConfig.sectionTitles?.workout"></h3>
+      <h3 class="title">WORKOUT</h3>
       <div class="grid">
         <template x-for="(day, dayIdx) in workoutPlan" :key="day.id || dayIdx">
           <div class="p-1 workout-day-card">
@@ -147,7 +153,7 @@
 
     <!-- Other Sections -->
     <div class="section">
-      <h3 class="title editable" @dblclick="editField($event, 'sectionTitle', uiConfig.sectionTitles?.meals, 'meals')" x-text="uiConfig.sectionTitles?.meals"></h3>
+      <h3 class="title">MEALS</h3>
       <ul class="list text-xs">
         <template x-for="(meal, i) in meals" :key="meal.id || i">
           <li class="list-item">
@@ -159,8 +165,8 @@
     </div>
 
     <div class="section">
-      <h3 class="title title--inline editable" @dblclick="editField($event, 'sectionTitle', uiConfig.sectionTitles?.grocery, 'grocery')">
-        <span x-text="uiConfig.sectionTitles?.grocery"></span>
+      <h3 class="title title--inline">
+        <span>GROCERY</span>
         <input type="text" class="input input--inline" x-model="groceryBudget" :placeholder="budgetDefault" @change="saveData();">
       </h3>
       <ul class="list text-xs">
@@ -174,8 +180,8 @@
     </div>
 
     <div class="section">
-      <h3 class="title title--inline editable" @dblclick="editField($event, 'sectionTitle', uiConfig.sectionTitles?.measurements, 'measurements')">
-        <span x-text="uiConfig.sectionTitles?.measurements"></span>
+      <h3 class="title title--inline">
+        <span>BODY</span>
         <template x-for="(m, i) in bodyMeasurements" :key="m.id || i">
           <span class="inline">
             <span class="editable label" @dblclick="editField($event, 'measurementName', m.name, i)" x-text="m.name + ':'"></span>
@@ -186,8 +192,8 @@
     </div>
 
     <div class="section">
-      <h3 class="title title--inline editable" @dblclick="editField($event, 'sectionTitle', uiConfig.sectionTitles?.financials, 'financials')">
-        <span x-text="uiConfig.sectionTitles?.financials"></span>
+      <h3 class="title title--inline">
+        <span>FINANCIAL</span>
         <template x-for="(item, i) in financials" :key="item.id || i">
           <span class="inline">
             <span class="editable label" @dblclick="editField($event, 'financialName', item.name, i)" x-text="item.name + ':'"></span>
