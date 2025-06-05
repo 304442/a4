@@ -29,8 +29,6 @@ function plannerApp() {
     tasks: [], 
     workoutPlan: [], 
     meals: [],
-    groceryBudget: '', 
-    budgetDefault: '', 
     groceryList: [], 
     bodyMeasurements: [], 
     financials: [],
@@ -124,7 +122,7 @@ function plannerApp() {
           },
           workout: [], 
           meals: [], 
-          grocery: { budget_default: '', categories: [] }, 
+          grocery: { categories: [] }, 
           measurements: [], 
           financials: [], 
           city_default: "London"
@@ -154,8 +152,6 @@ function plannerApp() {
 
       this.workoutPlan = this.buildWorkoutFromTemplate(s.workout || []);
       this.meals = this.ensureIds([...(s.meals || [])]);
-      this.groceryBudget = s.grocery?.budget_default || '';
-      this.budgetDefault = s.grocery?.budget_default || '';
       this.groceryList = this.ensureIds([...(s.grocery?.categories || [])]);
       this.bodyMeasurements = this.ensureIds([...(s.measurements || [])]);
       this.financials = this.ensureIds([...(s.financials || [])]);
@@ -327,7 +323,6 @@ function plannerApp() {
     },
 
     overlayGroceryData(groceryData) {
-      if (groceryData.budget) this.groceryBudget = groceryData.budget;
       if (groceryData.categories) this.overlayArray(this.groceryList, groceryData.categories);
     },
 
@@ -390,10 +385,7 @@ function plannerApp() {
 
     extractGroceryData() {
       const categories = this.extractUserItems(this.groceryList, ['name', 'items']);
-      return {
-        budget: this.groceryBudget || null,
-        categories: categories.length > 0 ? categories : null
-      };
+      return categories.length > 0 ? { categories } : null;
     },
 
     // Editing
