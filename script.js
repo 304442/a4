@@ -100,23 +100,6 @@ function plannerApp() {
         id: 'fallback', 
         name: 'fallback',
         structure: {
-          ui: {
-            title_default: "Weekly Planner",
-            headers: { 
-              main_table: ['T', 'D', 'ACTIVITY', 'S', 'M', '🔥'], 
-              days: ['M', 'T', 'W', 'T', 'F', 'S', 'S'], 
-              max_cols: Array(7).fill('MAX'), 
-              tasks: ['#', 'P', 'T', 'Task', 'Start', 'Expected', 'Actual', 'Delay', '✓'] 
-            },
-            sections: { 
-              tasks: 'TASKS & PROJECT MANAGEMENT', 
-              workout: 'WORKOUT', 
-              meals: 'MEALS', 
-              grocery: 'GROCERY', 
-              measurements: 'BODY', 
-              financials: 'FINANCIAL' 
-            }
-          },
           prayer_times: [
             { label: 'Q', value: '' },
             { label: 'F', value: '' },
@@ -152,8 +135,7 @@ function plannerApp() {
       this.currentTemplateId = template.id;
       const s = template.structure;
 
-      this.plannerTitle = s.ui?.title_default || 'Weekly Planner';
-
+      this.plannerTitle = s.title_default || 'Weekly Planner';
       this.times = [...(s.prayer_times || [])];
       this.schedule = this.buildScheduleFromTemplate(s.schedule || []);
       this.tasks = Array(s.tasks?.count || 10).fill().map(() => ({
@@ -352,7 +334,7 @@ function plannerApp() {
       return {
         week_id: this.currentWeek,
         template_id: this.currentTemplateId,
-        title: this.plannerTitle !== this.currentTemplate?.structure?.ui?.title_default ? this.plannerTitle : null,
+        title: this.plannerTitle !== this.currentTemplate?.structure?.title_default ? this.plannerTitle : null,
         city: this.city !== this.currentTemplate?.structure?.city_default ? this.city : null,
         date_range: this.dateRange,
         prayer_times: this.times.some(t => t.value) ? this.times : null,
