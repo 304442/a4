@@ -177,32 +177,34 @@
     </div>
 
     <div class="section">
-      <h3 class="title">
-        <span class="bold">BODY</span>
-        <span> - </span>
-        <template x-for="(m, i) in bodyMeasurements" :key="m.id || i">
-          <span>
-            <span class="bold" x-text="m.name + ':'"></span>
-            <input type="text" class="input input--inline" x-model="m.value" :placeholder="m.placeholder" @change="saveData();">
-            <span x-show="i < bodyMeasurements.length - 1">, </span>
-          </span>
-        </template>
-      </h3>
+      <ul class="list text-xs">
+        <li class="list-item">
+          <span class="bold">BODY</span>
+          <template x-for="(m, i) in bodyMeasurements" :key="m.id || i">
+            <span>
+              <span class="bold" x-text="m.name + ':'"></span>
+              <input type="text" class="input input--inline" x-model="m.value" :placeholder="m.placeholder" @change="saveData();">
+              <span x-show="i < bodyMeasurements.length - 1">, </span>
+            </span>
+          </template>
+        </li>
+      </ul>
     </div>
 
     <div class="section">
-      <h3 class="title">
-        <span class="bold">FINANCIAL</span>
-        <span> - </span>
-        <template x-for="(item, i) in financials" :key="item.id || i">
-          <span>
-            <span class="bold" x-text="item.name + ':'"></span>
-            £<input type="text" class="input input--inline" x-model="item.value" :placeholder="item.placeholder" @change="saveData();">
-            <span x-text="item.account"></span>
-            <span x-show="i < financials.length - 1">, </span>
-          </span>
-        </template>
-      </h3>
+      <ul class="list text-xs">
+        <li class="list-item">
+          <span class="bold">FINANCIAL</span>
+          <template x-for="(item, i) in financials" :key="item.id || i">
+            <span>
+              <span class="bold" x-text="item.name + ':'"></span>
+              £<input type="text" class="input input--inline" x-model="item.value" :placeholder="item.placeholder" @change="saveData();">
+              <span x-text="item.account"></span>
+              <span x-show="i < financials.length - 1">, </span>
+            </span>
+          </template>
+        </li>
+      </ul>
     </div>
   </div>
 
