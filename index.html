@@ -29,9 +29,9 @@
           </div>
         </template>
         <span class="ml-1">|</span>
-        <span class="clickable ml-1" x-text="city" @click="toggleSelector($event, 'city')"></span>
+        <span class="clickable ml-1" x-text="city" @click="toggleSelector($event, 'city')" style="position: relative;"></span>
       </div>
-      <div class="text-sm">
+      <div class="text-sm" style="position: relative;">
         <span class="clickable" x-text="currentWeek" @click="toggleSelector($event, 'week')"></span> (<span x-text="dateRange"></span>)
       </div>
     </div>
