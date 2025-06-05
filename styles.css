@@ -1,3 +1,4 @@
+/* Reset & Base */
 * { box-sizing: border-box; margin: 0; padding: 0; font-family: monospace; }
 input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
 input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
@@ -66,6 +67,11 @@ tr:has(.task-done) td, tr:has(.task-done) td input:not(.task-done) { text-decora
 .status { position: fixed; right: 10px; padding: 5px 10px; border-radius: 5px; font-size: 12px; font-weight: bold; z-index: 1000; }
 .status--save { bottom: 10px; }
 .status--sync { bottom: 40px; }
+.status-saving { background-color: #fff3cd; color: #856404; }
+.status-saved { background-color: #d4edda; color: #155724; }
+.status-error { background-color: #f8d7da; color: #721c24; }
+.status-pending { background-color: #fff3cd; color: #856404; }
+.status-synced { background-color: #d4edda; color: #155724; }
 .notification { position: fixed; top: 20px; right: 20px; padding: 10px 15px; border-radius: 5px; font-size: 12px; font-weight: bold; z-index: 1100; background-color: #f8d7da; color: #721c24; display: none; }
 .notification--show { display: block; animation: fadeOut 5s forwards; }
 @keyframes fadeOut { 0%, 70% { opacity: 1; } 100% { opacity: 0; } }
@@ -73,6 +79,7 @@ tr:has(.task-done) td, tr:has(.task-done) td input:not(.task-done) { text-decora
 /* Typography */
 .text-xs { font-size: 7pt; line-height: 1.2; }
 .text-sm { font-size: 8pt; line-height: 1.2; }
+.text-center { text-align: center; }
 .bold { font-weight: bold; }
 .cell { font-size: 6pt; text-align: center; }
 .cell--bold { font-weight: bold; }
@@ -126,7 +133,7 @@ td.editable:hover { background-color: #f0f7ff !important; }
 .progress--medium { background-color: #ffc107; }
 .progress--high { background-color: #28a745; }
 
-/* Task Table */
+/* Task Table Specific Columns */
 .section table { table-layout: fixed; width: 100%; }
 .section table th:nth-child(1), .section table td:nth-child(1), 
 .section table th:nth-child(2), .section table td:nth-child(2), 
