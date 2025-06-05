@@ -895,121 +895,210 @@ const DEFAULT_COLLECTIONS = [
 const DEFAULT_SEEDS = {
     templates: [
         {
-            name: "enhanced-weekly-v3",
-            description: "Enhanced weekly planner with project management - normalized",
+            name: "complete-weekly-v4",
+            description: "Complete enhanced weekly planner with all activities - 247 points",
             is_default: true,
-            version: 3,
+            version: 4,
             structure: {
                 ui: {
                     title_default: "My Weekly Plan & Projects",
                     headers: {
-                        main_table: ['TIME', 'DAY', 'ACTIVITY', 'SCR', 'MAX', '🔥'],
-                        days: ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'],
-                        max_cols: Array(7).fill('MAX'),
-                        tasks: ['№', '🔥', '🏷️', '✏️ Task/Project', '📅 Start', '🎯 Due', '✅ Done', '⏰ Delay', '✓']
+                        main_table: ["TIME", "DAY", "ACTIVITY", "SCR", "MAX", "🔥"],
+                        days: ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"],
+                        max_cols: ["MAX", "MAX", "MAX", "MAX", "MAX", "MAX", "MAX"],
+                        tasks: ["№", "🔥", "🏷️", "Task/Project", "📅 Start", "🎯 Due", "✅ Done", "⏰ Delay", "✓"]
                     },
                     sections: {
-                        tasks: 'TASKS & PROJECT MANAGEMENT',
-                        workout: 'WORKOUT PLAN',
-                        meals: 'MEAL PREP',
-                        grocery: 'GROCERY LIST',
-                        measurements: 'BODY MEASUREMENTS',
-                        financials: 'MONTH/1ST: FINANCIAL'
+                        tasks: "TASKS & PROJECT MANAGEMENT",
+                        workout: "WORKOUT PLAN",
+                        meals: "MEAL PREP",
+                        grocery: "GROCERY LIST",
+                        measurements: "BODY MEASUREMENTS",
+                        financials: "MONTH/1ST: FINANCIAL"
                     }
                 },
                 prayer_times: [
-                    { label: 'Q', value: '' }, { label: 'F', value: '' }, { label: 'D', value: '' },
-                    { label: 'A', value: '' }, { label: 'M', value: '' }, { label: 'I', value: '' }
+                    { label: "Q", value: "4:30AM" },
+                    { label: "F", value: "5:30AM" },
+                    { label: "D", value: "12:30PM" },
+                    { label: "A", value: "3:45PM" },
+                    { label: "M", value: "6:30PM" },
+                    { label: "I", value: "8:00PM" }
                 ],
                 schedule: [
                     {
-                        name: 'QIYAM',
+                        name: "QIYAM",
                         activities: [
-                            { name: 'DAILY: Wakeup early', max_per_day: 1, max_score: 7 },
-                            { name: 'DAILY: Qiyam/Tahajjud', max_per_day: 1, max_score: 7 },
-                            { name: 'DAILY: Nutty Pudding', max_per_day: 1, max_score: 7 }
+                            { name: "DAILY: Wakeup early", max_per_day: 1, max_score: 7 },
+                            { name: "DAILY: Qiyam/Tahajjud", max_per_day: 1, max_score: 7 },
+                            { name: "DAILY: Nutty Pudding", max_per_day: 1, max_score: 7 }
                         ]
                     },
                     {
-                        name: 'FAJR',
+                        name: "FAJR",
                         activities: [
-                            { name: 'DAILY: Fajr prayer', max_per_day: 1, max_score: 7 },
-                            { name: 'DAILY: Quran - 1 Juz', max_per_day: 1, max_score: 7 },
-                            { name: 'DAILY: 5min Cold Shower', max_per_day: 1, max_score: 7 }
+                            { name: "DAILY: Fajr prayer", max_per_day: 1, max_score: 7 },
+                            { name: "DAILY: Quran - 1 Juz", max_per_day: 1, max_score: 7 },
+                            { name: "DAILY: 5min Cold Shower", max_per_day: 1, max_score: 7 }
                         ]
                     },
                     {
-                        name: '7AM - 9AM',
+                        name: "7AM - 9AM",
                         activities: [
-                            { name: 'MON/THU: COMMUTE', days: ['mon', 'thu'], max_per_day: 1, max_score: 2 },
-                            { name: 'TUE/WED/FRI: Reading/Study', days: ['tue', 'wed', 'fri'], max_per_day: 1, max_score: 3 },
-                            { name: 'SAT: Errands, Grocery, Meal prep', days: ['sat'], max_per_day: 3, max_score: 3 },
-                            { name: 'SUN: House cleaning, laundry', days: ['sun'], max_per_day: 2, max_score: 2 }
+                            { name: "MON/THU: COMMUTE", days: ["mon", "thu"], max_per_day: 1, max_score: 2 },
+                            { name: "TUE/WED/FRI: Reading/Study (book/course/skill)", days: ["tue", "wed", "fri"], max_per_day: 1, max_score: 3 },
+                            { name: "SAT: Errands, Grocery shopping, Meal prep", days: ["sat"], max_per_day: 3, max_score: 3 },
+                            { name: "SUN: House cleaning, laundry", days: ["sun"], max_per_day: 2, max_score: 2 }
                         ]
                     },
                     {
-                        name: 'TOTAL',
+                        name: "9AM - 5PM",
                         activities: [
-                            { name: 'DAILY POINTS', max_per_day: 0, max_score: 0 }
+                            { name: "MON-FRI: Work", days: ["mon", "tue", "wed", "thu", "fri"], max_per_day: 1, max_score: 5 },
+                            { name: "DAILY: ZeroInbox (E1, E2, E3, E4, LI, Slack)", max_per_day: 1, max_score: 30 },
+                            { name: "SAT/SUN: Nature time / Outdoor Activity / Adventure", days: ["sat", "sun"], max_per_day: 1, max_score: 2 }
+                        ]
+                    },
+                    {
+                        name: "DHUHR",
+                        activities: [
+                            { name: "DAILY: Dhuhr prayer", max_per_day: 1, max_score: 7 },
+                            { name: "TUE/WED/FRI: Sun walk (30-45 minutes)", days: ["tue", "wed", "fri"], max_per_day: 1, max_score: 3 },
+                            { name: "FRI: £10 Sadaqa", days: ["fri"], max_per_day: 1, max_score: 1 }
+                        ]
+                    },
+                    {
+                        name: "ASR",
+                        activities: [
+                            { name: "DAILY: Asr prayer", max_per_day: 1, max_score: 7 }
+                        ]
+                    },
+                    {
+                        name: "5PM - 6:30PM",
+                        activities: [
+                            { name: "MON/THU: COMMUTE", days: ["mon", "thu"], max_per_day: 1, max_score: 2 },
+                            { name: "TUE/WED/FRI: Workout", days: ["tue", "wed", "fri"], max_per_day: 1, max_score: 3 },
+                            { name: "TUE/WED/FRI: Third Meal", days: ["tue", "wed", "fri"], max_per_day: 1, max_score: 3 }
+                        ]
+                    },
+                    {
+                        name: "6:30PM - ISHA",
+                        activities: [
+                            { name: "MON/TUE/WED/THU: Personal", days: ["mon", "tue", "wed", "thu"], max_per_day: 1, max_score: 4 },
+                            { name: "DAILY: Family/Friends/Date calls(M, WA, Phone)", max_per_day: 1, max_score: 12 },
+                            { name: "FRI/SAT/SUN: Family/Friends/Date visits/outings/activities", days: ["fri", "sat", "sun"], max_per_day: 1, max_score: 9 }
+                        ]
+                    },
+                    {
+                        name: "MAGHRIB",
+                        activities: [
+                            { name: "DAILY: Maghrib prayer", max_per_day: 1, max_score: 7 },
+                            { name: "DAILY: Super Veggie", max_per_day: 1, max_score: 7 }
+                        ]
+                    },
+                    {
+                        name: "ISHA",
+                        activities: [
+                            { name: "DAILY: Isha prayer", max_per_day: 1, max_score: 7 },
+                            { name: "DAILY: Sleep early", max_per_day: 1, max_score: 7 }
+                        ]
+                    },
+                    {
+                        name: "ALLDAY",
+                        activities: [
+                            { name: "DAILY: No Doomscrolling; (FB, YTB, LKDN, & IG)", max_per_day: 4, max_score: 28 },
+                            { name: "DAILY: No Fap; (P, & M)", max_per_day: 2, max_score: 14 },
+                            { name: "DAILY: No Processed; (Sugar, RefinedFlour, SeedOils, Soda, FastFood)", max_per_day: 5, max_score: 35 },
+                            { name: "MON/THU: Fasting", days: ["mon", "thu"], max_per_day: 1, max_score: 2 },
+                            { name: "DAILY: Expense Tracker <25", max_per_day: 0, max_score: 0 }
+                        ]
+                    },
+                    {
+                        name: "TOTAL",
+                        activities: [
+                            { name: "DAILY POINTS", max_per_day: 0, max_score: 247 }
                         ]
                     }
                 ],
                 tasks: {
                     count: 15,
-                    fields: ['num', 'priority', 'tag', 'description', 'start_date', 'expected_date', 'actual_date', 'completed']
+                    fields: ["num", "priority", "tag", "description", "start_date", "expected_date", "actual_date", "completed"]
                 },
                 workout: [
                     {
-                        name: 'TUESDAY',
+                        name: "TUESDAY",
                         exercises: [
-                            { name: 'Incline Dumbbell Press', default_weight: 30, default_sets: 3, default_reps: 12 },
-                            { name: 'Barbell Squats', default_weight: 80, default_sets: 3, default_reps: 8 },
-                            { name: 'DB Chest-Supported Row', default_weight: 25, default_sets: 3, default_reps: 12 }
+                            { name: "Incline Dumbbell Press", default_weight: 30, default_sets: 3, default_reps: 12 },
+                            { name: "Barbell Squats", default_weight: 80, default_sets: 3, default_reps: 8 },
+                            { name: "DB Chest-Supported Row", default_weight: 25, default_sets: 3, default_reps: 12 },
+                            { name: "Leg Curls", default_weight: 40, default_sets: 3, default_reps: 12 },
+                            { name: "SS: Incline DB Curls", default_weight: 15, default_sets: 3, default_reps: 12 },
+                            { name: "SS: Tricep Extensions", default_weight: 20, default_sets: 3, default_reps: 12 }
                         ]
                     },
                     {
-                        name: 'WEDNESDAY',
+                        name: "WEDNESDAY",
                         exercises: [
-                            { name: 'Barbell Bench Press', default_weight: 70, default_sets: 3, default_reps: 6 },
-                            { name: 'Romanian Deadlift', default_weight: 90, default_sets: 3, default_reps: 8 },
-                            { name: 'Lat Pulldown', default_weight: 60, default_sets: 3, default_reps: 12 }
+                            { name: "Barbell Bench Press", default_weight: 70, default_sets: 3, default_reps: 6 },
+                            { name: "Romanian Deadlift", default_weight: 90, default_sets: 3, default_reps: 8 },
+                            { name: "Lat Pulldown", default_weight: 60, default_sets: 3, default_reps: 12 },
+                            { name: "Walking Lunges", default_weight: 20, default_sets: 3, default_reps: 12 },
+                            { name: "SS: Cable Lateral Raises", default_weight: 10, default_sets: 3, default_reps: 15 },
+                            { name: "SS: Reverse Crunches", default_weight: 0, default_sets: 3, default_reps: 15 }
                         ]
                     },
                     {
-                        name: 'FRIDAY',
+                        name: "FRIDAY",
                         exercises: [
-                            { name: 'Seated DB Shoulder Press', default_weight: 20, default_sets: 3, default_reps: 12 },
-                            { name: 'Dumbbell Row', default_weight: 25, default_sets: 3, default_reps: 12 },
-                            { name: 'Barbell Hip Thrust', default_weight: 100, default_sets: 3, default_reps: 15 }
+                            { name: "Seated DB Shoulder Press", default_weight: 20, default_sets: 3, default_reps: 12 },
+                            { name: "Dumbbell Row", default_weight: 25, default_sets: 3, default_reps: 12 },
+                            { name: "Barbell Hip Thrust", default_weight: 100, default_sets: 3, default_reps: 15 },
+                            { name: "Leg Extensions", default_weight: 50, default_sets: 3, default_reps: 12 },
+                            { name: "Seated Chest Flyes", default_weight: 15, default_sets: 3, default_reps: 12 },
+                            { name: "SS: Standing Calf Raises", default_weight: 30, default_sets: 3, default_reps: 20 },
+                            { name: "SS: Reverse Cable Flyes", default_weight: 10, default_sets: 3, default_reps: 15 }
                         ]
                     }
                 ],
                 meals: [
-                    { name: 'Nutty Pudding', ingredients: 'Berries ½c, Cherries 3, Macadamia nuts 45g, Chia seeds 1tbsp, Protein powder 30g, Almond milk 200ml' },
-                    { name: 'Super Veggie', ingredients: 'Broccoli 250g, Cauliflower 150g, Mushrooms 50g, Bell peppers 100g, Olive oil 2tbsp' },
-                    { name: 'Third Meal', ingredients: 'Sweet Potato 350g, Protein 100g, Avocado ½, Spinach 100g, Lemon juice 1tbsp' }
+                    {
+                        name: "Nutty Pudding",
+                        ingredients: "Berries ½c, Cherries 3, Pomegranate Juice 2oz, Macadamia nuts (raw) 45g, Walnuts (raw) 5g, Cocoa 1t, Brazil Nuts ¼, Milk 50-100ml, Chia Seeds 2T, Flax (ground, refr) 1t, Lecithin 1t, Ceylon Cinnamon ½t"
+                    },
+                    {
+                        name: "Super Veggie",
+                        ingredients: "Broccoli 250g, Cauliflower 150g, Mushrooms 50g, Garlic 1 clove, Ginger 3g, Cumin 1T, Black Lentils 45g, Hemp Seeds 1T, Apple Cider Vinegar 1T"
+                    },
+                    {
+                        name: "Third Meal",
+                        ingredients: "Sweet Potato 350-400g, Protein 100-150g, Grape Tomatoes 12, Avocado ½, Radishes 4, Cilantro ¼c, Lemon 1, Jalapeño (lg) 1, Chili Powder 1t"
+                    }
                 ],
                 grocery: {
-                    budget_default: '120',
+                    budget_default: "£120",
                     categories: [
-                        { name: 'Produce', items: 'Broccoli, Cauliflower, Mushrooms, Bell peppers, Spinach, Avocado' },
-                        { name: 'Protein', items: 'Lentils, Protein powder, Milk, Eggs, Chicken breast' },
-                        { name: 'Pantry', items: 'Olive oil, Chia seeds, Macadamia nuts, Sweet potatoes' }
+                        {
+                            name: "Produce",
+                            items: "Broccoli 1.75kg, Cauliflower 1.05kg, Mushrooms 350g, Garlic 1 bulb, Ginger 1pc, Sweet Potato 2.8kg, Grape Tomatoes 84, Avocados (ripe) 4, Radishes 28, Cilantro 2-3 bunch"
+                        },
+                        {
+                            name: "Fruits & Protein",
+                            items: "Lemons 7, Jalapeños (lg) 7, Berries 3.5c, Cherries 21, Black Lentils 315g, Protein 1.05kg, Milk (fortified) 1L"
+                        }
                     ]
                 },
                 measurements: [
-                    { name: 'Weight', placeholder: '75kg' },
-                    { name: 'Chest', placeholder: '42in' },
-                    { name: 'Waist', placeholder: '34in' },
-                    { name: 'Arms', placeholder: '15in' },
-                    { name: 'Thighs', placeholder: '24in' }
+                    { name: "Weight", placeholder: "75kg" },
+                    { name: "Chest", placeholder: "42in" },
+                    { name: "Waist", placeholder: "34in" },
+                    { name: "Hips", placeholder: "36in" },
+                    { name: "Arms", placeholder: "15in" },
+                    { name: "Thighs", placeholder: "24in" }
                 ],
                 financials: [
-                    { name: 'Rent', placeholder: '850', account: 'Cash' },
-                    { name: 'Allowance', placeholder: '850', account: 'Revolut' },
-                    { name: 'Savings', placeholder: '3800', account: 'HSBCUK' },
-                    { name: 'Groceries', placeholder: '120', account: 'Cash' },
-                    { name: 'Transport', placeholder: '80', account: 'Card' }
+                    { name: "Rent", placeholder: "850", account: "Cash" },
+                    { name: "Allowance", placeholder: "850", account: "Revolut" },
+                    { name: "Savings", placeholder: "3800", account: "HSBCUK" }
                 ],
                 city_default: "London"
             }
