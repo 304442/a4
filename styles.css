@@ -117,10 +117,19 @@ tr:has(.mini-input:focus) td { background-color: #f0f7ff !important; }
 
 /* Interactive Elements */
 .clickable { 
-  cursor: pointer; text-decoration: underline; color: #4a5568; 
-  padding: 0 2px; background-color: #f0f0f0; font-size: 7pt; 
+  cursor: pointer; 
+  text-decoration: none; 
+  color: #4a5568; 
+  padding: 1px 4px; 
+  background-color: #edf2f7; 
+  border-radius: 2px; 
+  font-size: 7pt; 
+  border: 1px solid transparent;
 }
-.clickable:hover { background-color: #e0e0e0; }
+.clickable:hover { 
+  background-color: #e2e8f0; 
+  border-color: #cbd5e0;
+}
 .editable { position: relative; cursor: pointer; }
 .editable:hover { background-color: #f0f7ff; }
 
@@ -242,22 +251,6 @@ td.editable:hover { background-color: #f0f7ff !important; }
 .inline-measurement { margin-right: 4mm; margin-bottom: 1mm; }
 .inline-financial { margin-right: 4mm; margin-bottom: 1mm; }
 
-/* Improved button-like clickables */
-.clickable { 
-  cursor: pointer; 
-  text-decoration: none; 
-  color: #4a5568; 
-  padding: 1px 4px; 
-  background-color: #edf2f7; 
-  border-radius: 2px; 
-  font-size: 7pt; 
-  border: 1px solid transparent;
-}
-.clickable:hover { 
-  background-color: #e2e8f0; 
-  border-color: #cbd5e0;
-}
-
 /* Prayer time inputs */
 .time-value-input:focus { 
   background-color: #fff8e1 !important; 
@@ -267,7 +260,7 @@ td.editable:hover { background-color: #f0f7ff !important; }
 /* Enhanced focus states */
 input:focus, textarea:focus { transition: all 0.2s ease; }
 
-/* Better visual hierarchy */
+/* Better visual hierarchy - NO UNDERLINE */
 .section-title { 
   color: #2d3748; 
   text-transform: uppercase; 
@@ -332,24 +325,4 @@ th {
   td { 
     border: 1px solid #eee; 
   }
-}
-
-/* Dark mode support */
-@media (prefers-color-scheme: dark) {
-  body { background-color: #1a202c; }
-  .card { 
-    background-color: #2d3748; 
-    color: #e2e8f0; 
-  }
-  th { 
-    background-color: #4a5568 !important; 
-    color: #e2e8f0; 
-  }
-  tr:nth-child(even) td { background-color: #2d3748; }
-  tr:nth-child(odd) td { background-color: #1a202c; }
-  .mini-input { 
-    background-color: #4a5568; 
-    color: #e2e8f0; 
-  }
-  .section { background-color: #2d3748; }
 }
