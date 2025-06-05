@@ -94,7 +94,7 @@
         <thead>
           <tr>
             <template x-for="(header, i) in uiConfig.taskHeaders" :key="i">
-              <th :style="getTaskColumnStyle(i)" class="editable" @dblclick="editField($event, 'header', header, 'task', i)" x-text="header"></th>
+              <th class="editable" @dblclick="editField($event, 'header', header, 'task', i)" x-text="header"></th>
             </template>
           </tr>
         </thead>
@@ -200,7 +200,7 @@
   </div>
 
   <!-- Dropdowns -->
-  <div class="dropdown" :class="{'dropdown--show': showCitySelector}" :style="getDropdownStyle()">
+  <div class="dropdown" :class="{'dropdown--show': showCitySelector}">
     <div class="dropdown__content">
       <template x-for="cityItem in cityOptions" :key="cityItem.name">
         <div class="dropdown__item" @click="selectCity(cityItem)" x-text="cityItem.name"></div>
@@ -208,7 +208,7 @@
     </div>
   </div>
 
-  <div class="dropdown" :class="{'dropdown--show': showWeekSelector}" :style="getDropdownStyle()">
+  <div class="dropdown" :class="{'dropdown--show': showWeekSelector}">
     <div class="dropdown__content">
       <template x-if="savedWeeks.length > 0">
         <template x-for="week in savedWeeks" :key="week.iso_week">
