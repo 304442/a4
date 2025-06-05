@@ -29,10 +29,10 @@
           </div>
         </template>
         <span class="ml-1">|</span>
-        <span class="clickable ml-1 dropdown-trigger" x-text="city" @click="toggleSelector($event, 'city')"></span>
+        <span class="clickable ml-1" x-text="city" @click="toggleSelector($event, 'city')"></span>
       </div>
-      <div class="text-sm dropdown-container">
-        <span class="clickable dropdown-trigger" x-text="currentWeek" @click="toggleSelector($event, 'week')"></span> (<span x-text="dateRange"></span>)
+      <div class="text-sm">
+        <span class="clickable" x-text="currentWeek" @click="toggleSelector($event, 'week')"></span> (<span x-text="dateRange"></span>)
       </div>
     </div>
 
@@ -205,8 +205,16 @@
     </div>
   </div>
 
-  <!-- Dropdowns -->
-  <div class="dropdown city-dropdown" :class="{'dropdown--show': showCitySelector}">
+  <!-- Portal Dropdowns (positioned at document level) -->
+  <div x-show="showCitySelector" 
+       x-transition:enter="transition ease-out duration-100"
+       x-transition:enter-start="opacity-0 scale-95"
+       x-transition:enter-end="opacity-100 scale-100"
+       x-transition:leave="transition ease-in duration-75"
+       x-transition:leave-start="opacity-100 scale-100"
+       x-transition:leave-end="opacity-0 scale-95"
+       :style="cityDropdownStyle" 
+       class="dropdown-portal">
     <div class="dropdown__content">
       <template x-for="cityItem in cityOptions" :key="cityItem.name">
         <div class="dropdown__item" @click="selectCity(cityItem)" x-text="cityItem.name"></div>
@@ -214,7 +222,15 @@
     </div>
   </div>
 
-  <div class="dropdown week-dropdown" :class="{'dropdown--show': showWeekSelector}">
+  <div x-show="showWeekSelector"
+       x-transition:enter="transition ease-out duration-100"
+       x-transition:enter-start="opacity-0 scale-95"
+       x-transition:enter-end="opacity-100 scale-100"
+       x-transition:leave="transition ease-in duration-75"
+       x-transition:leave-start="opacity-100 scale-100"
+       x-transition:leave-end="opacity-0 scale-95"
+       :style="weekDropdownStyle" 
+       class="dropdown-portal">
     <div class="dropdown__content">
       <template x-if="savedWeeks.length > 0">
         <template x-for="week in savedWeeks" :key="week.iso_week">
