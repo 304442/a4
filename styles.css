@@ -210,16 +210,16 @@ tr:has(.completed-task) td input:not(.completed-task) { text-decoration: line-th
   box-shadow: inset 0 0 0 1px #4299e1; resize: vertical; 
 }
 
-/* Task Table Column Widths */
-.section table th:nth-child(1), .section table td:nth-child(1) { width: 5mm; }
-.section table th:nth-child(2), .section table td:nth-child(2) { width: 5mm; }
-.section table th:nth-child(3), .section table td:nth-child(3) { width: 5mm; }
-.section table th:nth-child(4), .section table td:nth-child(4) { width: 65mm; text-align: left; }
-.section table th:nth-child(5), .section table td:nth-child(5) { width: 12mm; }
-.section table th:nth-child(6), .section table td:nth-child(6) { width: 12mm; }
-.section table th:nth-child(7), .section table td:nth-child(7) { width: 12mm; }
-.section table th:nth-child(8), .section table td:nth-child(8) { width: 8mm; }
-.section table th:nth-child(9), .section table td:nth-child(9) { width: 5mm; }
+/* Task Table Column Widths - Narrow all except Task/Project column */
+.section table th:nth-child(1), .section table td:nth-child(1) { width: 3mm; text-align: center; }  /* № */
+.section table th:nth-child(2), .section table td:nth-child(2) { width: 3mm; text-align: center; }  /* 🔥 */
+.section table th:nth-child(3), .section table td:nth-child(3) { width: 3mm; text-align: center; }  /* 🏷️ */
+.section table th:nth-child(4), .section table td:nth-child(4) { width: auto; text-align: left; }   /* Task/Project - widest */
+.section table th:nth-child(5), .section table td:nth-child(5) { width: 8mm; text-align: center; }  /* Start */
+.section table th:nth-child(6), .section table td:nth-child(6) { width: 8mm; text-align: center; }  /* Due */
+.section table th:nth-child(7), .section table td:nth-child(7) { width: 8mm; text-align: center; }  /* Done */
+.section table th:nth-child(8), .section table td:nth-child(8) { width: 6mm; text-align: center; }  /* Delay */
+.section table th:nth-child(9), .section table td:nth-child(9) { width: 3mm; text-align: center; }  /* ✓ */
 
 /* Additional Interactive Styling */
 .mini-input:hover { background-color: #f0f7ff; }
@@ -272,8 +272,6 @@ input:focus, textarea:focus { transition: all 0.2s ease; }
   color: #2d3748; 
   text-transform: uppercase; 
   letter-spacing: 0.5px; 
-  border-bottom: 1px solid #e2e8f0; 
-  padding-bottom: 0.5mm; 
 }
 
 /* Workout exercise prefix styling */
