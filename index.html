@@ -165,10 +165,7 @@
     </div>
 
     <div class="section">
-      <h3 class="title title--inline">
-        <span>GROCERY</span>
-        <input type="text" class="input input--inline" x-model="groceryBudget" :placeholder="budgetDefault" @change="saveData();">
-      </h3>
+      <h3 class="title">GROCERY</h3>
       <ul class="list text-xs">
         <template x-for="(cat, i) in groceryList" :key="cat.id || i">
           <li class="list-item">
