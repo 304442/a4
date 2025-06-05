@@ -155,7 +155,7 @@
     <div class="section">
       <h3 class="section-title inline-title editable" @dblclick="editField($event, 'sectionTitle', uiConfig.sectionTitles?.grocery, 'grocery')">
         <span x-text="uiConfig.sectionTitles?.grocery"></span>
-        <input type="text" class="mini-input inline-input" x-model="groceryBudget" placeholder="£120" @change="saveData();">
+        <input type="text" class="mini-input inline-input" x-model="groceryBudget" :placeholder="budgetDefault" @change="saveData();">
       </h3>
       <ul class="list text-xs">
         <template x-for="(cat, i) in groceryList" :key="cat.id || i">
