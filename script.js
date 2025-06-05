@@ -20,6 +20,8 @@ function plannerApp() {
     pendingSync: [], 
     showCitySelector: false, 
     showWeekSelector: false,
+    cityDropdownStyle: '',
+    weekDropdownStyle: '',
     currentDay: (new Date()).getDay(), 
     plannerTitle: 'Weekly Planner',
     times: [], 
@@ -63,7 +65,7 @@ function plannerApp() {
       });
       window.addEventListener('offline', () => this.isOnline = false);
       document.addEventListener('click', e => { 
-        if (!e.target.closest('.dropdown,.clickable')) {
+        if (!e.target.closest('.dropdown-portal,.clickable')) {
           this.showCitySelector = this.showWeekSelector = false; 
         }
       });
@@ -543,18 +545,50 @@ function plannerApp() {
       this.saveData(); 
     },
 
-    // Selectors
+    // Selectors with Portal Positioning
     toggleSelector(event, type) {
-      const prop = `show${type.charAt(0).toUpperCase() + type.slice(1)}Selector`;
-      const other = type === 'city' ? 'showWeekSelector' : 'showCitySelector';
-      this[other] = false;
-      this[prop] = !this[prop];
-      if (type === 'week' && this[prop]) this.fetchSavedWeeks();
+      const otherType = type === 'city' ? 'week' : 'city';
+      const showProp = `show${type.charAt(0).toUpperCase() + type.slice(1)}Selector`;
+      const otherShowProp = `show${otherType.charAt(0).toUpperCase() + otherType.slice(1)}Selector`;
+      
+      // Close other dropdown
+      this[otherShowProp] = false;
+      
+      if (this[showProp]) {
+        // Close current dropdown
+        this[showProp] = false;
+      } else {
+        // Open current dropdown with calculated position
+        const rect = event.target.getBoundingClientRect();
+        const styleProp = `${type}DropdownStyle`;
+        
+        this[styleProp] = `
+          position: fixed;
+          top: ${rect.bottom + 4}px;
+          left: ${Math.max(10, rect.left - 100)}px;
+          z-index: 9999;
+          min-width: 150px;
+          max-width: 250px;
+        `;
+        
+        this[showProp] = true;
+        
+        // Fetch saved weeks if opening week selector
+        if (type === 'week') this.fetchSavedWeeks();
+      }
+    },
+
+    closeCitySelector() {
+      this.showCitySelector = false;
+    },
+
+    closeWeekSelector() {
+      this.showWeekSelector = false;
     },
 
     async selectCity(cityOption) {
       this.city = cityOption.name;
-      this.showCitySelector = false;
+      this.closeCitySelector();
       try {
         if (cityOption.lat === null) await this.getPrayerTimes();
         else await this.fetchPrayerTimes(cityOption.lat, cityOption.lon);
@@ -920,6 +954,7 @@ function plannerApp() {
           !confirm("Unsaved changes. Load anyway?")) {
         return;
       }
+      this.closeWeekSelector();
       this.loadWeek(isoWeek);
     },
 
