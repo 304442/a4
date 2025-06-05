@@ -22,7 +22,6 @@ function plannerApp() {
     showWeekSelector: false,
     currentDay: (new Date()).getDay(), 
     plannerTitle: 'Weekly Planner',
-    uiConfig: {}, 
     times: [], 
     schedule: [], 
     tasks: [], 
@@ -154,13 +153,6 @@ function plannerApp() {
       const s = template.structure;
 
       this.plannerTitle = s.ui?.title_default || 'Weekly Planner';
-      this.uiConfig = {
-        mainTableHeaders: s.ui?.headers?.main_table || [],
-        dayHeaders: s.ui?.headers?.days || [],
-        maxHeaders: s.ui?.headers?.max_cols || [],
-        taskHeaders: s.ui?.headers?.tasks || [],
-        sectionTitles: s.ui?.sections || {}
-      };
 
       this.times = [...(s.prayer_times || [])];
       this.schedule = this.buildScheduleFromTemplate(s.schedule || []);
@@ -471,20 +463,6 @@ function plannerApp() {
         timeLabel: (i) => { 
           if (this.times[i]) this.times[i].label = value; 
         },
-        sectionTitle: (section) => { 
-          if (this.uiConfig.sectionTitles?.[section]) this.uiConfig.sectionTitles[section] = value; 
-        },
-        header: (headerType, index) => {
-          const map = { 
-            main: 'mainTableHeaders', 
-            day: 'dayHeaders', 
-            max: 'maxHeaders', 
-            task: 'taskHeaders' 
-          };
-          if (this.uiConfig[map[headerType]]?.[index] !== undefined) {
-            this.uiConfig[map[headerType]][index] = value;
-          }
-        },
         sectionName: (sIdx) => {
           const mappedIdx = this.schedule.length - 1 - sIdx;
           if (this.schedule[mappedIdx]) this.schedule[mappedIdx].name = value;
@@ -582,47 +560,6 @@ function plannerApp() {
       }
       this.saveData(); 
     },
-
-    // UI Helpers
-    getScoreClass(activity) {
-      if (activity.maxScore <= 0) return '';
-      const ratio = activity.score / activity.maxScore;
-      if (ratio < 0.33) return 'red';
-      if (ratio < 0.66) return 'yellow';
-      return 'green';
-    },
-
-    getTaskRowClass(task) {
-      const classes = [];
-      if (task.completed === '✓') classes.push('green');
-      const delay = this.getTaskDelay(task);
-      if (delay > 0) classes.push('red');
-      else if (delay < 0) classes.push('blue');
-      return classes.join(' ');
-    },
-
-    getDelayClass(task) {
-      const delay = this.getTaskDelay(task);
-      if (delay < 0) return 'green';
-      if (delay > 0) return 'red';
-      return 'yellow';
-    },
-
-    getProgressStyle(activity) {
-      if (activity.maxScore <= 0) return 'width: 0%';
-      const percentage = Math.min(100, (activity.score / activity.maxScore) * 100);
-      return `width: ${percentage}%`;
-    },
-
-    getProgressClass(activity) {
-      if (activity.maxScore <= 0) return '';
-      const ratio = activity.score / activity.maxScore;
-      if (ratio < 0.33) return 'progress--low';
-      if (ratio < 0.66) return 'progress--medium';
-      return 'progress--high';
-    },
-
-
 
     // Selectors
     toggleSelector(event, type) {
