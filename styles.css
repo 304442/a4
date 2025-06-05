@@ -92,15 +92,15 @@ tr:has(.task-done) td, tr:has(.task-done) td input:not(.task-done) { text-decora
 th.editable:hover { background-color: #d4edda !important; }
 td.editable:hover { background-color: #f0f7ff !important; }
 
-/* Dropdown System */
-.dropdown-container { position: relative; }
-.dropdown-trigger { position: relative; }
-
-.dropdown { position: fixed; background-color: white; border-radius: 3px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); font-size: 7pt; z-index: 1000; display: none; min-width: 150px; max-width: 250px; border: 1px solid #ccc; }
-.dropdown--show { display: block; }
-
-.city-dropdown { top: 50px; right: 350px; }
-.week-dropdown { top: 50px; right: 20px; }
+/* Dropdown Portal System */
+.dropdown-portal {
+  background-color: white;
+  border-radius: 3px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  font-size: 7pt;
+  border: 1px solid #ccc;
+  /* Position set dynamically via JavaScript */
+}
 
 .dropdown__content { max-height: 150px; overflow-y: auto; }
 .dropdown__item { padding: 3px 6px; cursor: pointer; white-space: nowrap; }
