@@ -849,7 +849,7 @@ const resetAll = async () => {
     }
 };
 
-// Enhanced Weekly Planner Collections
+// Simplified Weekly Planner Collections (NO UI CONFIG)
 const DEFAULT_COLLECTIONS = [
     {
         name: "templates",
@@ -892,31 +892,15 @@ const DEFAULT_COLLECTIONS = [
     }
 ];
 
+// Simplified seed data (removed UI config sections)
 const DEFAULT_SEEDS = {
     templates: [
         {
-            name: "complete-weekly-v4",
-            description: "Complete enhanced weekly planner with all activities - 247 points",
+            name: "complete-weekly-v5",
+            description: "Simplified complete weekly planner without UI config - 247 points",
             is_default: true,
-            version: 4,
+            version: 5,
             structure: {
-                ui: {
-                    title_default: "My Weekly Plan & Projects",
-                    headers: {
-                        main_table: ["TIME", "DAY", "ACTIVITY", "SCR", "MAX", "🔥"],
-                        days: ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"],
-                        max_cols: ["MAX", "MAX", "MAX", "MAX", "MAX", "MAX", "MAX"],
-                        tasks: ["№", "🔥", "🏷️", "Task/Project", "📅 Start", "🎯 Due", "✅ Done", "⏰ Delay", "✓"]
-                    },
-                    sections: {
-                        tasks: "TASKS & PROJECT MANAGEMENT",
-                        workout: "WORKOUT PLAN",
-                        meals: "MEAL PREP",
-                        grocery: "GROCERY LIST",
-                        measurements: "BODY MEASUREMENTS",
-                        financials: "MONTH/1ST: FINANCIAL"
-                    }
-                },
                 prayer_times: [
                     { label: "Q", value: "4:30AM" },
                     { label: "F", value: "5:30AM" },
@@ -1217,7 +1201,7 @@ updateStats();
 validateCollections();
 validateSeeds();
 
-log('🚀 Enhanced Weekly Planner Setup Ready', 'i');
+log('🚀 Simplified Weekly Planner Setup Ready', 'i');
 log('📚 Click "Help & Docs" for complete PocketBase reference', 'i');
 log('1. Edit collections/seeds 2. Test connection 3. Run setup', 'i');
 </script>
