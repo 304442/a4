@@ -39,8 +39,6 @@ tr:has(.input:focus) td { background-color: #f0f7ff !important; }
 .input--text { text-align: left; }
 .input--date { width: 8mm; font-size: 6pt; background-color: #f8f9fa; border: 1px solid #dee2e6; border-radius: 2px; }
 .input--inline { width: 8mm; margin-left: 1mm; vertical-align: middle; background-color: #f8f9fa; border: 1px solid #dee2e6; border-radius: 2px; }
-.input--edit { background-color: #fff; padding: 0 1mm; box-shadow: inset 0 0 0 1px #4299e1; }
-.input--edit-area { min-height: 3mm; resize: vertical; }
 
 /* State Colors */
 .green { background-color: #d4edda !important; color: #155724 !important; }
@@ -56,10 +54,9 @@ tr:has(.task-done) td, tr:has(.task-done) td input:not(.task-done) { text-decora
 /* Layout */
 .section { margin-top: 0.5mm; border-radius: 2px; background-color: #fafafa; padding: 1mm; }
 .title { margin-bottom: 0.5mm; font-size: 8pt; font-weight: bold; position: relative; display: flex; align-items: center; color: #2d3748; text-transform: uppercase; letter-spacing: 0.5px; }
-.title--inline { display: flex; align-items: center; flex-wrap: wrap; gap: 2mm; }
-.inline { display: inline-flex; align-items: center; margin-right: 4mm; margin-bottom: 1mm; white-space: nowrap; }
+.title--inline { display: flex; align-items: center; flex-wrap: nowrap; gap: 2mm; overflow-x: auto; }
+.inline { display: inline-flex; align-items: center; margin-right: 3mm; white-space: nowrap; }
 .label { font-weight: bold; margin-right: 1mm; cursor: pointer; font-size: 7pt; }
-.label:hover, .clickable:hover, .exercise-name:hover { background-color: #f0f7ff; }
 .list { padding-left: 2mm; margin-top: 0.5mm; list-style-type: disc; }
 .list-item { margin-bottom: 0.5mm; line-height: 1; }
 
@@ -88,9 +85,6 @@ tr:has(.task-done) td, tr:has(.task-done) td input:not(.task-done) { text-decora
 /* Interactive */
 .clickable { cursor: pointer; text-decoration: none; color: #4a5568; padding: 1px 4px; background-color: #edf2f7; border-radius: 2px; font-size: 7pt; border: 1px solid transparent; }
 .clickable:hover { background-color: #e2e8f0; border-color: #cbd5e0; }
-.editable { position: relative; cursor: pointer; }
-th.editable:hover { background-color: #d4edda !important; }
-td.editable:hover { background-color: #f0f7ff !important; }
 
 /* Dropdown Portal System */
 .dropdown-portal {
@@ -99,7 +93,6 @@ td.editable:hover { background-color: #f0f7ff !important; }
   box-shadow: 0 4px 12px rgba(0,0,0,0.15);
   font-size: 7pt;
   border: 1px solid #ccc;
-  /* Position set dynamically via JavaScript */
 }
 
 .dropdown__content { max-height: 150px; overflow-y: auto; }
@@ -171,7 +164,7 @@ td.editable:hover { background-color: #f0f7ff !important; }
   * { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
   .section { background-color: white; break-inside: avoid; }
   .input { border: 1px solid #ccc; background-color: white; }
-  .clickable, .editable { color: black; background-color: transparent; }
+  .clickable { color: black; background-color: transparent; }
   th { background-color: #f0f0f0 !important; border: 1px solid #ccc; }
   td { border: 1px solid #eee; }
 }
