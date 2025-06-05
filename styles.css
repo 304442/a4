@@ -138,12 +138,12 @@ td.editable:hover { background-color: #f0f7ff !important; }
 .section table th:nth-child(1), .section table td:nth-child(1), 
 .section table th:nth-child(2), .section table td:nth-child(2), 
 .section table th:nth-child(3), .section table td:nth-child(3), 
-.section table th:nth-child(9), .section table td:nth-child(9) { width: 3mm; text-align: center; }
+.section table th:nth-child(9), .section table td:nth-child(9) { width: 4mm; text-align: center; }
 .section table th:nth-child(5), .section table td:nth-child(5), 
 .section table th:nth-child(6), .section table td:nth-child(6), 
-.section table th:nth-child(7), .section table td:nth-child(7) { width: 8mm; text-align: center; }
-.section table th:nth-child(8), .section table td:nth-child(8) { width: 6mm; text-align: center; }
-.section table th:nth-child(4), .section table td:nth-child(4) { text-align: left; }
+.section table th:nth-child(7), .section table td:nth-child(7) { width: 10mm; text-align: center; }
+.section table th:nth-child(8), .section table td:nth-child(8) { width: 8mm; text-align: center; }
+.section table th:nth-child(4), .section table td:nth-child(4) { text-align: left; width: auto; }
 .section table td:nth-child(4) input { width: 100%; }
 
 /* Responsive */
