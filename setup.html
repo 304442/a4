@@ -849,7 +849,7 @@ const resetAll = async () => {
     }
 };
 
-// Simplified Weekly Planner Collections (NO UI CONFIG)
+// Simplified Weekly Planner Collections (NO GROCERY BUDGET)
 const DEFAULT_COLLECTIONS = [
     {
         name: "templates",
@@ -892,12 +892,12 @@ const DEFAULT_COLLECTIONS = [
     }
 ];
 
-// Simplified seed data (removed UI config sections)
+// Simplified seed data (removed grocery budget)
 const DEFAULT_SEEDS = {
     templates: [
         {
             name: "complete-weekly-v5",
-            description: "Simplified complete weekly planner without UI config - 247 points",
+            description: "Simplified complete weekly planner without grocery budget - 247 points",
             is_default: true,
             version: 5,
             structure: {
@@ -1059,7 +1059,6 @@ const DEFAULT_SEEDS = {
                     }
                 ],
                 grocery: {
-                    budget_default: "£120",
                     categories: [
                         {
                             name: "Produce",
