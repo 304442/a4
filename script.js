@@ -13,7 +13,7 @@ function plannerApp() {
     pendingSync: [], showCitySelector: false, showWeekSelector: false, dropdownPosition: { top: 0, left: 0 },
     currentDay: (new Date()).getDay(), plannerTitle: 'Weekly Planner',
     uiConfig: {}, times: [], schedule: [], tasks: [], workoutPlan: [], meals: [],
-    groceryBudget: '', budgetDefault: '£120', groceryList: [], bodyMeasurements: [], financials: [],
+    groceryBudget: '', budgetDefault: '', groceryList: [], bodyMeasurements: [], financials: [],
     currentTemplate: null, currentTemplateId: null, savedWeeks: [],
     cityOptions: [
       { name: 'London', lat: 51.5074, lon: -0.1278 }, 
@@ -89,7 +89,7 @@ function plannerApp() {
           prayer_times: [{ label: 'Q', value: '' },{ label: 'F', value: '' },{ label: 'D', value: '' },{ label: 'A', value: '' },{ label: 'M', value: '' },{ label: 'I', value: '' }],
           schedule: [{ name: 'TOTAL', activities: [{ name: 'DAILY POINTS', max_per_day: 0, max_score: 0 }] }],
           tasks: { count: 5, fields: ['num', 'priority', 'tag', 'description', 'start_date', 'expected_date', 'actual_date', 'completed'] },
-          workout: [], meals: [], grocery: { budget_default: '£120', categories: [] }, measurements: [], financials: [], city_default: "London"
+          workout: [], meals: [], grocery: { budget_default: '', categories: [] }, measurements: [], financials: [], city_default: "London"
         }
       };
     },
@@ -117,8 +117,8 @@ function plannerApp() {
 
       this.workoutPlan = this.buildWorkoutFromTemplate(s.workout || []);
       this.meals = this.ensureIds([...(s.meals || [])]);
-      this.groceryBudget = s.grocery?.budget_default || '£120';
-      this.budgetDefault = s.grocery?.budget_default || '£120';
+      this.groceryBudget = s.grocery?.budget_default || '';
+      this.budgetDefault = s.grocery?.budget_default || '';
       this.groceryList = this.ensureIds([...(s.grocery?.categories || [])]);
       this.bodyMeasurements = this.ensureIds([...(s.measurements || [])]);
       this.financials = this.ensureIds([...(s.financials || [])]);
@@ -511,7 +511,7 @@ function plannerApp() {
     },
 
     getTaskColumnStyle(i) {
-      const widths = ['5mm', '5mm', '5mm', '', '12mm', '12mm', '12mm', '8mm', '5mm'];
+      const widths = ['3mm', '3mm', '3mm', '', '8mm', '8mm', '8mm', '6mm', '3mm'];
       return widths[i] ? `width:${widths[i]}` : 'text-align:left';
     },
 
