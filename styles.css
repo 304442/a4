@@ -37,7 +37,7 @@ tr:has(.input:focus) td { background-color: #f0f7ff !important; }
 .input--time { width: 9mm; }
 .input--time:focus { background-color: #fff8e1 !important; box-shadow: inset 0 0 0 2px rgba(255, 193, 7, 0.5) !important; }
 .input--text { text-align: left; }
-.input--date { width: 12mm; font-size: 6pt; background-color: #f8f9fa; border: 1px solid #dee2e6; border-radius: 2px; }
+.input--date { width: 8mm; font-size: 6pt; background-color: #f8f9fa; border: 1px solid #dee2e6; border-radius: 2px; }
 .input--inline { width: 8mm; margin-left: 1mm; vertical-align: middle; background-color: #f8f9fa; border: 1px solid #dee2e6; border-radius: 2px; }
 .input--edit { background-color: #fff; padding: 0 1mm; box-shadow: inset 0 0 0 1px #4299e1; }
 .input--edit-area { min-height: 3mm; resize: vertical; }
@@ -55,7 +55,7 @@ tr:has(.task-done) td, tr:has(.task-done) td input:not(.task-done) { text-decora
 
 /* Layout */
 .section { margin-top: 0.5mm; border-radius: 2px; background-color: #fafafa; padding: 1mm; }
-.title { margin-bottom: 0mm; font-size: 8pt; font-weight: bold; position: relative; display: flex; align-items: center; color: #2d3748; text-transform: uppercase; letter-spacing: 0.5px; }
+.title { margin-bottom: 0.5mm; font-size: 8pt; font-weight: bold; position: relative; display: flex; align-items: center; color: #2d3748; text-transform: uppercase; letter-spacing: 0.5px; }
 .title--inline { display: flex; align-items: center; flex-wrap: wrap; gap: 2mm; }
 .inline { display: inline-flex; align-items: center; margin-right: 4mm; margin-bottom: 1mm; white-space: nowrap; }
 .label { font-weight: bold; margin-right: 1mm; cursor: pointer; font-size: 7pt; }
@@ -148,7 +148,7 @@ td.editable:hover { background-color: #f0f7ff !important; }
 .section table th:nth-child(9), .section table td:nth-child(9) { width: 4mm; text-align: center; }
 .section table th:nth-child(5), .section table td:nth-child(5), 
 .section table th:nth-child(6), .section table td:nth-child(6), 
-.section table th:nth-child(7), .section table td:nth-child(7) { width: 8mm; text-align: center; }
+.section table th:nth-child(7), .section table td:nth-child(7) { width: 6mm; text-align: center; }
 .section table th:nth-child(8), .section table td:nth-child(8) { width: 6mm; text-align: center; }
 .section table th:nth-child(4), .section table td:nth-child(4) { text-align: left; width: auto; }
 .section table td:nth-child(4) input { width: 100%; }
