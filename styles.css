@@ -49,6 +49,10 @@ tr:has(.mini-input:focus) td { background-color: #f0f7ff !important; }
   width: 8mm; margin-left: 1mm; vertical-align: middle; 
   background-color: #f8f9fa; border: 1px solid #dee2e6; border-radius: 2px;
 }
+.inline-input:focus {
+  background-color: #fff !important; border-color: #80bdff !important;
+  box-shadow: 0 0 0 0.2rem rgba(0,123,255,.25) !important;
+}
 
 /* Task Status Classes */
 .task-completed { background-color: #d4edda !important; opacity: 0.7; }
@@ -77,4 +81,277 @@ tr:has(.mini-input:focus) td { background-color: #f0f7ff !important; }
   display: inline-flex; align-items: center; margin-right: 3mm; 
   white-space: nowrap;
 }
-.
+.measurement-label, .financial-label { 
+  font-weight: bold; margin-right: 1mm; cursor: pointer; font-size: 7pt;
+}
+.measurement-label:hover, .financial-label:hover { background-color: #f0f7ff; }
+
+/* List Styling */
+.list { padding-left: 2mm; margin-top: 0.5mm; list-style-type: disc; }
+.list-item { margin-bottom: 0.5mm; line-height: 1; }
+
+/* Status Indicators */
+#save-status, #sync-status { 
+  position: fixed; right: 10px; padding: 5px 10px; border-radius: 5px; 
+  font-size: 12px; font-weight: bold; z-index: 1000; 
+}
+#save-status { bottom: 10px; }
+#sync-status { bottom: 40px; }
+.status-saved, .status-synced { background-color: #d4edda; color: #155724; }
+.status-saving, .status-pending { background-color: #fff3cd; color: #856404; }
+.status-error { background-color: #f8d7da; color: #721c24; }
+
+/* Notification */
+#notification { 
+  position: fixed; top: 20px; right: 20px; padding: 10px 15px; border-radius: 5px; 
+  font-size: 12px; font-weight: bold; z-index: 1100; 
+  background-color: #f8d7da; color: #721c24; display: none; 
+}
+#notification.show { display: block; animation: fadeOut 5s forwards; }
+@keyframes fadeOut { 0%, 70% { opacity: 1; } 100% { opacity: 0; } }
+
+/* Typography */
+.text-xs { font-size: 7pt; line-height: 1.2; }
+.text-sm { font-size: 8pt; line-height: 1.2; }
+.bold { font-weight: bold; }
+
+/* Interactive Elements */
+.clickable { 
+  cursor: pointer; text-decoration: underline; color: #4a5568; 
+  padding: 0 2px; background-color: #f0f0f0; font-size: 7pt; 
+}
+.clickable:hover { background-color: #e0e0e0; }
+.editable { position: relative; cursor: pointer; }
+.editable:hover { background-color: #f0f7ff; }
+
+/* Dropdown */
+.dropdown { 
+  position: absolute; background-color: white; border-radius: 3px; 
+  box-shadow: 0 2px 5px rgba(0,0,0,0.2); font-size: 7pt; z-index: 1000; display: none; 
+}
+.dropdown.show { display: block; }
+.dropdown-content { max-height: 150px; overflow-y: auto; }
+.dropdown-item { padding: 3px 6px; cursor: pointer; white-space: nowrap; }
+.dropdown-item:hover { background-color: #f0f0f0; }
+.dropdown-item.current { font-weight: bold; background-color: #f0f8ff; }
+.dropdown-item-empty { padding: 3px 6px; color: #666; font-style: italic; }
+.delete-week-btn { color: #e53e3e; margin-left: 2mm; cursor: pointer; }
+.delete-week-btn:hover { background-color: #fed7d7; border-radius: 2px; }
+
+/* Layout Utilities */
+.flex { display: flex; }
+.grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2mm; }
+.between { justify-content: space-between; }
+.center { align-items: center; }
+.mb-1 { margin-bottom: 1mm; }
+.ml-1 { margin-left: 1mm; }
+.p-1 { padding: 1mm; }
+
+/* Table Borders */
+tr:first-child td { border-top: 1px solid #ccc; }
+td.bold:not(:empty) { border-left: 2px solid #aaa; }
+tr:has(td.bold:not(:empty)):not(:first-child) { border-top: 2px solid #f0f0f0; }
+
+/* Exercise Layout */
+.exercise { 
+  display: flex; justify-content: space-between; align-items: center; 
+  height: 3mm; margin-bottom: 0.5mm; position: relative; 
+}
+.exercise-name { 
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; 
+  flex-grow: 1; margin-right: 0.5mm; cursor: pointer; font-size: 7pt; 
+}
+.exercise-name:hover { background-color: #f0f7ff; }
+.exercise-inputs { display: flex; align-items: center; }
+.exercise-inputs input { width: 4mm; height: 3mm; font-size: 7pt; }
+.exercise-inputs input.sets { width: 2mm; }
+.exercise-inputs input.reps { width: 3mm; }
+.exercise-unit { margin: 0 0.5mm; font-size: 7pt; }
+.workout-day-card { background-color: #f9fafb; border: 1px solid #e2e8f0; border-radius: 2px; }
+.workout-day-name { font-size: 7pt; }
+
+/* Task Completion */
+.completed-task { background-color: #d4edda !important; color: #155724 !important; }
+tr:has(.completed-task) td { text-decoration: line-through; color: #6c757d; }
+tr:has(.completed-task) td input:not(.completed-task) { text-decoration: line-through; color: #6c757d; }
+
+/* Streak Indicators */
+.streak-cell { font-size: 6pt; color: #e67700; }
+.has-streak { background-color: #fff3cd !important; }
+.has-streak span { position: relative; }
+.has-streak span::after { 
+  content: "🔥"; font-size: 6pt; position: absolute; top: -2px; right: -8px; 
+}
+
+/* Progress Bar */
+.progress-container { 
+  height: 2mm; background-color: #e9ecef; border-radius: 0.5mm; 
+  overflow: hidden; padding: 0 !important; 
+}
+.progress-bar { height: 100%; border-radius: 0.5mm; transition: width 0.3s ease; }
+.progress-low { background-color: #dc3545; }
+.progress-medium { background-color: #ffc107; }
+.progress-high { background-color: #28a745; }
+
+/* Score Colors */
+.score-low .mini-input { background-color: #f8d7da; color: #721c24; }
+.score-medium .mini-input { background-color: #fff3cd; color: #856404; }
+.score-high .mini-input { background-color: #d4edda; color: #155724; }
+
+/* Inline Editing */
+.inline-edit-input { 
+  width: 100%; height: 100%; border: none; background-color: #fff; 
+  font-size: 7pt; padding: 0 1mm; outline: none; 
+  box-shadow: inset 0 0 0 1px #4299e1; 
+}
+.inline-edit-textarea { 
+  width: 100%; min-height: 3mm; border: none; background-color: #fff; 
+  font-size: 7pt; padding: 0 1mm; outline: none; 
+  box-shadow: inset 0 0 0 1px #4299e1; resize: vertical; 
+}
+
+/* Task Table Column Widths */
+.section table th:nth-child(1), .section table td:nth-child(1) { width: 5mm; }
+.section table th:nth-child(2), .section table td:nth-child(2) { width: 5mm; }
+.section table th:nth-child(3), .section table td:nth-child(3) { width: 5mm; }
+.section table th:nth-child(4), .section table td:nth-child(4) { width: 65mm; text-align: left; }
+.section table th:nth-child(5), .section table td:nth-child(5) { width: 12mm; }
+.section table th:nth-child(6), .section table td:nth-child(6) { width: 12mm; }
+.section table th:nth-child(7), .section table td:nth-child(7) { width: 12mm; }
+.section table th:nth-child(8), .section table td:nth-child(8) { width: 8mm; }
+.section table th:nth-child(9), .section table td:nth-child(9) { width: 5mm; }
+
+/* Additional Interactive Styling */
+.mini-input:hover { background-color: #f0f7ff; }
+.mini-input:read-only { background-color: #f8f9fa; color: #6c757d; cursor: not-allowed; }
+.mini-input:read-only:hover { background-color: #f8f9fa; }
+
+/* Header Styling */
+th.editable:hover { background-color: #d4edda !important; }
+td.editable:hover { background-color: #f0f7ff !important; }
+
+/* Section Cards */
+.section { 
+  margin-top: 2mm; 
+  border-radius: 2px; 
+  background-color: #fafafa; 
+  padding: 1mm; 
+}
+
+/* Better spacing for inline elements */
+.inline-measurement { margin-right: 4mm; margin-bottom: 1mm; }
+.inline-financial { margin-right: 4mm; margin-bottom: 1mm; }
+
+/* Improved button-like clickables */
+.clickable { 
+  cursor: pointer; 
+  text-decoration: none; 
+  color: #4a5568; 
+  padding: 1px 4px; 
+  background-color: #edf2f7; 
+  border-radius: 2px; 
+  font-size: 7pt; 
+  border: 1px solid transparent;
+}
+.clickable:hover { 
+  background-color: #e2e8f0; 
+  border-color: #cbd5e0;
+}
+
+/* Prayer time inputs */
+.time-value-input:focus { 
+  background-color: #fff8e1 !important; 
+  box-shadow: inset 0 0 0 2px rgba(255, 193, 7, 0.5) !important; 
+}
+
+/* Enhanced focus states */
+input:focus, textarea:focus { transition: all 0.2s ease; }
+
+/* Better visual hierarchy */
+.section-title { 
+  color: #2d3748; 
+  text-transform: uppercase; 
+  letter-spacing: 0.5px; 
+  border-bottom: 1px solid #e2e8f0; 
+  padding-bottom: 0.5mm; 
+}
+
+/* Workout exercise prefix styling */
+.exercise-name span:first-child { color: #718096; }
+
+/* Enhanced table readability */
+table { border: 1px solid #e2e8f0; }
+th { 
+  background: linear-gradient(135deg, #e6e6e6 0%, #f0f0f0 100%) !important; 
+  color: #2d3748; 
+  font-weight: 600; 
+}
+
+/* Responsive text sizing for better readability */
+@media screen and (max-width: 1200px) {
+  * { font-size: 8pt !important; }
+  .text-xs { font-size: 7pt !important; }
+  .text-sm { font-size: 9pt !important; }
+}
+
+/* Print Styles */
+@media print {
+  html, body { 
+    width: 210mm; 
+    height: 297mm; 
+    background-color: white; 
+    margin: 0; 
+    padding: 0; 
+    font-size: 7pt;
+  }
+  .card { 
+    box-shadow: none; 
+    padding: 3mm; 
+  }
+  #save-status, #sync-status, .dropdown, #notification { 
+    display: none !important; 
+  }
+  * { 
+    print-color-adjust: exact; 
+    -webkit-print-color-adjust: exact; 
+  }
+  .section { 
+    background-color: white; 
+    break-inside: avoid; 
+  }
+  .mini-input { 
+    border: 1px solid #ccc; 
+    background-color: white; 
+  }
+  .clickable, .editable { 
+    color: black; 
+    background-color: transparent; 
+  }
+  th { 
+    background-color: #f0f0f0 !important; 
+    border: 1px solid #ccc; 
+  }
+  td { 
+    border: 1px solid #eee; 
+  }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  body { background-color: #1a202c; }
+  .card { 
+    background-color: #2d3748; 
+    color: #e2e8f0; 
+  }
+  th { 
+    background-color: #4a5568 !important; 
+    color: #e2e8f0; 
+  }
+  tr:nth-child(even) td { background-color: #2d3748; }
+  tr:nth-child(odd) td { background-color: #1a202c; }
+  .mini-input { 
+    background-color: #4a5568; 
+    color: #e2e8f0; 
+  }
+  .section { background-color: #2d3748; }
+}
