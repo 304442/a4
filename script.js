@@ -348,7 +348,7 @@ function plannerApp() {
       
       input.type = 'text';
       input.value = currentValue;
-      input.className = isTextarea ? 'inline-edit-textarea' : 'inline-edit-input';
+      input.className = isTextarea ? 'input input--edit input--edit-area' : 'input input--edit';
       if (isTextarea) input.rows = 3;
 
       const originalText = element.innerText;
@@ -475,25 +475,25 @@ function plannerApp() {
     getScoreClass(activity) {
       if (activity.maxScore <= 0) return '';
       const ratio = activity.score / activity.maxScore;
-      if (ratio < 0.33) return 'score-low';
-      if (ratio < 0.66) return 'score-medium';
-      return 'score-high';
+      if (ratio < 0.33) return 'red';
+      if (ratio < 0.66) return 'yellow';
+      return 'green';
     },
 
     getTaskRowClass(task) {
       const classes = [];
-      if (task.completed === '✓') classes.push('task-completed');
+      if (task.completed === '✓') classes.push('green');
       const delay = this.getTaskDelay(task);
-      if (delay > 0) classes.push('task-delayed');
-      else if (delay < 0) classes.push('task-early');
+      if (delay > 0) classes.push('red');
+      else if (delay < 0) classes.push('blue');
       return classes.join(' ');
     },
 
     getDelayClass(task) {
       const delay = this.getTaskDelay(task);
-      if (delay < 0) return 'delay-negative';
-      if (delay > 0) return 'delay-positive';
-      return 'delay-zero';
+      if (delay < 0) return 'green';
+      if (delay > 0) return 'red';
+      return 'yellow';
     },
 
     getProgressStyle(activity) {
@@ -505,9 +505,9 @@ function plannerApp() {
     getProgressClass(activity) {
       if (activity.maxScore <= 0) return '';
       const ratio = activity.score / activity.maxScore;
-      if (ratio < 0.33) return 'progress-low';
-      if (ratio < 0.66) return 'progress-medium';
-      return 'progress-high';
+      if (ratio < 0.33) return 'progress--low';
+      if (ratio < 0.66) return 'progress--medium';
+      return 'progress--high';
     },
 
     getTaskColumnStyle(i) {
