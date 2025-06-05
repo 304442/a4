@@ -10,6 +10,7 @@
   <link rel="stylesheet" href="styles.css">
 </head>
 <body x-data="plannerApp()" x-init="init()">
+  <!-- Status indicators -->
   <div id="save-status" class="status status--save" :class="'status-' + saveStatus" x-text="saveStatus === 'saving' ? 'Saving...' : (saveStatus === 'error' ? 'Error!' : 'Saved')"></div>
   <div id="sync-status" class="status status--sync" :class="pendingSync.length > 0 ? 'status-pending' : 'status-synced'" x-show="pendingSync.length > 0 || !isOnline">
     <span x-text="isOnline ? (pendingSync.length > 0 ? 'Pending: ' + pendingSync.length : '') : 'Offline'"></span>
@@ -17,6 +18,7 @@
   <div id="notification" class="notification" :class="{ 'notification--show': showNotification }" x-text="notificationMessage"></div>
   
   <div class="card">
+    <!-- Header -->
     <div class="flex between center mb-1">
       <h1 class="text-sm bold editable" @dblclick="editField($event, 'plannerTitle', plannerTitle)" x-text="plannerTitle"></h1>
       <div class="flex center text-xs">
@@ -34,6 +36,7 @@
       </div>
     </div>
 
+    <!-- Main Schedule Table -->
     <table>
       <thead>
         <tr>
@@ -84,6 +87,7 @@
       </tbody>
     </table>
 
+    <!-- Tasks Section -->
     <div class="section">
       <h3 class="title editable" @dblclick="editField($event, 'sectionTitle', uiConfig.sectionTitles?.tasks, 'tasks')" x-text="uiConfig.sectionTitles?.tasks"></h3>
       <table>
@@ -114,6 +118,7 @@
       </table>
     </div>
 
+    <!-- Workout Section -->
     <div class="section">
       <h3 class="title editable" @dblclick="editField($event, 'sectionTitle', uiConfig.sectionTitles?.workout, 'workout')" x-text="uiConfig.sectionTitles?.workout"></h3>
       <div class="grid">
@@ -140,6 +145,7 @@
       </div>
     </div>
 
+    <!-- Other Sections -->
     <div class="section">
       <h3 class="title editable" @dblclick="editField($event, 'sectionTitle', uiConfig.sectionTitles?.meals, 'meals')" x-text="uiConfig.sectionTitles?.meals"></h3>
       <ul class="list text-xs">
@@ -193,6 +199,7 @@
     </div>
   </div>
 
+  <!-- Dropdowns -->
   <div class="dropdown" :class="{'dropdown--show': showCitySelector}" :style="getDropdownStyle()">
     <div class="dropdown__content">
       <template x-for="cityItem in cityOptions" :key="cityItem.name">
