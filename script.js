@@ -19,8 +19,7 @@ function plannerApp() {
     isOnline: navigator.onLine,
     pendingSync: [], 
     showCitySelector: false, 
-    showWeekSelector: false, 
-    dropdownPosition: { top: 0, left: 0 },
+    showWeekSelector: false,
     currentDay: (new Date()).getDay(), 
     plannerTitle: 'Weekly Planner',
     uiConfig: {}, 
@@ -623,27 +622,13 @@ function plannerApp() {
       return 'progress--high';
     },
 
-    getTaskColumnStyle(i) {
-      const widths = ['3mm', '3mm', '3mm', '', '8mm', '8mm', '8mm', '6mm', '3mm'];
-      return widths[i] ? `width:${widths[i]}` : 'text-align:left';
-    },
 
-    getDropdownStyle() {
-      return `top: ${this.dropdownPosition.top}px; left: ${this.dropdownPosition.left}px;`;
-    },
 
     // Selectors
     toggleSelector(event, type) {
       const prop = `show${type.charAt(0).toUpperCase() + type.slice(1)}Selector`;
       const other = type === 'city' ? 'showWeekSelector' : 'showCitySelector';
       this[other] = false;
-      
-      const rect = event.target.getBoundingClientRect();
-      this.dropdownPosition = {
-        top: rect.bottom + window.scrollY,
-        left: rect.left + window.scrollX
-      };
-      
       this[prop] = !this[prop];
       if (type === 'week' && this[prop]) this.fetchSavedWeeks();
     },
