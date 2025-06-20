@@ -42,7 +42,7 @@ function plannerApp() {
       { name: 'Amsterdam', lat: 52.3676, lon: 4.9041 }, 
       { name: 'Current Location', lat: null, lon: null }
     ],
-    editingActivity: null,
+    editingItem: null,
 
     // Initialization
     async init() {
@@ -655,11 +655,11 @@ function plannerApp() {
       this.saveData();
     },
 
-    // Activity editing
-    startEditingActivity(activity) {
-      this.editingActivity = activity.id;
+    // Generic double-click editing
+    startEditing(itemId) {
+      this.editingItem = itemId;
       this.$nextTick(() => {
-        const input = document.querySelector(`input[data-activity-id="${activity.id}"]`);
+        const input = document.querySelector(`input[data-edit-id="${itemId}"]`);
         if (input) {
           input.focus();
           input.select();
@@ -667,22 +667,29 @@ function plannerApp() {
       });
     },
 
-    finishEditingActivity(activity, newName) {
-      if (newName && newName.trim() !== '') {
-        // Preserve the prefix if the activity name has a colon
-        if (activity.name.includes(':')) {
-          const prefix = activity.name.split(':')[0];
-          activity.name = `${prefix}: ${newName.trim()}`;
+    finishEditing(item, field, newValue, preservePrefix = false) {
+      if (newValue && newValue.trim() !== '') {
+        if (preservePrefix && item[field].includes(':')) {
+          const prefix = item[field].split(':')[0];
+          item[field] = `${prefix}: ${newValue.trim()}`;
         } else {
-          activity.name = newName.trim();
+          item[field] = newValue.trim();
         }
         this.saveData();
       }
-      this.editingActivity = null;
+      this.editingItem = null;
     },
 
-    cancelEditingActivity() {
-      this.editingActivity = null;
+    finishEditingSimple(field, newValue) {
+      if (newValue && newValue.trim() !== '') {
+        this[field] = newValue.trim();
+        this.saveData();
+      }
+      this.editingItem = null;
+    },
+
+    cancelEditing() {
+      this.editingItem = null;
     },
 
     // Data Management
