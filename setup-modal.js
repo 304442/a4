@@ -962,26 +962,26 @@
     },
 
     async runFullSetup() {
-      const out = document.getElementById('setup-out');
-      out.innerHTML = '';
+      this.clearOutput();
       if (await this.runSchemaSetup() && await this.runSeedSetup()) {
         this.setupLog('🎉 Full setup complete!', 's');
-        // Close modal and reinitialize
         this.app.showSetupModal = false;
         this.app.init();
       }
     },
 
     async runSchemaOnly() {
-      const out = document.getElementById('setup-out');
-      out.innerHTML = '';
+      this.clearOutput();
       await this.runSchemaSetup();
     },
 
     async runSeedOnly() {
-      const out = document.getElementById('setup-out');
-      out.innerHTML = '';
+      this.clearOutput();
       await this.runSeedSetup();
+    },
+
+    clearOutput() {
+      document.getElementById('setup-out').innerHTML = '';
     },
 
     async runSchemaSetup() {

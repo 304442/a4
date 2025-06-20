@@ -290,11 +290,11 @@ function plannerApp() {
       if (record.title) this.plannerTitle = record.title;
       if (record.city) this.city = record.city;
       if (record.prayer_times) this.overlayArray(this.times, record.prayer_times);
-      if (record.schedule_data) this.overlayScheduleData(record.schedule_data);
+      if (record.schedule_data) this.overlayComplexData(this.schedule, record.schedule_data, 'name', this.overlayScheduleActivity);
       if (record.tasks_data) this.overlayArray(this.tasks, record.tasks_data);
-      if (record.workout_data) this.overlayWorkoutData(record.workout_data);
+      if (record.workout_data) this.overlayComplexData(this.workoutPlan, record.workout_data, 'name', this.overlayWorkoutExercise);
       if (record.meals_data) this.overlayArray(this.meals, record.meals_data);
-      if (record.grocery_data) this.overlayGroceryData(record.grocery_data);
+      if (record.grocery_data?.categories) this.overlayArray(this.groceryList, record.grocery_data.categories);
       if (record.measurements_data) this.overlayArray(this.bodyMeasurements, record.measurements_data);
       if (record.financials_data) this.overlayArray(this.financials, record.financials_data);
     },
@@ -305,46 +305,39 @@ function plannerApp() {
       });
     },
 
-    overlayScheduleData(scheduleData) {
-      scheduleData.forEach(savedSection => {
-        const section = this.schedule.find(s => s.name === savedSection.name);
-        if (section) {
-          savedSection.activities?.forEach(savedActivity => {
-            const activity = section.activities.find(a => a.name === savedActivity.name);
-            if (activity) {
-              if (savedActivity.days) {
-                Object.keys(activity.days).forEach(day => {
-                  if (savedActivity.days[day]) {
-                    activity.days[day].value = savedActivity.days[day].value || '';
-                  }
-                });
+    overlayComplexData(target, source, matchKey, itemProcessor) {
+      source.forEach(savedItem => {
+        const item = target.find(t => t[matchKey] === savedItem[matchKey]);
+        if (item) itemProcessor.call(this, item, savedItem);
+      });
+    },
+
+    overlayScheduleActivity(section, savedSection) {
+      savedSection.activities?.forEach(savedActivity => {
+        const activity = section.activities.find(a => a.name === savedActivity.name);
+        if (activity) {
+          if (savedActivity.days) {
+            Object.keys(activity.days).forEach(day => {
+              if (savedActivity.days[day]) {
+                activity.days[day].value = savedActivity.days[day].value || '';
               }
-              activity.score = savedActivity.score || 0;
-              activity.streaks = savedActivity.streaks || { current: 0, longest: 0 };
-            }
-          });
+            });
+          }
+          activity.score = savedActivity.score || 0;
+          activity.streaks = savedActivity.streaks || { current: 0, longest: 0 };
         }
       });
     },
 
-    overlayWorkoutData(workoutData) {
-      workoutData.forEach(savedDay => {
-        const day = this.workoutPlan.find(d => d.name === savedDay.name);
-        if (day) {
-          savedDay.exercises?.forEach(savedEx => {
-            const exercise = day.exercises.find(ex => ex.name === savedEx.name);
-            if (exercise) {
-              exercise.weight = savedEx.weight || '';
-              exercise.sets = savedEx.sets || '';
-              exercise.reps = savedEx.reps || '';
-            }
-          });
+    overlayWorkoutExercise(day, savedDay) {
+      savedDay.exercises?.forEach(savedEx => {
+        const exercise = day.exercises.find(ex => ex.name === savedEx.name);
+        if (exercise) {
+          exercise.weight = savedEx.weight || '';
+          exercise.sets = savedEx.sets || '';
+          exercise.reps = savedEx.reps || '';
         }
       });
-    },
-
-    overlayGroceryData(groceryData) {
-      if (groceryData.categories) this.overlayArray(this.groceryList, groceryData.categories);
     },
 
     // User Data Extraction
@@ -367,7 +360,7 @@ function plannerApp() {
     },
 
     extractScheduleData() {
-      return this.schedule.map(section => ({
+      return this.extractComplexData(this.schedule, section => ({
         name: section.name,
         activities: section.activities.map(activity => ({
           name: activity.name,
@@ -378,26 +371,27 @@ function plannerApp() {
           score: activity.score,
           streaks: activity.streaks
         })).filter(activity => Object.keys(activity.days).length > 0 || activity.score > 0)
-      })).filter(section => section.activities.length > 0);
+      }), section => section.activities.length > 0);
     },
 
     extractUserTasks() {
       return this.tasks.filter(task => 
-        task.num || task.priority || task.tag || task.description || 
+        task.priority || task.tag || task.description || 
         task.startDate || task.expectedDate || task.actualDate || task.completed
       );
     },
 
     extractWorkoutData() {
-      return this.workoutPlan.map(day => ({
+      return this.extractComplexData(this.workoutPlan, day => ({
         name: day.name,
         exercises: day.exercises.filter(ex => ex.weight || ex.sets || ex.reps).map(ex => ({
-          name: ex.name, 
-          weight: ex.weight, 
-          sets: ex.sets, 
-          reps: ex.reps
+          name: ex.name, weight: ex.weight, sets: ex.sets, reps: ex.reps
         }))
-      })).filter(day => day.exercises.length > 0);
+      }), day => day.exercises.length > 0);
+    },
+
+    extractComplexData(items, mapper, filter = () => true) {
+      return items.map(mapper).filter(filter);
     },
 
     extractUserItems(items, fields) {
@@ -438,33 +432,17 @@ function plannerApp() {
 
     // Selectors with Portal Positioning
     toggleSelector(event, type) {
-      const otherType = type === 'city' ? 'week' : 'city';
-      const showProp = `show${type.charAt(0).toUpperCase() + type.slice(1)}Selector`;
-      const otherShowProp = `show${otherType.charAt(0).toUpperCase() + otherType.slice(1)}Selector`;
+      const types = { city: 'week', week: 'city' };
+      const showProp = `show${type[0].toUpperCase() + type.slice(1)}Selector`;
       
-      // Close other dropdown
-      this[otherShowProp] = false;
+      this[`show${types[type][0].toUpperCase() + types[type].slice(1)}Selector`] = false;
       
       if (this[showProp]) {
-        // Close current dropdown
         this[showProp] = false;
       } else {
-        // Open current dropdown with calculated position
         const rect = event.target.getBoundingClientRect();
-        const styleProp = `${type}DropdownStyle`;
-        
-        this[styleProp] = `
-          position: fixed;
-          top: ${rect.bottom + 4}px;
-          left: ${Math.max(10, rect.left - 100)}px;
-          z-index: 9999;
-          min-width: 150px;
-          max-width: 250px;
-        `;
-        
+        this[`${type}DropdownStyle`] = `position:fixed;top:${rect.bottom + 4}px;left:${Math.max(10, rect.left - 100)}px;z-index:9999;min-width:150px;max-width:250px;`;
         this[showProp] = true;
-        
-        // Fetch saved weeks if opening week selector
         if (type === 'week') this.fetchSavedWeeks();
       }
     },
@@ -548,9 +526,8 @@ function plannerApp() {
     },
 
     setPrayerTimes(timings) {
-      const qiyamTime = this.calculateQiyamTime(timings.Fajr);
       const prayerMap = {
-        Q: qiyamTime, 
+        Q: this.calculateQiyamTime(timings.Fajr), 
         F: timings.Fajr, 
         D: timings.Dhuhr, 
         A: timings.Asr, 
@@ -558,14 +535,14 @@ function plannerApp() {
         I: timings.Isha
       };
       
-      let changed = false;
-      this.times.forEach(time => {
+      const changed = this.times.reduce((acc, time) => {
         const newTime = this.formatTime(prayerMap[time.label]);
         if (time.value !== newTime) {
           time.value = newTime;
-          changed = true;
+          return true;
         }
-      });
+        return acc;
+      }, false);
       
       if (changed && !isInitializing) this.saveData();
     },
