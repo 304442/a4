@@ -43,7 +43,7 @@
       <thead>
         <tr>
           <th style="width:18mm">T</th>
-          <th style="width:18mm">D</th>
+          <th style="width:20mm">D</th>
           <th class="ac">ACTIVITY</th>
           <template x-for="(dayKey, i) in ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN']" :key="dayKey">
             <th class="dc" :class="{'current-day': i === (currentDay || 7) - 1}" x-text="['M', 'T', 'W', 'T', 'F', 'S', 'S'][i]"></th>
