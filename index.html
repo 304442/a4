@@ -118,7 +118,13 @@
                   <option value="D">D</option>
                 </select>
               </td>
-              <td><input type="text" class="input" x-model="task.tag" @change="saveData()"></td>
+              <td>
+                <select class="input" x-model="task.tag" @change="saveData()">
+                  <option value=""></option>
+                  <option value="P">Personal</option>
+                  <option value="W">Work</option>
+                </select>
+              </td>
               <td><input type="text" class="input input--text" x-model="task.description" @change="saveData()"></td>
               <td><input type="text" class="input input--date" x-model="task.startDate" @change="calculateTaskDelay(task); saveData();"></td>
               <td><input type="text" class="input input--date" x-model="task.expectedDate" @change="calculateTaskDelay(task); saveData();"></td>
