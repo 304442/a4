@@ -73,7 +73,6 @@ function plannerApp() {
         const template = await pb.collection('templates').getFirstListItem('is_default=true');
         return true;
       } catch (error) {
-        console.log('Database not initialized or template not found');
         return false;
       }
     },
@@ -264,7 +263,7 @@ function plannerApp() {
         try { 
           return await pb.collection('planners').getFirstListItem(`week_id="${isoWeek}"`); 
         } catch (e) { 
-          if (e.status !== 404) console.error("PB error:", e); 
+ 
         }
       }
       
@@ -273,7 +272,7 @@ function plannerApp() {
         try { 
           return JSON.parse(local); 
         } catch(e) { 
-          console.error("Parse error", e); 
+          // Invalid JSON in localStorage
         }
       }
       return null;
@@ -283,7 +282,6 @@ function plannerApp() {
       try {
         return await pb.collection('templates').getOne(templateId);
       } catch (e) {
-        console.error("Template by ID error:", e);
         return await this.fetchTemplate("default");
       }
     },
@@ -471,17 +469,10 @@ function plannerApp() {
       }
     },
 
-    closeCitySelector() {
-      this.showCitySelector = false;
-    },
-
-    closeWeekSelector() {
-      this.showWeekSelector = false;
-    },
 
     async selectCity(cityOption) {
       this.city = cityOption.name;
-      this.closeCitySelector();
+      this.showCitySelector = false;
       try {
         if (cityOption.lat === null) await this.getPrayerTimes();
         else await this.fetchPrayerTimes(cityOption.lat, cityOption.lon);
@@ -816,7 +807,7 @@ function plannerApp() {
             addWeek(record.week_id, record.date_range, 'pocketbase', record.week_id === currentIso)
           );
         } catch (e) {
-          console.error("Fetch weeks error:", e);
+          // Failed to fetch from PocketBase
         }
       }
       
@@ -848,7 +839,7 @@ function plannerApp() {
           !confirm("Unsaved changes. Load anyway?")) {
         return;
       }
-      this.closeWeekSelector();
+      this.showWeekSelector = false;
       this.loadWeek(isoWeek);
     },
 
@@ -909,20 +900,6 @@ function plannerApp() {
       return `${(date.getUTCMonth() + 1).toString().padStart(2, '0')}/${date.getUTCDate().toString().padStart(2, '0')}`;
     },
 
-    // Format dates to MM/DD for display
-    formatDateForInput(dateString) {
-      if (!dateString) return '';
-      const date = new Date(dateString + 'T00:00:00');
-      return `${(date.getMonth() + 1).toString().padStart(2, '0')}/${date.getDate().toString().padStart(2, '0')}`;
-    },
-
-    // Parse MM/DD back to full date (assumes current year)
-    parseDateFromInput(mmddString) {
-      if (!mmddString || !mmddString.includes('/')) return '';
-      const [month, day] = mmddString.split('/');
-      const currentYear = new Date().getFullYear();
-      return `${currentYear}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
-    },
 
     showMessage(message) {
       this.notificationMessage = message;
