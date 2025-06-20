@@ -1,5 +1,5 @@
 function plannerApp() {
-  const pb = new PocketBase('/');
+  const pb = new PocketBase(window.location.origin);
   pb.autoCancellation(false);
   let isInitializing = true;
   let lastSavedState = null;
