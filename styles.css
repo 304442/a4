@@ -35,7 +35,7 @@ body {
 .dc { width: 3.5mm; text-align: center; padding: 0; height: 3mm; }
 .ac { width: 88mm; text-align: left; padding-left: 1mm; height: 3mm; }
 table { table-layout: fixed; width: 200mm; border-collapse: collapse; border: 1px solid #e2e8f0; }
-th, td { padding: 0; border: none; vertical-align: middle; height: 3mm; font-size: 7pt; }
+th, td { padding: 0; border: 1px solid #e2e8f0; vertical-align: middle; height: 3mm; font-size: 7pt; }
 th { background: linear-gradient(135deg, #e6e6e6 0%, #f0f0f0 100%) !important; color: #2d3748; font-weight: 600; }
 tr:nth-child(even) td { background-color: #f0f4f8; }
 tr:nth-child(odd) td { background-color: #ffffff; }
