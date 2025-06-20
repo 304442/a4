@@ -200,6 +200,7 @@ tr:has(.task-done) td, tr:has(.task-done) td input:not(.task-done) { text-decora
 .between { justify-content: space-between; }
 .center { align-items: center; }
 .mb-1 { margin-bottom: 1mm; }
+.mb-05 { margin-bottom: 0.5mm; }
 .ml-1 { margin-left: 1mm; }
 .p-1 { padding: 1mm; }
 

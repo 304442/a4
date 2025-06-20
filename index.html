@@ -34,7 +34,7 @@
         <span class="clickable ml-1" x-text="city" @click="toggleSelector($event, 'city')"></span>
       </div>
       <div class="text-sm">
-        <span class="clickable" x-text="currentWeek" @click="toggleSelector($event, 'week')"></span> (<span x-text="dateRange"></span>)
+        <span class="clickable" x-text="currentWeek" @click="toggleSelector($event, 'week')"></span> <span x-text="dateRange"></span>
       </div>
     </div>
 
@@ -170,57 +170,53 @@
     <!-- Other Sections -->
     <div class="section">
       <h3 class="title">MEALS</h3>
-      <ul class="list text-xs">
+      <div class="text-xs">
         <template x-for="(meal, i) in meals" :key="meal.id || i">
-          <li class="list-item">
+          <div class="mb-05">
             <span class="bold" x-text="meal.name + ':'"></span>
             <span x-text="meal.ingredients"></span>
-          </li>
+          </div>
         </template>
-      </ul>
+      </div>
     </div>
 
     <div class="section">
       <h3 class="title">GROCERY</h3>
-      <ul class="list text-xs">
+      <div class="text-xs">
         <template x-for="(cat, i) in groceryList" :key="cat.id || i">
-          <li class="list-item">
+          <div class="mb-05">
             <span class="bold" x-text="cat.name + ':'"></span>
             <span x-text="cat.items"></span>
-          </li>
+          </div>
         </template>
-      </ul>
+      </div>
     </div>
 
     <div class="section">
-      <ul class="list text-xs">
-        <li class="list-item">
-          <span class="bold">BODY</span>
-          <template x-for="(m, i) in bodyMeasurements" :key="m.id || i">
-            <span>
-              <span x-text="m.name + ':'"></span>
-              <input type="text" class="input input--inline" x-model="m.value" :placeholder="m.placeholder" @change="saveData();">
-              <span x-show="i < bodyMeasurements.length - 1">, </span>
-            </span>
-          </template>
-        </li>
-      </ul>
+      <h3 class="title">BODY</h3>
+      <div class="text-xs">
+        <template x-for="(m, i) in bodyMeasurements" :key="m.id || i">
+          <span>
+            <span x-text="m.name + ':'"></span>
+            <input type="text" class="input input--inline" x-model="m.value" :placeholder="m.placeholder" @change="saveData();">
+            <span x-show="i < bodyMeasurements.length - 1">, </span>
+          </span>
+        </template>
+      </div>
     </div>
 
     <div class="section">
-      <ul class="list text-xs">
-        <li class="list-item">
-          <span class="bold">FINANCIAL</span>
-          <template x-for="(item, i) in financials" :key="item.id || i">
-            <span>
-              <span x-text="item.name + ':'"></span>
-              £<input type="text" class="input input--inline" x-model="item.value" :placeholder="item.placeholder" @change="saveData();">
-              <span x-text="item.account"></span>
-              <span x-show="i < financials.length - 1">, </span>
-            </span>
-          </template>
-        </li>
-      </ul>
+      <h3 class="title">FINANCIAL</h3>
+      <div class="text-xs">
+        <template x-for="(item, i) in financials" :key="item.id || i">
+          <span>
+            <span x-text="item.name + ':'"></span>
+            £<input type="text" class="input input--inline" x-model="item.value" :placeholder="item.placeholder" @change="saveData();">
+            <span x-text="item.account"></span>
+            <span x-show="i < financials.length - 1">, </span>
+          </span>
+        </template>
+      </div>
     </div>
   </div>
 
@@ -254,7 +250,7 @@
       <template x-if="savedWeeks.length > 0">
         <template x-for="week in savedWeeks" :key="week.iso_week">
           <div class="flex between center dropdown__item" :class="{'dropdown__item--current': week.isCurrent}">
-            <span @click="confirmLoadWeek(week.iso_week)" x-text="`${week.iso_week} (${week.dateRange})`"></span>
+            <span @click="confirmLoadWeek(week.iso_week)" x-text="`${week.iso_week} ${week.dateRange}`"></span>
             <span @click="confirmDeleteWeek(week.iso_week)" class="dropdown__delete">×</span>
           </div>
         </template>
