@@ -1,14 +1,32 @@
 /* Reset & Base */
 * { box-sizing: border-box; margin: 0; padding: 0; font-family: monospace; }
-html { overflow-x: hidden; }
 input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
 input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
 @page { size: A4; margin: 0; }
-html, body { width: 100%; height: 100%; background-color: #f0f0f0; -webkit-text-size-adjust: 100%; }
-body { display: flex; justify-content: center; align-items: flex-start; padding: 10px; }
+html { width: 100%; min-height: 100%; background-color: #f0f0f0; }
+body { 
+  width: 100%;
+  min-height: 100vh;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  background-color: #f0f0f0;
+  overflow-x: auto;
+}
 
 /* Card Layout */
-.card { width: 210mm; max-width: 100%; height: 297mm; padding: 5mm; box-shadow: 0 4px 6px rgba(0,0,0,0.1); background-color: white; position: relative; margin: 0 auto; overflow-x: auto; }
+.card { 
+  width: 210mm; 
+  height: 297mm; 
+  padding: 5mm; 
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1); 
+  background-color: white; 
+  position: relative; 
+  margin: 10px auto;
+  transform-origin: top center;
+}
 
 /* Table System */
 .dc { width: 3.5mm; text-align: center; padding: 0; height: 3mm; }
@@ -150,28 +168,35 @@ tr:has(.task-done) td, tr:has(.task-done) td input:not(.task-done) { text-decora
 /* Icon headers for task table */
 .icon-header { font-size: 7pt; }
 
-/* Responsive */
-@media screen and (max-width: 840px) {
-  body { padding: 5px; }
-  .card { 
-    width: 100%; 
-    height: auto; 
-    min-height: 100vh; 
-    padding: 3mm; 
-    transform-origin: top left;
-  }
-  table { width: 100%; }
-  .dc { width: auto; min-width: 3mm; }
-  .ac { width: auto; }
-  .status { font-size: 10px; padding: 3px 6px; }
+/* Container for proper scrolling */
+.viewport-container {
+  width: 100%;
+  min-width: 220mm; /* Slightly larger than A4 to accommodate margins */
+  display: flex;
+  justify-content: center;
 }
 
-@media screen and (max-width: 600px) {
-  * { font-size: 6pt !important; }
-  .text-xs { font-size: 5pt !important; }
-  .text-sm { font-size: 6pt !important; }
-  th, td { font-size: 5pt !important; }
-  .input { font-size: 5pt !important; }
+/* Mobile viewing - scale down the entire card */
+@media screen and (max-width: 850px) {
+  body {
+    padding: 5px;
+    overflow: auto;
+  }
+  .viewport-container {
+    min-width: auto;
+    width: 100%;
+    height: 150mm; /* Adjusted height for scaled content */
+    position: relative;
+    overflow: visible;
+  }
+  .card {
+    transform: scale(0.47);
+    transform-origin: top center;
+    position: absolute;
+    left: 50%;
+    top: 0;
+    margin-left: -99mm; /* Adjusted for scale */
+  }
 }
 
 /* Print */

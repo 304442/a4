@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=850, user-scalable=yes">
   <title>A4 Planner</title>
   <script src="pocketbase.umd.js"></script>
   <script defer src="script.js"></script>
@@ -17,7 +17,8 @@
   </div>
   <div id="notification" class="notification" :class="{ 'notification--show': showNotification }" x-text="notificationMessage"></div>
   
-  <div class="card">
+  <div class="viewport-container">
+    <div class="card">
     <!-- Header -->
     <div class="flex between center mb-1">
       <h1 class="text-sm bold" x-text="plannerTitle"></h1>
@@ -248,5 +249,6 @@
       </template>
     </div>
   </div>
+  </div><!-- end viewport-container -->
 </body>
 </html>
