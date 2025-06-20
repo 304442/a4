@@ -148,7 +148,7 @@ tr:has(.task-done) td, tr:has(.task-done) td input:not(.task-done) { text-decora
 
 /* Progress & Streaks */
 .streak span { position: relative; }
-/* Streak indicator removed for clarity */
+.streak span::after { content: "🔥"; font-size: 6pt; position: absolute; top: -2px; right: -8px; }
 .progress { height: 2mm; background-color: #e9ecef; border-radius: 0.5mm; overflow: hidden; padding: 0 !important; }
 .progress__bar { height: 100%; border-radius: 0.5mm; transition: width 0.3s ease; }
 .progress--low { background-color: #dc3545; }
