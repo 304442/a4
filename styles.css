@@ -3,17 +3,20 @@
 input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
 input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
 @page { size: A4; margin: 0; }
-html { width: 100%; min-height: 100%; background-color: #f0f0f0; }
+html { 
+  width: 100%; 
+  height: 100%; 
+  overflow: auto;
+}
 body { 
   width: 100%;
-  min-height: 100vh;
+  min-height: 100%;
   margin: 0;
-  padding: 0;
+  padding: 20px 0;
   display: flex;
   justify-content: center;
   align-items: flex-start;
   background-color: #f0f0f0;
-  overflow-x: auto;
 }
 
 /* Card Layout */
@@ -24,8 +27,8 @@ body {
   box-shadow: 0 4px 6px rgba(0,0,0,0.1); 
   background-color: white; 
   position: relative; 
-  margin: 10px auto;
-  transform-origin: top center;
+  margin: 0;
+  transform-origin: center center;
 }
 
 /* Table System */
@@ -170,32 +173,31 @@ tr:has(.task-done) td, tr:has(.task-done) td input:not(.task-done) { text-decora
 
 /* Container for proper scrolling */
 .viewport-container {
-  width: 100%;
-  min-width: 220mm; /* Slightly larger than A4 to accommodate margins */
+  width: 210mm;
+  margin: 0 auto;
   display: flex;
   justify-content: center;
+  align-items: flex-start;
 }
 
 /* Mobile viewing - scale down the entire card */
 @media screen and (max-width: 850px) {
   body {
-    padding: 5px;
-    overflow: auto;
+    padding: 10px;
   }
   .viewport-container {
-    min-width: auto;
     width: 100%;
-    height: 150mm; /* Adjusted height for scaled content */
+    height: auto;
+    min-height: 140mm;
+    display: block;
     position: relative;
-    overflow: visible;
   }
   .card {
     transform: scale(0.47);
     transform-origin: top center;
-    position: absolute;
-    left: 50%;
-    top: 0;
-    margin-left: -99mm; /* Adjusted for scale */
+    position: relative;
+    margin: 0 auto;
+    left: auto;
   }
 }
 
