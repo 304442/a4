@@ -180,25 +180,21 @@ tr:has(.task-done) td, tr:has(.task-done) td input:not(.task-done) { text-decora
   align-items: flex-start;
 }
 
-/* Mobile viewing - scale down the entire card */
+/* Mobile viewing - keep A4 format but allow horizontal scroll */
 @media screen and (max-width: 850px) {
   body {
     padding: 10px;
+    justify-content: flex-start;
   }
   .viewport-container {
-    width: 100%;
-    height: auto;
-    min-height: 140mm;
-    display: block;
-    position: relative;
+    width: 210mm;
+    margin: 0;
   }
   .card {
-    transform: scale(0.47);
-    transform-origin: top center;
-    position: relative;
-    margin: 0 auto;
-    left: auto;
+    transform: none;
+    margin: 0;
   }
+  /* Let mobile users pinch to zoom as needed */
 }
 
 /* Print */
