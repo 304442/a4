@@ -84,11 +84,20 @@ Always implement graceful degradation for offline scenarios. The app should rema
 
 ## Recent Updates & UI Features
 
+### Latest Changes (2024)
+- Reordered task columns: Priority now appears before Task description
+- Removed parentheses from week date range displays
+- Unified section formatting: All sections now have consistent headers without bullets
+- Replaced S/M column headers with 📊/🎯 emojis
+- Added CSS variables for color management and maintainability
+- Code reduction: Consolidated duplicate functions and simplified logic
+- All dropdowns now have consistent light blue background
+
 ### Task Management
 - Task numbers are auto-generated (not editable)
 - Priority is a dropdown (A, B, C, D)
 - Tag is a dropdown (Personal, Work)
-- Column order: # → Task → ⭐ → 🏷️ → Start → Due → Done → Delay → ✓
+- Column order: # → ⭐ → Task → 🏷️ → Start → Due → Delay → Done → ✓
 - Date columns show clear text headers without emojis
 
 ### Styling
@@ -101,6 +110,8 @@ Always implement graceful degradation for offline scenarios. The app should rema
 ### Icons & Emojis
 - ⭐ for Priority
 - 🏷️ for Tag  
+- 📊 for Score
+- 🎯 for Max score
 - 🔥 for Streak (in schedule table)
 - Text-only headers for Start, Due, Done, Delay
 
@@ -161,12 +172,13 @@ Prayer times use the Islamic Society of North America (ISNA) method. Modify calc
 - Color-coded progress bars (red/yellow/green)
 
 ### Tasks Section
-- 10 task rows by default
+- 15 task rows by default
 - Priority dropdown (A/B/C/D) with ⭐ header
 - Tag dropdown (Personal/Work) with 🏷️ header  
 - Date fields for Start/Due/Done
 - Automatic delay calculation with color coding
 - Completion checkbox with ✓
+- Column order: # → ⭐ → Task → 🏷️ → Start → Due → Delay → Done → ✓
 
 ### Workout Section
 - 3-column layout for different days
@@ -183,12 +195,14 @@ Prayer times use the Islamic Society of North America (ISNA) method. Modify calc
 - List format
 
 ### Body Measurements
-- Grid layout with measurement inputs
-- No labels (assumes user knows what they're tracking)
+- Single line with inline inputs
+- Comma-separated format
+- No bullet points
 
 ### Financial Section
-- Inline format: name: £value (account)
+- Single line format: name: £value (account)
 - Comma-separated items
+- No bullet points
 
 ### Visual Design
 - A4 page size (210mm × 297mm) maintained on all devices
