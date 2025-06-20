@@ -52,8 +52,8 @@ function plannerApp() {
       
       // Check if database is initialized
       if (!(await this.checkDatabaseInitialized())) {
-        this.showSetupModal = true;
-        this.initializeSetup();
+        // Show notification to setup database
+        this.showSetupNotification();
         return;
       }
       
@@ -929,6 +929,17 @@ function plannerApp() {
       this.showNotification = true;
       clearTimeout(this.notificationTimeout);
       this.notificationTimeout = setTimeout(() => this.showNotification = false, 5000);
+    },
+
+    showSetupNotification() {
+      // Create a persistent setup notification
+      const notification = document.createElement('div');
+      notification.className = 'setup-notification';
+      notification.innerHTML = `
+        <span>Database not initialized. Click to run setup.</span>
+        <button onclick="window.setupModal.showModal()">Setup Now</button>
+      `;
+      document.body.appendChild(notification);
     }
   };
 }

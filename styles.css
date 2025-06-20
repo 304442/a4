@@ -96,6 +96,40 @@ tr:has(.task-done) td, tr:has(.task-done) td input:not(.task-done) { text-decora
 .notification--show { display: block; animation: fadeOut 5s forwards; }
 @keyframes fadeOut { 0%, 70% { opacity: 1; } 100% { opacity: 0; } }
 
+/* Setup Notification */
+.setup-notification {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background-color: #fff3cd;
+  color: #856404;
+  padding: 20px 30px;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  font-size: 14px;
+  z-index: 2000;
+  text-align: center;
+  border: 1px solid #ffeaa7;
+}
+.setup-notification span {
+  display: block;
+  margin-bottom: 15px;
+}
+.setup-notification button {
+  background-color: #007bff;
+  color: white;
+  border: none;
+  padding: 8px 20px;
+  border-radius: 4px;
+  font-size: 14px;
+  cursor: pointer;
+  font-family: monospace;
+}
+.setup-notification button:hover {
+  background-color: #0056b3;
+}
+
 /* Typography */
 .text-xs { font-size: 7pt; line-height: 1.2; }
 .text-sm { font-size: 8pt; line-height: 1.2; }
