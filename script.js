@@ -138,7 +138,7 @@ function plannerApp() {
       this.plannerTitle = s.title_default || 'Weekly Planner';
       this.times = [...(s.prayer_times || [])];
       this.schedule = this.buildScheduleFromTemplate(s.schedule || []);
-      this.tasks = Array(s.tasks?.count || 10).fill().map(() => ({
+      this.tasks = Array(s.tasks?.count || 15).fill().map(() => ({
         id: generateId(), 
  
         priority: '', 
