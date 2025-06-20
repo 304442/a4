@@ -42,6 +42,7 @@ function plannerApp() {
       { name: 'Amsterdam', lat: 52.3676, lon: 4.9041 }, 
       { name: 'Current Location', lat: null, lon: null }
     ],
+    editingActivity: null,
 
     // Initialization
     async init() {
@@ -652,6 +653,36 @@ function plannerApp() {
       input.value = value === 0 ? '' : value.toString();
       this.calculateScores();
       this.saveData();
+    },
+
+    // Activity editing
+    startEditingActivity(activity) {
+      this.editingActivity = activity.id;
+      this.$nextTick(() => {
+        const input = document.querySelector(`input[data-activity-id="${activity.id}"]`);
+        if (input) {
+          input.focus();
+          input.select();
+        }
+      });
+    },
+
+    finishEditingActivity(activity, newName) {
+      if (newName && newName.trim() !== '') {
+        // Preserve the prefix if the activity name has a colon
+        if (activity.name.includes(':')) {
+          const prefix = activity.name.split(':')[0];
+          activity.name = `${prefix}: ${newName.trim()}`;
+        } else {
+          activity.name = newName.trim();
+        }
+        this.saveData();
+      }
+      this.editingActivity = null;
+    },
+
+    cancelEditingActivity() {
+      this.editingActivity = null;
     },
 
     // Data Management

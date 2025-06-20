@@ -59,8 +59,22 @@
             <tr :class="{'total': section.name === 'TOTAL'}">
               <td class="bold" x-text="aIdx === 0 ? section.name : ''"></td>
               <td class="bold" x-text="activity.name.includes(':') ? activity.name.split(':')[0] : ''"></td>
-              <td class="ac">
-                <span x-text="activity.name.includes(':') ? activity.name.split(':')[1].trim() : activity.name"></span>
+              <td class="ac" @dblclick="startEditingActivity(activity)">
+                <template x-if="editingActivity !== activity.id">
+                  <span style="cursor: pointer;" x-text="activity.name.includes(':') ? activity.name.split(':')[1].trim() : activity.name"></span>
+                </template>
+                <template x-if="editingActivity === activity.id">
+                  <input 
+                    type="text" 
+                    class="input input--text" 
+                    :data-activity-id="activity.id"
+                    :value="activity.name.includes(':') ? activity.name.split(':')[1].trim() : activity.name"
+                    @keyup.enter="finishEditingActivity(activity, $event.target.value)"
+                    @keyup.escape="cancelEditingActivity()"
+                    @blur="finishEditingActivity(activity, $event.target.value)"
+                    style="width: 100%; font-size: 7pt;"
+                  >
+                </template>
               </td>
               <template x-for="(day, i) in ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']" :key="day">
                 <td class="dc" :class="{'current-day': i === (currentDay || 7) - 1}">
