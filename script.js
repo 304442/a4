@@ -402,7 +402,7 @@ function plannerApp() {
     },
 
     formatDelay(days) {
-      if (days === 0) return '⏰';
+      if (days === 0) return '0d';
       return days > 0 ? `+${days}d` : `${days}d`;
     },
 
