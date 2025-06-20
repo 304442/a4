@@ -21,23 +21,7 @@
     <div class="card">
     <!-- Header -->
     <div class="flex between center mb-1">
-      <h1 class="text-sm bold" @dblclick="startEditing('planner-title')" style="cursor: pointer;">
-        <template x-if="editingItem !== 'planner-title'">
-          <span x-text="plannerTitle"></span>
-        </template>
-        <template x-if="editingItem === 'planner-title'">
-          <input 
-            type="text" 
-            class="input input--text" 
-            :data-edit-id="'planner-title'"
-            :value="plannerTitle"
-            @keyup.enter="finishEditingSimple('plannerTitle', $event.target.value)"
-            @keyup.escape="cancelEditing()"
-            @blur="finishEditingSimple('plannerTitle', $event.target.value)"
-            style="font-size: 8pt; font-weight: bold;"
-          >
-        </template>
-      </h1>
+      <h1 class="text-sm bold" x-text="plannerTitle"></h1>
       <div class="flex center text-xs">
         <template x-for="(time, i) in times" :key="i">
           <div class="flex center">
@@ -75,22 +59,8 @@
             <tr :class="{'total': section.name === 'TOTAL'}">
               <td class="bold" x-text="aIdx === 0 ? section.name : ''"></td>
               <td class="bold" x-text="activity.name.includes(':') ? activity.name.split(':')[0] : ''"></td>
-              <td class="ac" @dblclick="startEditing(activity.id)">
-                <template x-if="editingItem !== activity.id">
-                  <span style="cursor: pointer;" x-text="activity.name.includes(':') ? activity.name.split(':')[1].trim() : activity.name"></span>
-                </template>
-                <template x-if="editingItem === activity.id">
-                  <input 
-                    type="text" 
-                    class="input input--text" 
-                    :data-edit-id="activity.id"
-                    :value="activity.name.includes(':') ? activity.name.split(':')[1].trim() : activity.name"
-                    @keyup.enter="finishEditing(activity, 'name', $event.target.value, true)"
-                    @keyup.escape="cancelEditing()"
-                    @blur="finishEditing(activity, 'name', $event.target.value, true)"
-                    style="width: 100%; font-size: 7pt;"
-                  >
-                </template>
+              <td class="ac">
+                <span x-text="activity.name.includes(':') ? activity.name.split(':')[1].trim() : activity.name"></span>
               </td>
               <template x-for="(day, i) in ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']" :key="day">
                 <td class="dc" :class="{'current-day': i === (currentDay || 7) - 1}">
@@ -164,28 +134,9 @@
             <p class="bold text-center mb-1 workout-day-name" x-text="day.name"></p>
             <template x-for="(ex, exIdx) in day.exercises" :key="ex.id || exIdx">
               <div class="exercise">
-                <div class="exercise-name" :title="ex.prefix + ex.name" @dblclick="startEditing(ex.id)">
-                  <template x-if="editingItem !== ex.id">
-                    <span>
-                      <span x-text="ex.prefix"></span>
-                      <span x-text="ex.name"></span>:
-                    </span>
-                  </template>
-                  <template x-if="editingItem === ex.id">
-                    <span>
-                      <span x-text="ex.prefix"></span>
-                      <input 
-                        type="text" 
-                        class="input input--text" 
-                        :data-edit-id="ex.id"
-                        :value="ex.name"
-                        @keyup.enter="finishEditing(ex, 'name', $event.target.value)"
-                        @keyup.escape="cancelEditing()"
-                        @blur="finishEditing(ex, 'name', $event.target.value)"
-                        style="font-size: 7pt; width: 80px;"
-                      >:
-                    </span>
-                  </template>
+                <div class="exercise-name" :title="ex.prefix + ex.name">
+                  <span x-text="ex.prefix"></span>
+                  <span x-text="ex.name"></span>:
                 </div>
                 <div class="exercise-inputs">
                   <input type="number" class="input" x-model.number="ex.weight" @input="saveData();" :placeholder="ex.defaultWeight">
@@ -207,25 +158,7 @@
       <ul class="list text-xs">
         <template x-for="(meal, i) in meals" :key="meal.id || i">
           <li class="list-item">
-            <span class="bold" @dblclick="startEditing(meal.id)" style="cursor: pointer;">
-              <template x-if="editingItem !== meal.id">
-                <span x-text="meal.name + ':'"></span>
-              </template>
-              <template x-if="editingItem === meal.id">
-                <span>
-                  <input 
-                    type="text" 
-                    class="input input--text" 
-                    :data-edit-id="meal.id"
-                    :value="meal.name"
-                    @keyup.enter="finishEditing(meal, 'name', $event.target.value)"
-                    @keyup.escape="cancelEditing()"
-                    @blur="finishEditing(meal, 'name', $event.target.value)"
-                    style="font-weight: bold; font-size: 7pt; width: 50px;"
-                  >:
-                </span>
-              </template>
-            </span>
+            <span class="bold" x-text="meal.name + ':'"></span>
             <span x-text="meal.ingredients"></span>
           </li>
         </template>
@@ -237,25 +170,7 @@
       <ul class="list text-xs">
         <template x-for="(cat, i) in groceryList" :key="cat.id || i">
           <li class="list-item">
-            <span class="bold" @dblclick="startEditing(cat.id)" style="cursor: pointer;">
-              <template x-if="editingItem !== cat.id">
-                <span x-text="cat.name + ':'"></span>
-              </template>
-              <template x-if="editingItem === cat.id">
-                <span>
-                  <input 
-                    type="text" 
-                    class="input input--text" 
-                    :data-edit-id="cat.id"
-                    :value="cat.name"
-                    @keyup.enter="finishEditing(cat, 'name', $event.target.value)"
-                    @keyup.escape="cancelEditing()"
-                    @blur="finishEditing(cat, 'name', $event.target.value)"
-                    style="font-weight: bold; font-size: 7pt; width: 60px;"
-                  >:
-                </span>
-              </template>
-            </span>
+            <span class="bold" x-text="cat.name + ':'"></span>
             <span x-text="cat.items"></span>
           </li>
         </template>
@@ -283,25 +198,7 @@
           <span class="bold">FINANCIAL</span>
           <template x-for="(item, i) in financials" :key="item.id || i">
             <span>
-              <span @dblclick="startEditing(item.id)" style="cursor: pointer;">
-                <template x-if="editingItem !== item.id">
-                  <span x-text="item.name + ':'"></span>
-                </template>
-                <template x-if="editingItem === item.id">
-                  <span>
-                    <input 
-                      type="text" 
-                      class="input input--text" 
-                      :data-edit-id="item.id"
-                      :value="item.name"
-                      @keyup.enter="finishEditing(item, 'name', $event.target.value)"
-                      @keyup.escape="cancelEditing()"
-                      @blur="finishEditing(item, 'name', $event.target.value)"
-                      style="font-size: 7pt; width: 40px;"
-                    >:
-                  </span>
-                </template>
-              </span>
+              <span x-text="item.name + ':'"></span>
               £<input type="text" class="input input--inline" x-model="item.value" :placeholder="item.placeholder" @change="saveData();">
               <span x-text="item.account"></span>
               <span x-show="i < financials.length - 1">, </span>

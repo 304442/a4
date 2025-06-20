@@ -42,7 +42,6 @@ function plannerApp() {
       { name: 'Amsterdam', lat: 52.3676, lon: 4.9041 }, 
       { name: 'Current Location', lat: null, lon: null }
     ],
-    editingItem: null,
 
     // Initialization
     async init() {
@@ -655,42 +654,6 @@ function plannerApp() {
       this.saveData();
     },
 
-    // Generic double-click editing
-    startEditing(itemId) {
-      this.editingItem = itemId;
-      this.$nextTick(() => {
-        const input = document.querySelector(`input[data-edit-id="${itemId}"]`);
-        if (input) {
-          input.focus();
-          input.select();
-        }
-      });
-    },
-
-    finishEditing(item, field, newValue, preservePrefix = false) {
-      if (newValue && newValue.trim() !== '') {
-        if (preservePrefix && item[field].includes(':')) {
-          const prefix = item[field].split(':')[0];
-          item[field] = `${prefix}: ${newValue.trim()}`;
-        } else {
-          item[field] = newValue.trim();
-        }
-        this.saveData();
-      }
-      this.editingItem = null;
-    },
-
-    finishEditingSimple(field, newValue) {
-      if (newValue && newValue.trim() !== '') {
-        this[field] = newValue.trim();
-        this.saveData();
-      }
-      this.editingItem = null;
-    },
-
-    cancelEditing() {
-      this.editingItem = null;
-    },
 
     // Data Management
     saveData() {
