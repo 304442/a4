@@ -108,13 +108,13 @@
         <tbody>
           <template x-for="(task, i) in tasks" :key="task.id || i">
             <tr :class="[task.completed === '✓' ? 'green' : '', getTaskDelay(task) > 0 ? 'red' : getTaskDelay(task) < 0 ? 'blue' : ''].filter(Boolean).join(' ')">
-              <td><input type="text" class="input" x-model="task.num" :placeholder="i + 1" @change="saveData()"></td>
-              <td><input type="text" class="input" x-model="task.priority" placeholder="A" @change="saveData()"></td>
-              <td><input type="text" class="input" x-model="task.tag" placeholder="W" @change="saveData()"></td>
-              <td><input type="text" class="input input--text" x-model="task.description" placeholder="Task description" @change="saveData()"></td>
-              <td><input type="text" class="input input--date" x-model="task.startDate" placeholder="MM/DD" @change="calculateTaskDelay(task); saveData();"></td>
-              <td><input type="text" class="input input--date" x-model="task.expectedDate" placeholder="MM/DD" @change="calculateTaskDelay(task); saveData();"></td>
-              <td><input type="text" class="input input--date" x-model="task.actualDate" placeholder="MM/DD" @change="calculateTaskDelay(task); saveData();"></td>
+              <td><input type="text" class="input" x-model="task.num" @change="saveData()"></td>
+              <td><input type="text" class="input" x-model="task.priority" @change="saveData()"></td>
+              <td><input type="text" class="input" x-model="task.tag" @change="saveData()"></td>
+              <td><input type="text" class="input input--text" x-model="task.description" @change="saveData()"></td>
+              <td><input type="text" class="input input--date" x-model="task.startDate" @change="calculateTaskDelay(task); saveData();"></td>
+              <td><input type="text" class="input input--date" x-model="task.expectedDate" @change="calculateTaskDelay(task); saveData();"></td>
+              <td><input type="text" class="input input--date" x-model="task.actualDate" @change="calculateTaskDelay(task); saveData();"></td>
               <td class="dc cell cell--bold" :class="getTaskDelay(task) < 0 ? 'green' : getTaskDelay(task) > 0 ? 'red' : 'yellow'">
                 <span x-text="formatDelay(getTaskDelay(task))"></span>
               </td>
