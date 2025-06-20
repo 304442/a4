@@ -4,16 +4,16 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is an A4-sized weekly planner web application designed for both digital use and printing. It uses Alpine.js for reactivity and PocketBase as the backend database.
+This is an A4-sized weekly planner web application designed for both digital use and printing. It uses Svelte 5 for reactivity and PocketBase as the backend database.
 
 ## Technology Stack
 
-- **Frontend**: Alpine.js v3.x (included as `alpinejs.min.js`)
+- **Frontend**: Svelte 5 (compiled with Vite)
 - **Backend**: PocketBase (included as `pocketbase.umd.js`)
-- **Languages**: HTML, CSS, vanilla JavaScript
-- **No build system**: Files run directly in browser
+- **Languages**: JavaScript/Svelte, CSS
+- **Build system**: Vite for production builds
 - **External Dependencies**:
-  - Alpine.js for reactivity
+  - Svelte 5 with runes for reactivity
   - PocketBase JavaScript SDK for backend communication
   - Aladhan API for prayer times
   - OpenStreetMap Nominatim API for location services
@@ -35,14 +35,20 @@ When you push to this git repository, it automatically deploys to a VPS via Dock
 
 The application follows an offline-first architecture with localStorage for immediate persistence and PocketBase for cloud sync.
 
-### Main Files
-- `index.html` - Main planner interface with setup modal container
-- `script.js` - Alpine.js component with all application logic (plannerApp function)
-- `styles.css` - A4-optimized styling (210mm × 297mm) including setup notification styles
-- `setup-modal.js` - Self-contained setup modal module (includes JS, CSS, and HTML)
+### Main Files (Production)
+- `index.html` - Main HTML entry point
+- `assets/index-*.js` - Compiled Svelte application bundle
+- `assets/index-*.css` - Compiled CSS including A4-optimized styling (210mm × 297mm)
+- `pocketbase.umd.js` - PocketBase SDK
+
+### Source Files (in svelte-app/)
+- `src/App.svelte` - Main application component
+- `src/lib/store.svelte.js` - Svelte 5 store with all application logic using runes
+- `src/components/` - Individual Svelte components for each section
+- `src/app.css` - A4-optimized styling including setup notification styles
 
 ### Data Flow
-1. User input → Alpine.js reactive state
+1. User input → Svelte 5 reactive state (using $state runes)
 2. State changes → localStorage (immediate)
 3. localStorage → PocketBase sync (when online)
 4. Failed syncs → Pending queue with retry
@@ -58,11 +64,12 @@ The application follows an offline-first architecture with localStorage for imme
 ## Development Guidelines
 
 ### State Management
-All state is managed within the Alpine.js component. Key state properties:
-- `weekId` - ISO week format (YYYY-Www)
-- `templateId` - Currently active template
-- `pendingSyncs` - Queue for offline changes
+All state is managed within the Svelte store using $state runes. Key state properties in `store.svelte.js`:
+- `currentWeek` - ISO week format (YYYY-Www)
+- `currentTemplateId` - Currently active template
+- `pendingSync` - Queue for offline changes
 - Various data objects (schedule, tasks, workouts, etc.)
+- All reactive state uses Svelte 5's $state() rune
 
 ### ID Generation
 Use timestamp-based IDs: `Date.now().toString()`
@@ -119,9 +126,9 @@ Always implement graceful degradation for offline scenarios. The app should rema
 
 ### Database Setup
 When the application starts and detects no database is initialized:
-1. A notification appears: "Database not initialized. Click to run setup."
-2. User clicks "Setup Now" button to open the setup modal
-3. The setup modal (`setup-modal.js`) provides:
+1. A notification appears: "Database not initialized"
+2. User clicks "Setup" button to open the setup modal
+3. The setup modal (`SetupModal.svelte`) provides:
    - Complete help documentation with PocketBase schema reference
    - Default collections schema (templates and planners)
    - Default template with complete weekly structure
@@ -131,16 +138,17 @@ When the application starts and detects no database is initialized:
    - Password visibility toggle for database credentials
 
 ### Setup Modal Features
-The setup modal is a self-contained module that:
-- Injects its own CSS styles when loaded
-- Creates the modal HTML dynamically
-- Provides full PocketBase schema documentation
-- Validates JSON before attempting setup
+The setup modal is a Svelte component that:
+- Uses step-by-step wizard interface
+- Tests PocketBase connection before proceeding
+- Authenticates admin user
+- Creates collections with proper schema
+- Seeds database with default template
 - Shows real-time progress during setup operations
-- Handles errors gracefully with detailed logging
-- Can be opened manually via `window.setupModal.showModal()`
+- Handles errors gracefully with user feedback
+- Can be opened by setting `plannerStore.showSetupModal = true`
 
-**IMPORTANT**: The collections schema and seed data in `setup-modal.js` must perfectly match:
+**IMPORTANT**: The collections schema and seed data in `SetupModal.svelte` must perfectly match:
 - The validation rules in `validateCollections()` and `validateSeeds()`
 - The help documentation shown in the modal
 - The field properties documented in the PocketBase Schema Reference
@@ -150,17 +158,18 @@ The setup modal is a self-contained module that:
 - The week_id pattern must be: `^\\d{4}-W(0[1-9]|[1-4]\\d|5[0-3])$`
 
 ### Adding a new data section
-1. Add data structure to template defaults in `setup-modal.js` (getDefaultSeeds function)
-2. Add corresponding state property in `script.js`
-3. Add UI section in `index.html`
-4. Update save/load functions to include new data
-5. Add to PocketBase schema if persistent storage needed
+1. Add data structure to template defaults in `SetupModal.svelte` (getDefaultTemplate function)
+2. Add corresponding state property in `store.svelte.js` using $state()
+3. Create new Svelte component in `src/components/`
+4. Import and add component to `App.svelte`
+5. Update save/load functions to include new data
+6. Add to PocketBase schema if persistent storage needed
 
 ### Modifying calculations
-Point calculations and scoring logic are in the `calculateScheduleTotals()` and related methods in `script.js`.
+Point calculations and scoring logic are in the `calculateScores()` method in `store.svelte.js`.
 
 ### Changing prayer time calculation
-Prayer times use the Islamic Society of North America (ISNA) method. Modify calculation parameters in the `fetchPrayerTimes()` method.
+Prayer times use the Islamic Society of North America (ISNA) method. Modify calculation parameters in the `fetchPrayerTimes()` method in `store.svelte.js`.
 
 ## Complete Feature List
 
@@ -230,20 +239,32 @@ No formal testing framework is used. Test manually by:
 
 ```
 /
-├── index.html          # Main application entry point
-├── script.js           # Alpine.js component with application logic
-├── styles.css          # All styling including print styles
-├── setup-modal.js      # Self-contained database setup module
-├── alpinejs.min.js     # Alpine.js v3 library
+├── index.html          # Main HTML entry point
+├── assets/             # Compiled Svelte assets
+│   ├── index-*.js      # Compiled JavaScript bundle
+│   └── index-*.css     # Compiled CSS bundle
 ├── pocketbase.umd.js   # PocketBase JavaScript SDK
+├── svelte-app/         # Svelte source code
+│   ├── src/
+│   │   ├── App.svelte  # Main application component
+│   │   ├── app.css     # All styling including print styles
+│   │   ├── lib/
+│   │   │   └── store.svelte.js  # Svelte store with application logic
+│   │   └── components/ # Individual UI components
+│   │       ├── Header.svelte
+│   │       ├── ScheduleTable.svelte
+│   │       ├── TasksSection.svelte
+│   │       ├── SetupModal.svelte
+│   │       └── ... (other components)
+│   ├── package.json    # Dependencies and scripts
+│   └── vite.config.js  # Vite build configuration
 ├── CLAUDE.md           # This documentation file
-└── .claude/            # Claude Code configuration
-    └── settings.local.json
+└── old-alpine/         # Backup of original Alpine.js files
 ```
 
 ## Key Functions and Methods
 
-### In script.js (plannerApp):
+### In store.svelte.js (PlannerStore class):
 - `init()` - Application initialization
 - `checkDatabaseInitialized()` - Verifies PocketBase setup
 - `loadWeek(isoWeek)` - Loads data for a specific week
@@ -251,14 +272,17 @@ No formal testing framework is used. Test manually by:
 - `calculateScores()` - Updates all scores and streaks
 - `fetchPrayerTimes()` - Gets prayer times from API
 - `syncPendingData()` - Retries failed sync operations
+- All state managed with Svelte 5 $state() runes
 
-### In setup-modal.js:
-- `showModal()` - Opens the setup interface
-- `validateCollections()` - Validates collection schemas
-- `validateSeeds()` - Validates seed data
-- `runFullSetup()` - Creates collections and seeds
-- `getDefaultCollections()` - Returns default schema
-- `getDefaultSeeds()` - Returns default data
+### In SetupModal.svelte:
+- `closeModal()` - Closes the setup interface
+- `testConnection()` - Tests PocketBase connection
+- `authenticateAdmin()` - Logs in as admin
+- `createCollections()` - Creates database collections
+- `seedDatabase()` - Seeds initial data
+- `getTemplatesSchema()` - Returns templates collection schema
+- `getPlannersSchema()` - Returns planners collection schema
+- `getDefaultTemplate()` - Returns default template data
 
 ## Important Implementation Details
 
@@ -270,9 +294,35 @@ No formal testing framework is used. Test manually by:
 6. **Streak Tracking**: Counts consecutive days with activity
 7. **Sync Queue**: Failed syncs stored in `pendingSync` array for retry
 
+## Development & Building
+
+### Development
+```bash
+cd svelte-app
+npm install
+npm run dev
+```
+
+### Building for Production
+```bash
+cd svelte-app
+npm run build
+# Copy build files to root
+cp -r dist/* ..
+# Update index.html paths to be relative (remove leading /)
+```
+
+### Key Differences from Alpine.js Version
+1. **Reactivity**: Uses Svelte 5 $state runes instead of Alpine.js x-data
+2. **Components**: Modular Svelte components instead of inline HTML
+3. **Build Step**: Requires compilation with Vite
+4. **State Management**: Centralized store with reactive class instance
+5. **Performance**: Compiled components with minimal runtime overhead
+
 ## Common Issues and Solutions
 
-1. **Database not initialized**: Click "Setup Now" notification
+1. **Database not initialized**: Click "Setup" button in notification
 2. **Sync failures**: Check network connection, data auto-retries
 3. **Prayer times not loading**: Check location permissions or select city manually
 4. **Print layout issues**: Use Chrome/Edge for best print results
+5. **Build errors**: Ensure Svelte 5 (svelte@next) is installed
