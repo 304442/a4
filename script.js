@@ -140,7 +140,7 @@ function plannerApp() {
       this.schedule = this.buildScheduleFromTemplate(s.schedule || []);
       this.tasks = Array(s.tasks?.count || 10).fill().map(() => ({
         id: generateId(), 
-        num: '', 
+ 
         priority: '', 
         tag: '', 
         description: '', 
