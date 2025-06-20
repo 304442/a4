@@ -158,16 +158,21 @@ tr:has(.task-done) td, tr:has(.task-done) td input:not(.task-done) { text-decora
 
 /* Task Table Specific Columns */
 .section table { table-layout: fixed; width: 100%; }
-.section table th:nth-child(1), .section table td:nth-child(1), 
-.section table th:nth-child(2), .section table td:nth-child(2), 
+/* Column 1: # (number) */
+.section table th:nth-child(1), .section table td:nth-child(1) { width: 4mm; text-align: center; }
+/* Column 2: Task (description) */
+.section table th:nth-child(2), .section table td:nth-child(2) { text-align: left; width: auto; }
+.section table td:nth-child(2) input { width: 100%; }
+/* Columns 3-4: Priority, Tag */
 .section table th:nth-child(3), .section table td:nth-child(3), 
-.section table th:nth-child(9), .section table td:nth-child(9) { width: 4mm; text-align: center; }
+.section table th:nth-child(4), .section table td:nth-child(4) { width: 4mm; text-align: center; }
+/* Columns 5-8: Start, Due, Done, Delay */
 .section table th:nth-child(5), .section table td:nth-child(5), 
 .section table th:nth-child(6), .section table td:nth-child(6), 
-.section table th:nth-child(7), .section table td:nth-child(7) { width: 10mm; text-align: center; }
+.section table th:nth-child(7), .section table td:nth-child(7),
 .section table th:nth-child(8), .section table td:nth-child(8) { width: 10mm; text-align: center; }
-.section table th:nth-child(4), .section table td:nth-child(4) { text-align: left; width: auto; }
-.section table td:nth-child(4) input { width: 100%; }
+/* Column 9: Completion checkbox */
+.section table th:nth-child(9), .section table td:nth-child(9) { width: 4mm; text-align: center; }
 
 /* Icon headers for task table */
 .icon-header { font-size: 7pt; }
