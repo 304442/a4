@@ -96,13 +96,13 @@
         <thead>
           <tr>
             <th>#</th>
-            <th>Task</th>
             <th>⭐</th>
+            <th>Task</th>
             <th>🏷️</th>
             <th class="icon-header">Start</th>
             <th class="icon-header">Due</th>
-            <th class="icon-header">Done</th>
             <th class="icon-header">Delay</th>
+            <th class="icon-header">Done</th>
             <th>✓</th>
           </tr>
         </thead>
@@ -110,7 +110,6 @@
           <template x-for="(task, i) in tasks" :key="task.id || i">
             <tr :class="[task.completed === '✓' ? 'green' : '', getTaskDelay(task) > 0 ? 'red' : getTaskDelay(task) < 0 ? 'blue' : ''].filter(Boolean).join(' ')">
               <td class="dc" x-text="i + 1"></td>
-              <td><input type="text" class="input input--text" x-model="task.description" @change="saveData()"></td>
               <td>
                 <select class="input" x-model="task.priority" @change="saveData()">
                   <option value=""></option>
@@ -120,6 +119,7 @@
                   <option value="D">D</option>
                 </select>
               </td>
+              <td><input type="text" class="input input--text" x-model="task.description" @change="saveData()"></td>
               <td>
                 <select class="input" x-model="task.tag" @change="saveData()">
                   <option value=""></option>
@@ -129,10 +129,10 @@
               </td>
               <td><input type="text" class="input input--date" x-model="task.startDate" @change="calculateTaskDelay(task); saveData();"></td>
               <td><input type="text" class="input input--date" x-model="task.expectedDate" @change="calculateTaskDelay(task); saveData();"></td>
-              <td><input type="text" class="input input--date" x-model="task.actualDate" @change="calculateTaskDelay(task); saveData();"></td>
               <td class="dc cell cell--bold" :class="getTaskDelay(task) < 0 ? 'green' : getTaskDelay(task) > 0 ? 'red' : 'yellow'">
                 <span x-text="formatDelay(getTaskDelay(task))"></span>
               </td>
+              <td><input type="text" class="input input--date" x-model="task.actualDate" @change="calculateTaskDelay(task); saveData();"></td>
               <td><input type="text" class="input" x-model="task.completed" @click.prevent="toggleTaskCompletion(task)" :class="{'task-done': task.completed === '✓'}" placeholder="☐"></td>
             </tr>
           </template>

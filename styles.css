@@ -196,14 +196,14 @@ tr:has(.task-done) td, tr:has(.task-done) td input:not(.task-done) { text-decora
 .section table { table-layout: fixed; width: 100%; }
 /* Column 1: # (number) */
 .section table th:nth-child(1), .section table td:nth-child(1) { width: 4mm; text-align: center; }
-/* Column 2: Task (description) */
-.section table th:nth-child(2), .section table td:nth-child(2) { text-align: left; width: auto; }
-.section table td:nth-child(2) input { width: 100%; }
-/* Column 3: Priority */
-.section table th:nth-child(3), .section table td:nth-child(3) { width: 4mm; text-align: center; }
+/* Column 2: Priority */
+.section table th:nth-child(2), .section table td:nth-child(2) { width: 4mm; text-align: center; }
+/* Column 3: Task (description) */
+.section table th:nth-child(3), .section table td:nth-child(3) { text-align: left; width: auto; }
+.section table td:nth-child(3) input { width: 100%; }
 /* Column 4: Tag - wider to fit "Personal" */
 .section table th:nth-child(4), .section table td:nth-child(4) { width: 15mm; text-align: center; }
-/* Columns 5-8: Start, Due, Done, Delay */
+/* Columns 5-8: Start, Due, Delay, Done */
 .section table th:nth-child(5), .section table td:nth-child(5), 
 .section table th:nth-child(6), .section table td:nth-child(6), 
 .section table th:nth-child(7), .section table td:nth-child(7),

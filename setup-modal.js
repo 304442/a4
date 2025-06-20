@@ -805,7 +805,7 @@
                 ],
                 tasks: {
                   count: 15,
-                  fields: ["priority", "tag", "description", "start_date", "expected_date", "actual_date", "completed"]
+                  fields: ["priority", "description", "tag", "start_date", "expected_date", "actual_date", "completed"]
                 },
                 workout: [
                   {
