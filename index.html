@@ -109,7 +109,15 @@
           <template x-for="(task, i) in tasks" :key="task.id || i">
             <tr :class="[task.completed === '✓' ? 'green' : '', getTaskDelay(task) > 0 ? 'red' : getTaskDelay(task) < 0 ? 'blue' : ''].filter(Boolean).join(' ')">
               <td class="dc" x-text="i + 1"></td>
-              <td><input type="text" class="input" x-model="task.priority" @change="saveData()"></td>
+              <td>
+                <select class="input" x-model="task.priority" @change="saveData()">
+                  <option value=""></option>
+                  <option value="A">A</option>
+                  <option value="B">B</option>
+                  <option value="C">C</option>
+                  <option value="D">D</option>
+                </select>
+              </td>
               <td><input type="text" class="input" x-model="task.tag" @change="saveData()"></td>
               <td><input type="text" class="input input--text" x-model="task.description" @change="saveData()"></td>
               <td><input type="text" class="input input--date" x-model="task.startDate" @change="calculateTaskDelay(task); saveData();"></td>
