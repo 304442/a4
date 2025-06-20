@@ -23,7 +23,6 @@ When you push to this git repository, it automatically deploys to a VPS via Dock
 ## Application Access
 
 - **Main application**: https://a4.48d1.cc
-- **Database administration**: https://a4.48d1.cc/setup.html
 - **PocketBase Admin UI**: https://a4.48d1.cc/_/
 - **PocketBase API**: https://a4.48d1.cc/api/*
 
@@ -32,10 +31,9 @@ When you push to this git repository, it automatically deploys to a VPS via Dock
 The application follows an offline-first architecture with localStorage for immediate persistence and PocketBase for cloud sync.
 
 ### Main Files
-- `index.html` - Main planner interface
-- `script.js` - Alpine.js component with all application logic (plannerApp function)
-- `setup.html` - PocketBase database administration tool
-- `styles.css` - A4-optimized styling (210mm × 297mm)
+- `index.html` - Main planner interface with integrated setup modal
+- `script.js` - Alpine.js component with all application logic (plannerApp function) including database setup
+- `styles.css` - A4-optimized styling (210mm × 297mm) including setup modal styles
 
 ### Data Flow
 1. User input → Alpine.js reactive state
@@ -102,8 +100,14 @@ Always implement graceful degradation for offline scenarios. The app should rema
 
 ## Common Tasks
 
+### Database Setup
+When the application starts and detects no database is initialized, it automatically shows a setup modal. The setup includes:
+- Default collections schema (templates and planners)
+- Default template with complete weekly structure
+- All configuration is now integrated in `script.js`
+
 ### Adding a new data section
-1. Add data structure to template in `setup.html`
+1. Add data structure to template defaults in `script.js` (getDefaultSeeds function)
 2. Add corresponding state property in `script.js`
 3. Add UI section in `index.html`
 4. Update save/load functions to include new data

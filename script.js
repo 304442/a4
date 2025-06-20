@@ -45,7 +45,18 @@ function plannerApp() {
 
     // Initialization
     async init() {
+      // Initialize setup modal
+      window.setupModal.init(this);
+      
       this.setupEventListeners();
+      
+      // Check if database is initialized
+      if (!(await this.checkDatabaseInitialized())) {
+        this.showSetupModal = true;
+        this.initializeSetup();
+        return;
+      }
+      
       this.pendingSync = JSON.parse(localStorage.getItem('planner_pending_sync') || '[]');
       this.currentWeek = this.getCurrentIsoWeek();
       this.dateRange = this.getWeekDateRange(this.parseISOWeek(this.currentWeek));
@@ -55,6 +66,18 @@ function plannerApp() {
       }, 30000);
       if (this.isOnline) this.syncPendingData();
     },
+
+    async checkDatabaseInitialized() {
+      try {
+        // Try to get the default template
+        const template = await pb.collection('templates').getFirstListItem('is_default=true');
+        return true;
+      } catch (error) {
+        console.log('Database not initialized or template not found');
+        return false;
+      }
+    },
+
 
     setupEventListeners() {
       window.addEventListener('online', () => { 
