@@ -129,6 +129,15 @@ The setup modal is a self-contained module that:
 - Handles errors gracefully with detailed logging
 - Can be opened manually via `window.setupModal.showModal()`
 
+**IMPORTANT**: The collections schema and seed data in `setup-modal.js` must perfectly match:
+- The validation rules in `validateCollections()` and `validateSeeds()`
+- The help documentation shown in the modal
+- The field properties documented in the PocketBase Schema Reference
+- All fields must include: `name`, `type`, `required`, `presentable`
+- JSON fields must have `maxSize` limits
+- Text fields should have `min`/`max` lengths where appropriate
+- The week_id pattern must be: `^\\d{4}-W(0[1-9]|[1-4]\\d|5[0-3])$`
+
 ### Adding a new data section
 1. Add data structure to template defaults in `setup-modal.js` (getDefaultSeeds function)
 2. Add corresponding state property in `script.js`
