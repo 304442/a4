@@ -304,6 +304,7 @@
           
           <div class="setup-row">
             <button @click="resetSetup" class="setup-danger">🗑️ Reset</button>
+            <button @click="showSetupModal = false">❌ Close</button>
           </div>
           
           <div class="setup-row">
@@ -598,7 +599,7 @@
       app.setupShowPassword = false;
       app.setupProgress = 0;
       app.setupConfig = {
-        url: '/',
+        url: window.location.origin,
         email: 'admin@example.com',
         password: 'unifiedpassword'
       };
@@ -664,7 +665,8 @@
           name: "planners",
           type: "base",
           fields: [
-            { name: "week_id", type: "text", required: true, presentable: true, pattern: "^\\\\d{4}-W(0[1-9]|[1-4]\\\\d|5[0-3])$", min: 8, max: 8 },
+            { name: "week_id", type: "text", required: true, presentable: true, pattern: "^\\d{4}-W(0[1-9]|[1-4]\\d|5[0-3])$", min: 8, max: 8 },
+            { name: "template_id", type: "text", required: false, presentable: true, max: 50 },
             { name: "title", type: "text", required: false, presentable: false, max: 100 },
             { name: "city", type: "text", required: false, presentable: false, max: 50 },
             { name: "date_range", type: "text", required: false, presentable: false, max: 20 },
@@ -1009,32 +1011,30 @@
             const templatesCollection = await setupPb.collections.getOne('templates');
             const plannersCollection = await setupPb.collections.getOne('planners');
             
-            // Check if template_id field already exists
-            const hasTemplateField = plannersCollection.fields.some(f => f.name === 'template_id');
+            // Update template_id field to be a relation
+            const templateFieldIndex = plannersCollection.fields.findIndex(f => f.name === 'template_id');
             
-            if (!hasTemplateField) {
-              const relationField = {
+            if (templateFieldIndex !== -1) {
+              const updatedFields = [...plannersCollection.fields];
+              updatedFields[templateFieldIndex] = {
                 name: "template_id",
                 type: "relation",
-                required: true,
+                required: false,
                 presentable: true,
                 collectionId: templatesCollection.id,
                 cascadeDelete: false,
-                minSelect: 1,
+                minSelect: 0,
                 maxSelect: 1,
                 displayFields: ["name", "description"]
               };
-              
-              const updatedFields = [...plannersCollection.fields];
-              updatedFields.splice(1, 0, relationField); // Insert after week_id
               
               await setupPb.collections.update(plannersCollection.id, {
                 fields: updatedFields
               });
               
-              this.setupLog('✅ Added template_id relation to planners', 's');
+              this.setupLog('✅ Updated template_id to relation field', 's');
             } else {
-              this.setupLog('ℹ️ template_id field already exists', 'i');
+              this.setupLog('⚠️ template_id field not found', 'w');
             }
           } catch (e) {
             this.setupLog(`⚠️ Relation setup warning: ${e.message}`, 'w');
@@ -1102,11 +1102,19 @@
       if (confirm('Reset all setup fields to defaults?')) {
         const out = document.getElementById('setup-out');
         out.innerHTML = '';
-        this.app.setupConfig.url = '/';
+        this.app.setupConfig.url = window.location.origin;
         this.app.setupConfig.email = 'admin@example.com';
         this.app.setupConfig.password = 'unifiedpassword';
         this.initializeSetup();
         this.setupLog('🔄 Reset to defaults', 'i');
+      }
+    },
+
+    // Show the setup modal
+    showModal() {
+      if (this.app) {
+        this.app.showSetupModal = true;
+        this.initializeSetup();
       }
     }
   };
