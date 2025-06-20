@@ -74,6 +74,28 @@ await this.syncToPocketbase();
 ### Error Handling
 Always implement graceful degradation for offline scenarios. The app should remain fully functional without PocketBase connection.
 
+## Recent Updates & UI Features
+
+### Task Management
+- Task numbers are auto-generated (not editable)
+- Priority is a dropdown (A, B, C, D)
+- Tag is a dropdown (Personal, Work)
+- Column order: # → Task → ⭐ → 🏷️ → Start → Due → Done → Delay → ✓
+- Date columns show clear text headers without emojis
+
+### Styling
+- Input fields have light blue background (#e6f7ff) for visibility
+- All table cells have borders (1px solid #e2e8f0)
+- Date input fields fill entire column width
+- No placeholders in input fields for cleaner look
+- Mobile view shows full A4 size (no auto-scaling)
+
+### Icons & Emojis
+- ⭐ for Priority
+- 🏷️ for Tag  
+- 🔥 for Streak (in schedule table)
+- Text-only headers for Start, Due, Done, Delay
+
 ## Common Tasks
 
 ### Adding a new data section
