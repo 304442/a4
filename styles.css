@@ -96,37 +96,40 @@ tr:has(.task-done) td, tr:has(.task-done) td input:not(.task-done) { text-decora
 /* Setup Notification */
 .setup-notification {
   position: fixed;
-  top: 50%;
+  top: 20px;
   left: 50%;
-  transform: translate(-50%, -50%);
+  transform: translateX(-50%);
   background-color: #fff3cd;
   color: #856404;
-  padding: 20px 30px;
-  border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-  font-size: 14px;
+  padding: 8px 15px;
+  border-radius: 4px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+  font-size: 11px;
   z-index: 9999;
   text-align: center;
   border: 1px solid #ffeaa7;
-  animation: fadeIn 0.3s ease-in;
+  animation: slideDown 0.3s ease-out;
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
-@keyframes fadeIn {
-  from { opacity: 0; transform: translate(-50%, -50%) scale(0.9); }
-  to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+@keyframes slideDown {
+  from { opacity: 0; transform: translateX(-50%) translateY(-20px); }
+  to { opacity: 1; transform: translateX(-50%) translateY(0); }
 }
 .setup-notification span {
-  display: block;
-  margin-bottom: 15px;
+  margin: 0;
 }
 .setup-notification button {
   background-color: #007bff;
   color: white;
   border: none;
-  padding: 8px 20px;
-  border-radius: 4px;
-  font-size: 14px;
+  padding: 4px 10px;
+  border-radius: 3px;
+  font-size: 10px;
   cursor: pointer;
   font-family: monospace;
+  white-space: nowrap;
 }
 .setup-notification button:hover {
   background-color: #0056b3;

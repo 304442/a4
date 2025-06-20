@@ -913,8 +913,8 @@ function plannerApp() {
       const notification = document.createElement('div');
       notification.className = 'setup-notification';
       notification.innerHTML = `
-        <span>Database not initialized. Click to run setup.</span>
-        <button onclick="window.setupModal.showModal()">Setup Now</button>
+        <span>Database not initialized</span>
+        <button onclick="window.setupModal.showModal()">Setup</button>
       `;
       document.body.appendChild(notification);
     }
