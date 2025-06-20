@@ -9,9 +9,14 @@ This is an A4-sized weekly planner web application designed for both digital use
 ## Technology Stack
 
 - **Frontend**: Alpine.js v3.x (included as `alpinejs.min.js`)
-- **Backend**: PocketBase
+- **Backend**: PocketBase (included as `pocketbase.umd.js`)
 - **Languages**: HTML, CSS, vanilla JavaScript
 - **No build system**: Files run directly in browser
+- **External Dependencies**:
+  - Alpine.js for reactivity
+  - PocketBase JavaScript SDK for backend communication
+  - Aladhan API for prayer times
+  - OpenStreetMap Nominatim API for location services
 
 ## Deployment
 
@@ -31,9 +36,10 @@ When you push to this git repository, it automatically deploys to a VPS via Dock
 The application follows an offline-first architecture with localStorage for immediate persistence and PocketBase for cloud sync.
 
 ### Main Files
-- `index.html` - Main planner interface with integrated setup modal
-- `script.js` - Alpine.js component with all application logic (plannerApp function) including database setup
-- `styles.css` - A4-optimized styling (210mm × 297mm) including setup modal styles
+- `index.html` - Main planner interface with setup modal container
+- `script.js` - Alpine.js component with all application logic (plannerApp function)
+- `styles.css` - A4-optimized styling (210mm × 297mm) including setup notification styles
+- `setup-modal.js` - Self-contained setup modal module (includes JS, CSS, and HTML)
 
 ### Data Flow
 1. User input → Alpine.js reactive state
@@ -101,13 +107,30 @@ Always implement graceful degradation for offline scenarios. The app should rema
 ## Common Tasks
 
 ### Database Setup
-When the application starts and detects no database is initialized, it automatically shows a setup modal. The setup includes:
-- Default collections schema (templates and planners)
-- Default template with complete weekly structure
-- All configuration is now integrated in `script.js`
+When the application starts and detects no database is initialized:
+1. A notification appears: "Database not initialized. Click to run setup."
+2. User clicks "Setup Now" button to open the setup modal
+3. The setup modal (`setup-modal.js`) provides:
+   - Complete help documentation with PocketBase schema reference
+   - Default collections schema (templates and planners)
+   - Default template with complete weekly structure
+   - Validation tools for collections and seed data
+   - Multiple setup options: Full Setup, Schema Only, Seed Only
+   - Progress tracking and detailed logging
+   - Password visibility toggle for database credentials
+
+### Setup Modal Features
+The setup modal is a self-contained module that:
+- Injects its own CSS styles when loaded
+- Creates the modal HTML dynamically
+- Provides full PocketBase schema documentation
+- Validates JSON before attempting setup
+- Shows real-time progress during setup operations
+- Handles errors gracefully with detailed logging
+- Can be opened manually via `window.setupModal.showModal()`
 
 ### Adding a new data section
-1. Add data structure to template defaults in `script.js` (getDefaultSeeds function)
+1. Add data structure to template defaults in `setup-modal.js` (getDefaultSeeds function)
 2. Add corresponding state property in `script.js`
 3. Add UI section in `index.html`
 4. Update save/load functions to include new data
@@ -179,3 +202,54 @@ No formal testing framework is used. Test manually by:
 2. Testing sync recovery (reconnect network)
 3. Testing data persistence across page reloads
 4. Testing print layout in browser print preview
+
+## File Structure
+
+```
+/
+├── index.html          # Main application entry point
+├── script.js           # Alpine.js component with application logic
+├── styles.css          # All styling including print styles
+├── setup-modal.js      # Self-contained database setup module
+├── alpinejs.min.js     # Alpine.js v3 library
+├── pocketbase.umd.js   # PocketBase JavaScript SDK
+├── CLAUDE.md           # This documentation file
+└── .claude/            # Claude Code configuration
+    └── settings.local.json
+```
+
+## Key Functions and Methods
+
+### In script.js (plannerApp):
+- `init()` - Application initialization
+- `checkDatabaseInitialized()` - Verifies PocketBase setup
+- `loadWeek(isoWeek)` - Loads data for a specific week
+- `saveData()` - Saves to localStorage and syncs to PocketBase
+- `calculateScores()` - Updates all scores and streaks
+- `fetchPrayerTimes()` - Gets prayer times from API
+- `syncPendingData()` - Retries failed sync operations
+
+### In setup-modal.js:
+- `showModal()` - Opens the setup interface
+- `validateCollections()` - Validates collection schemas
+- `validateSeeds()` - Validates seed data
+- `runFullSetup()` - Creates collections and seeds
+- `getDefaultCollections()` - Returns default schema
+- `getDefaultSeeds()` - Returns default data
+
+## Important Implementation Details
+
+1. **Offline-First**: All data saves to localStorage first, then syncs to PocketBase when online
+2. **ID Generation**: Uses `id_${Date.now()}_${counter}` pattern for unique IDs
+3. **Week Format**: ISO 8601 week format (YYYY-Www, e.g., "2024-W15")
+4. **Date Format**: Dates stored as YYYY-MM-DD, displayed as MM/DD
+5. **Score Calculation**: Real-time calculation based on daily inputs
+6. **Streak Tracking**: Counts consecutive days with activity
+7. **Sync Queue**: Failed syncs stored in `pendingSync` array for retry
+
+## Common Issues and Solutions
+
+1. **Database not initialized**: Click "Setup Now" notification
+2. **Sync failures**: Check network connection, data auto-retries
+3. **Prayer times not loading**: Check location permissions or select city manually
+4. **Print layout issues**: Use Chrome/Edge for best print results
