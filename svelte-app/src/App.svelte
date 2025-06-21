@@ -20,20 +20,23 @@
 
 <StatusIndicators />
 
-<div class="viewport-container">
-  <div class="card">
-    <Header />
-    <ScheduleTable />
-    <TasksSection />
-    <WorkoutSection />
-    <MealsSection />
-    <GrocerySection />
-    <BodySection />
-    <FinancialSection />
+{#if !plannerStore.isInitializing}
+  <div class="viewport-container">
+    <div class="card">
+      <Header />
+      <ScheduleTable />
+      <TasksSection />
+      <WorkoutSection />
+      <MealsSection />
+      <GrocerySection />
+      <BodySection />
+      <FinancialSection />
+    </div>
   </div>
-</div>
 
-<DropdownPortals />
+  <DropdownPortals />
+{/if}
+
 {#if plannerStore.showSetupModal}
   <SetupModal />
 {/if}

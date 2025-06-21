@@ -1,4 +1,5 @@
-import PocketBase from 'pocketbase';
+// Use global PocketBase from UMD script
+const PocketBase = window.PocketBase;
 
 let uniqueIdCounter = 0;
 const generateId = () => `id_${Date.now()}_${uniqueIdCounter++}`;
@@ -71,6 +72,8 @@ class PlannerStore {
     if (!(await this.checkDatabaseInitialized())) {
       // Show notification to setup database
       this.showSetupNotification();
+      // Also set isInitializing to false so the app renders
+      this.isInitializing = false;
       return;
     }
     
@@ -100,9 +103,17 @@ class PlannerStore {
     notification.className = 'setup-notification';
     notification.innerHTML = `
       <span>Database not initialized</span>
-      <button onclick="window.plannerStore.showSetupModal = true">Setup</button>
+      <button class="setup-notification-button">Setup</button>
     `;
     document.body.appendChild(notification);
+    
+    // Add event listener to the button
+    const button = notification.querySelector('.setup-notification-button');
+    if (button) {
+      button.addEventListener('click', () => {
+        this.showSetupModal = true;
+      });
+    }
   }
   
   // Template Management
