@@ -68,8 +68,10 @@ class PlannerStore {
   }
   
   async init() {
+    console.log('PlannerStore init() called');
     // Check if database is initialized
     if (!(await this.checkDatabaseInitialized())) {
+      console.log('Database not initialized, showing setup notification');
       // Show notification to setup database
       this.showSetupNotification();
       // Also set isInitializing to false so the app renders
@@ -93,6 +95,7 @@ class PlannerStore {
       const template = await this.pb.collection('templates').getFirstListItem('is_default=true');
       return true;
     } catch (error) {
+      console.log('Database not initialized:', error.message);
       return false;
     }
   }

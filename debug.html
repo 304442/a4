@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Test</title>
+    <script src="pocketbase.umd.js"></script>
+    <style>
+        body { font-family: monospace; padding: 20px; }
+        .test { margin: 10px 0; padding: 10px; background: #f0f0f0; }
+        .success { color: green; }
+        .error { color: red; }
+    </style>
+</head>
+<body>
+    <h1>A4 Planner Debug Test</h1>
+    
+    <div id="tests"></div>
+    
+    <script type="module">
+        const tests = document.getElementById('tests');
+        
+        function addTest(name, success, details = '') {
+            const div = document.createElement('div');
+            div.className = 'test';
+            div.innerHTML = `
+                <strong>${name}:</strong> 
+                <span class="${success ? 'success' : 'error'}">${success ? '✅ PASS' : '❌ FAIL'}</span>
+                ${details ? `<br><small>${details}</small>` : ''}
+            `;
+            tests.appendChild(div);
+        }
+        
+        // Test 1: PocketBase loaded
+        addTest('PocketBase Global', !!window.PocketBase, `Type: ${typeof window.PocketBase}`);
+        
+        // Test 2: Can create PocketBase instance
+        let pb;
+        try {
+            pb = new window.PocketBase(window.location.origin);
+            addTest('PocketBase Instance', true, 'Created successfully');
+        } catch (e) {
+            addTest('PocketBase Instance', false, e.message);
+        }
+        
+        // Test 3: Import main module
+        try {
+            const module = await import('./assets/index-zcn-Arxy.js');
+            addTest('Main Module Import', true, 'Module loaded');
+            
+            // Test 4: Check plannerStore
+            setTimeout(() => {
+                addTest('PlannerStore Global', !!window.plannerStore, `Type: ${typeof window.plannerStore}`);
+                
+                if (window.plannerStore) {
+                    addTest('PlannerStore Properties', true, 
+                        `isInitializing: ${window.plannerStore.isInitializing}, ` +
+                        `showSetupModal: ${window.plannerStore.showSetupModal}`
+                    );
+                }
+                
+                // Test 5: Check for setup notification
+                const notification = document.querySelector('.setup-notification');
+                addTest('Setup Notification', !!notification, 
+                    notification ? 'Found in DOM' : 'Not found in DOM'
+                );
+                
+                // Test 6: Check app content
+                const appContent = document.getElementById('app');
+                addTest('App Content', appContent && appContent.children.length > 0, 
+                    `Children: ${appContent ? appContent.children.length : 'N/A'}`
+                );
+            }, 1000);
+            
+        } catch (e) {
+            addTest('Main Module Import', false, e.message);
+        }
+        
+        // Test database connection
+        setTimeout(async () => {
+            if (pb) {
+                try {
+                    await pb.collection('templates').getFirstListItem('is_default=true');
+                    addTest('Database Connection', true, 'Database is initialized');
+                } catch (e) {
+                    addTest('Database Connection', false, 'Database not initialized (expected)');
+                }
+            }
+        }, 500);
+    </script>
+</body>
+</html>
