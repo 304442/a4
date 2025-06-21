@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Simple Test</title>
+    <script src="pocketbase.umd.js"></script>
+    <link rel="stylesheet" href="assets/index-CzxDvdnt.css">
+    <style>
+        body { padding: 20px; font-family: monospace; }
+        .test-section { margin: 20px 0; padding: 10px; background: #f0f0f0; }
+    </style>
+</head>
+<body>
+    <h1>Simple Direct Test</h1>
+    
+    <div class="test-section">
+        <h2>Test 1: Manual Setup Notification</h2>
+        <button onclick="addNotification()">Add Setup Notification</button>
+    </div>
+    
+    <div class="test-section">
+        <h2>Test 2: Test PocketBase</h2>
+        <button onclick="testPocketBase()">Test PocketBase Connection</button>
+        <div id="pb-result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>Test 3: Load App Module</h2>
+        <button onclick="loadApp()">Load Svelte App</button>
+        <div id="app"></div>
+    </div>
+    
+    <script>
+        function addNotification() {
+            const notification = document.createElement('div');
+            notification.className = 'setup-notification';
+            notification.innerHTML = `
+                <span>Database not initialized (TEST)</span>
+                <button onclick="alert('Button works!')">Setup</button>
+            `;
+            document.body.appendChild(notification);
+        }
+        
+        async function testPocketBase() {
+            const result = document.getElementById('pb-result');
+            try {
+                const pb = new PocketBase(window.location.origin);
+                result.innerHTML = '<p style="color: green;">✅ PocketBase instance created</p>';
+                
+                try {
+                    await pb.collection('templates').getFirstListItem('is_default=true');
+                    result.innerHTML += '<p style="color: green;">✅ Database is initialized</p>';
+                } catch (e) {
+                    result.innerHTML += '<p style="color: orange;">⚠️ Database not initialized (expected): ' + e.message + '</p>';
+                }
+            } catch (e) {
+                result.innerHTML = '<p style="color: red;">❌ Failed to create PocketBase: ' + e.message + '</p>';
+            }
+        }
+        
+        async function loadApp() {
+            try {
+                const module = await import('./assets/index-BLNEHanq.js');
+                console.log('Module loaded:', module);
+                document.getElementById('app').innerHTML = '<p style="color: green;">✅ Module loaded - check console</p>';
+            } catch (e) {
+                document.getElementById('app').innerHTML = '<p style="color: red;">❌ Failed to load module: ' + e.message + '</p>';
+            }
+        }
+    </script>
+</body>
+</html>

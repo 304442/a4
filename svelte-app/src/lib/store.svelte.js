@@ -6,7 +6,7 @@ const generateId = () => `id_${Date.now()}_${uniqueIdCounter++}`;
 
 class PlannerStore {
   // State
-  pb = new PocketBase(window.location.origin);
+  pb = null;
   isInitializing = $state(true);
   lastSavedState = null;
   
@@ -50,7 +50,13 @@ class PlannerStore {
   showSetupModal = $state(false);
   
   constructor() {
-    this.pb.autoCancellation(false);
+    // Initialize PocketBase when constructor runs
+    if (window.PocketBase) {
+      this.pb = new window.PocketBase(window.location.origin);
+      this.pb.autoCancellation(false);
+    } else {
+      console.error('PocketBase not available');
+    }
     this.setupEventListeners();
   }
   
@@ -69,6 +75,20 @@ class PlannerStore {
   
   async init() {
     console.log('PlannerStore init() called');
+    
+    // Ensure PocketBase is initialized
+    if (!this.pb && window.PocketBase) {
+      this.pb = new window.PocketBase(window.location.origin);
+      this.pb.autoCancellation(false);
+    }
+    
+    if (!this.pb) {
+      console.error('PocketBase not available in init');
+      this.showSetupNotification();
+      this.isInitializing = false;
+      return;
+    }
+    
     // Check if database is initialized
     if (!(await this.checkDatabaseInitialized())) {
       console.log('Database not initialized, showing setup notification');
@@ -101,6 +121,20 @@ class PlannerStore {
   }
   
   showSetupNotification() {
+    console.log('showSetupNotification called');
+    // Ensure DOM is ready
+    if (!document.body) {
+      console.error('document.body not ready');
+      setTimeout(() => this.showSetupNotification(), 100);
+      return;
+    }
+    
+    // Check if notification already exists
+    if (document.querySelector('.setup-notification')) {
+      console.log('Setup notification already exists');
+      return;
+    }
+    
     // Create a persistent setup notification
     const notification = document.createElement('div');
     notification.className = 'setup-notification';
@@ -109,11 +143,13 @@ class PlannerStore {
       <button class="setup-notification-button">Setup</button>
     `;
     document.body.appendChild(notification);
+    console.log('Setup notification added to DOM');
     
     // Add event listener to the button
     const button = notification.querySelector('.setup-notification-button');
     if (button) {
       button.addEventListener('click', () => {
+        console.log('Setup button clicked');
         this.showSetupModal = true;
       });
     }
