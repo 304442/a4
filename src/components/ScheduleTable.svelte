@@ -1,6 +1,7 @@
 <script>
   import { plannerStore } from '../lib/store.svelte.js';
   
+  // Fixed version - no MAX columns
   const dayLabels = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
   const dayKeys = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
 </script>
