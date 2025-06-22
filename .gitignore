@@ -25,5 +25,17 @@ dist-ssr
 
 # Build outputs
 dist
+dist-ssr
 assets
-index.html
+/index.html
+
+# Debug files
+debug-*.png
+debug-*.jpg
+trace.zip
+*.trace
+
+# Temporary files
+*.tmp
+*.temp
+.cache
