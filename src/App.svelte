@@ -22,18 +22,56 @@
   });
   
   onMount(() => {
-    console.log('App.svelte mounted, calling plannerStore.init()');
+    console.log('🚀 App.svelte mounted, calling plannerStore.init()');
+    
+    // Make debugging info globally available
+    window.plannerStore = plannerStore;
+    window.appDebug = {
+      mountTime: new Date().toISOString(),
+      storeExists: !!plannerStore,
+      initialState: {
+        isInitializing: plannerStore?.isInitializing,
+        currentWeek: plannerStore?.currentWeek,
+        showSetupModal: plannerStore?.showSetupModal
+      }
+    };
+    
     plannerStore.init();
     
-    // Debug: log the isInitializing state every second
+    // Enhanced debug monitoring
+    let debugCount = 0;
     const debugInterval = setInterval(() => {
-      console.log('App.svelte - isInitializing:', plannerStore.isInitializing);
+      debugCount++;
+      const debugInfo = {
+        count: debugCount,
+        isInitializing: plannerStore.isInitializing,
+        currentWeek: plannerStore.currentWeek,
+        hasSchedule: plannerStore.schedule?.length > 0,
+        hasTasks: plannerStore.tasks?.length > 0,
+        showSetupModal: plannerStore.showSetupModal,
+        appDivContent: document.getElementById('app')?.children.length || 0
+      };
+      console.log(`🔍 Debug #${debugCount}:`, debugInfo);
+      window.appDebug.latestState = debugInfo;
     }, 1000);
     
-    // Clean up after 10 seconds
-    setTimeout(() => clearInterval(debugInterval), 10000);
+    // Clean up after 15 seconds
+    setTimeout(() => {
+      clearInterval(debugInterval);
+      console.log('🛑 Debug monitoring stopped');
+    }, 15000);
   });
 </script>
+
+<!-- Debug Overlay -->
+<div style="position: fixed; top: 0; left: 0; background: rgba(255,0,0,0.8); color: white; padding: 10px; z-index: 9999; font-family: monospace; font-size: 12px;">
+  <strong>DEBUG MODE</strong><br>
+  isInitializing: {plannerStore.isInitializing}<br>
+  currentWeek: {plannerStore.currentWeek || 'null'}<br>
+  showSetupModal: {plannerStore.showSetupModal}<br>
+  schedule: {plannerStore.schedule?.length || 0} items<br>
+  tasks: {plannerStore.tasks?.length || 0} items
+</div>
 
 <StatusIndicators />
 
@@ -52,6 +90,13 @@
   </div>
 
   <DropdownPortals />
+{:else}
+  <!-- Show loading state when initializing -->
+  <div style="position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; font-family: monospace;">
+    <h2>Initializing...</h2>
+    <p>isInitializing: {plannerStore.isInitializing}</p>
+    <p>If this takes more than 5 seconds, something is wrong.</p>
+  </div>
 {/if}
 
 {#if showModal}
