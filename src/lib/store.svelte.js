@@ -109,11 +109,20 @@ class PlannerStore {
     try {
       console.log('Loading week data...');
       await this.loadWeek(this.currentWeek, true);
+      console.log('Week data loaded successfully, isInitializing should be false now');
     } catch (error) {
       console.error('Error loading week during initialization:', error);
       this.showMessage('Error loading planner data. Please refresh the page.');
       // Ensure we set isInitializing to false even on error so the UI renders
       this.isInitializing = false;
+    } finally {
+      // Extra safety: ensure isInitializing is false after 5 seconds no matter what
+      setTimeout(() => {
+        if (this.isInitializing) {
+          console.error('Initialization timeout - forcing isInitializing to false');
+          this.isInitializing = false;
+        }
+      }, 5000);
     }
     
     setInterval(() => {
@@ -344,11 +353,27 @@ class PlannerStore {
       
       console.log('Template fetched:', template);
       
+      console.log('Applying template structure...');
       this.applyTemplateStructure(template);
-      if (plannerRecord) this.overlayUserData(plannerRecord);
+      console.log('Template structure applied');
       
+      if (plannerRecord) {
+        console.log('Overlaying user data...');
+        this.overlayUserData(plannerRecord);
+        console.log('User data overlayed');
+      }
+      
+      console.log('Calculating scores...');
       this.calculateScores();
-      if (isInitLoad && !this.times.some(t => t.value)) await this.getPrayerTimes();
+      console.log('Scores calculated');
+      
+      if (isInitLoad && !this.times.some(t => t.value)) {
+        console.log('Fetching prayer times...');
+        await this.getPrayerTimes();
+        console.log('Prayer times fetched');
+      }
+      
+      console.log('Saving current state...');
       this.lastSavedState = JSON.stringify(this.getCurrentUserData());
       console.log('loadWeek completed successfully');
     } catch (error) {

@@ -22,7 +22,16 @@
   });
   
   onMount(() => {
+    console.log('App.svelte mounted, calling plannerStore.init()');
     plannerStore.init();
+    
+    // Debug: log the isInitializing state every second
+    const debugInterval = setInterval(() => {
+      console.log('App.svelte - isInitializing:', plannerStore.isInitializing);
+    }, 1000);
+    
+    // Clean up after 10 seconds
+    setTimeout(() => clearInterval(debugInterval), 10000);
   });
 </script>
 
