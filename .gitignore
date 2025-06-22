@@ -27,7 +27,6 @@ dist-ssr
 dist
 dist-ssr
 assets
-/index.html
 
 # Debug files
 debug-*.png
