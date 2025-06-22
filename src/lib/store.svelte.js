@@ -376,7 +376,7 @@ class PlannerStore {
   
   // Data Loading
   async loadWeek(isoWeek, isInitLoad = false) {
-    console.log('loadWeek called with:', isoWeek, 'isInitLoad:', isInitLoad);
+    console.log('🚀 loadWeek START - v2:', isoWeek, 'isInitLoad:', isInitLoad);
     
     if (!/^\\d{4}-W(0[1-9]|[1-4]\\d|5[0-3])$/.test(isoWeek)) {
       this.showMessage("Invalid week format");
@@ -428,12 +428,13 @@ class PlannerStore {
       console.log('Saving current state...');
       this.lastSavedState = JSON.stringify(this.getCurrentUserData());
       console.log('loadWeek completed successfully');
+      console.log('🎉 Final schedule length:', this.schedule?.length);
     } catch (error) {
-      console.error('Error in loadWeek:', error);
+      console.error('❌ Error in loadWeek:', error);
       this.showMessage('Error loading week data');
     } finally {
       if (isInitLoad) {
-        console.log('Setting isInitializing = false');
+        console.log('🏁 Setting isInitializing = false');
         this.isInitializing = false;
       }
     }
