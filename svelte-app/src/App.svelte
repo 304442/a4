@@ -19,7 +19,6 @@
   // Watch for changes in plannerStore
   $effect(() => {
     showModal = plannerStore.showSetupModal;
-    console.log('App.svelte: showSetupModal changed to', showModal);
   });
   
   onMount(() => {
@@ -48,6 +47,4 @@
 
 {#if showModal}
   <SetupModal />
-{:else}
-  <!-- Debug: Modal not showing, showModal = {showModal} -->
 {/if}

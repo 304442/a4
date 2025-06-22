@@ -55,7 +55,6 @@ class PlannerStore {
       this.pb = new window.PocketBase(window.location.origin);
       this.pb.autoCancellation(false);
     } else {
-      console.error('PocketBase not available');
     }
     this.setupEventListeners();
   }
@@ -74,7 +73,6 @@ class PlannerStore {
   }
   
   async init() {
-    console.log('PlannerStore init() called');
     
     // Ensure PocketBase is initialized
     if (!this.pb && window.PocketBase) {
@@ -83,7 +81,6 @@ class PlannerStore {
     }
     
     if (!this.pb) {
-      console.error('PocketBase not available in init');
       this.showSetupNotification();
       this.isInitializing = false;
       return;
@@ -91,7 +88,6 @@ class PlannerStore {
     
     // Check if database is initialized
     if (!(await this.checkDatabaseInitialized())) {
-      console.log('Database not initialized, showing setup notification');
       // Show notification to setup database
       this.showSetupNotification();
       // Also set isInitializing to false so the app renders
@@ -115,23 +111,19 @@ class PlannerStore {
       const template = await this.pb.collection('templates').getFirstListItem('is_default=true');
       return true;
     } catch (error) {
-      console.log('Database not initialized:', error.message);
       return false;
     }
   }
   
   showSetupNotification() {
-    console.log('showSetupNotification called');
     // Ensure DOM is ready
     if (!document.body) {
-      console.error('document.body not ready');
       setTimeout(() => this.showSetupNotification(), 100);
       return;
     }
     
     // Check if notification already exists
     if (document.querySelector('.setup-notification')) {
-      console.log('Setup notification already exists');
       return;
     }
     
@@ -152,19 +144,14 @@ class PlannerStore {
     
     // Add to DOM
     document.body.appendChild(notification);
-    console.log('Setup notification added to DOM');
     
     // Add event listener to the button
     button.addEventListener('click', () => {
-      console.log('Setup button clicked');
-      console.log('showSetupModal before:', this.showSetupModal);
       this.showSetupModal = true;
-      console.log('showSetupModal after:', this.showSetupModal);
       
       // Force check if modal appears
       setTimeout(() => {
         const modal = document.querySelector('.setup-modal-overlay');
-        console.log('Modal element exists:', modal ? 'YES' : 'NO');
       }, 100);
     });
   }
