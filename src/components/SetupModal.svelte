@@ -44,11 +44,16 @@
   let isTesting = $state(false);
   let isRunning = $state(false);
   
-  function closeModal() {
+  function closeModal(reload = false) {
     plannerStore.showSetupModal = false;
     // Remove the setup notification if it exists
     const notification = document.querySelector('.setup-notification');
     if (notification) notification.remove();
+    
+    // Reload page after successful setup to properly initialize the app
+    if (reload) {
+      window.location.reload();
+    }
   }
   
   function log(msg, type = 'i') {
@@ -157,10 +162,9 @@
         log('🎉 Full setup complete!', 's');
         setupStats.health = '✅';
         
-        // Wait a moment before closing
+        // Wait a moment before closing and reload
         setTimeout(() => {
-          closeModal();
-          plannerStore.init();
+          closeModal(true); // Pass true to reload after successful setup
         }, 2000);
       }
     } finally {
