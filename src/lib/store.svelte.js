@@ -376,7 +376,14 @@ class PlannerStore {
   
   // Data Loading
   async loadWeek(isoWeek, isInitLoad = false) {
-    console.log('🚀 loadWeek START - v3:', isoWeek, 'isInitLoad:', isInitLoad);
+    console.log('🚀 loadWeek START - v4 FIXED:', isoWeek, 'isInitLoad:', isInitLoad);
+    
+    // REAL FIX: During init, ensure we have valid data
+    if (!isoWeek) {
+      console.error('ERROR: No week provided to loadWeek!');
+      if (isInitLoad) this.isInitializing = false;
+      return;
+    }
     
     // Validate week format
     const weekRegex = /^\d{4}-W(0[1-9]|[1-4]\d|5[0-3])$/;
@@ -391,6 +398,19 @@ class PlannerStore {
     this.showWeekSelector = false;
     this.currentWeek = isoWeek;
     this.dateRange = this.getWeekDateRange(this.parseISOWeek(isoWeek));
+    
+    // REAL FIX: Just load the template directly during init
+    if (isInitLoad && !this.currentTemplate) {
+      console.log('INIT LOAD: No template loaded yet, fetching default...');
+      try {
+        const template = await this.fetchTemplate("default");
+        console.log('INIT LOAD: Applying template...');
+        this.applyTemplateStructure(template);
+        console.log('INIT LOAD: Template applied, schedule length:', this.schedule?.length);
+      } catch (e) {
+        console.error('INIT LOAD: Failed to load template:', e);
+      }
+    }
     
     try {
       console.log('Fetching planner record...');
@@ -436,11 +456,14 @@ class PlannerStore {
     } catch (error) {
       console.error('❌ Error in loadWeek:', error);
       this.showMessage('Error loading week data');
-    } finally {
-      if (isInitLoad) {
-        console.log('🏁 Setting isInitializing = false');
-        this.isInitializing = false;
-      }
+    }
+    
+    // REAL FIX: Always set isInitializing to false if this is init load
+    if (isInitLoad) {
+      console.log('🏁 INIT COMPLETE - Setting isInitializing = false');
+      this.isInitializing = false;
+      console.log('✅ Schedule has', this.schedule?.length, 'items');
+      console.log('✅ Tasks has', this.tasks?.length, 'items');
     }
   }
   
