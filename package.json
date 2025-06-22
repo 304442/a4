@@ -11,8 +11,7 @@
   "devDependencies": {
     "@sveltejs/vite-plugin-svelte": "^5.0.3",
     "svelte": "^5.0.0-next.272",
-    "vite": "^6.3.5",
-    "vite-plugin-static-copy": "^3.0.2"
+    "vite": "^6.3.5"
   },
   "dependencies": {
     "pocketbase": "^0.26.1",
