@@ -6,11 +6,11 @@
   const dayKeys = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
 </script>
 
-<table>
+<table class="schedule-table">
   <thead>
     <tr>
-      <th style="width:18mm">T</th>
-      <th style="width:20mm">D</th>
+      <th>T</th>
+      <th>D</th>
       <th class="ac">ACTIVITY</th>
       {#each dayLabels as dayLabel, i}
         <th class="dc" class:current-day={i === (plannerStore.currentDay || 7) - 1}>{dayLabel}</th>
