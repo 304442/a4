@@ -109,6 +109,7 @@ class PlannerStore {
     try {
       console.log('Loading week data...');
       await this.loadWeek(this.currentWeek, true);
+      console.log('Init complete, schedule items:', this.schedule?.length);
       console.log('Week data loaded successfully, isInitializing should be false now');
     } catch (error) {
       console.error('Error loading week during initialization:', error);
