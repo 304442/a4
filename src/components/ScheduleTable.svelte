@@ -13,7 +13,6 @@
       <th class="ac">ACTIVITY</th>
       {#each dayLabels as dayLabel, i}
         <th class="dc" class:current-day={i === (plannerStore.currentDay || 7) - 1}>{dayLabel}</th>
-        <th class="dc" class:current-day={i === (plannerStore.currentDay || 7) - 1}>MAX</th>
       {/each}
       <th class="dc">📊</th>
       <th class="dc">🎯</th>
@@ -21,7 +20,7 @@
     </tr>
   </thead>
   <tbody>
-    {#each [...plannerStore.schedule].reverse() as section}
+    {#each plannerStore.schedule as section}
       {#each section.activities as activity, aIdx}
         <tr class:total={section.name === 'TOTAL'}>
           <td class="bold">{aIdx === 0 ? section.name : ''}</td>
@@ -42,9 +41,6 @@
                   readonly={section.name === 'TOTAL'}
                 >
               {/if}
-            </td>
-            <td class="dc" class:current-day={i === (plannerStore.currentDay || 7) - 1}>
-              {activity.days?.[day]?.max || ''}
             </td>
           {/each}
           <td class="dc">
