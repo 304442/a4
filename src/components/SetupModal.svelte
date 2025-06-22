@@ -89,12 +89,116 @@
   function validateJSON(text, type) {
     try {
       const data = JSON.parse(text);
+      
+      // Validate structure based on type
+      if (type === 'collections') {
+        return validateCollectionStructure(data);
+      } else if (type === 'seeds') {
+        return validateSeedStructure(data);
+      }
+      
       return { valid: true, message: 'Valid JSON', data };
     } catch (e) {
       const match = e.message.match(/position (\d+)/);
       const pos = match ? ` at position ${match[1]}` : '';
       return { valid: false, message: `Invalid JSON${pos}` };
     }
+  }
+  
+  function validateCollectionStructure(data) {
+    if (!Array.isArray(data)) {
+      return { valid: false, message: 'Collections must be an array' };
+    }
+    
+    for (let i = 0; i < data.length; i++) {
+      const collection = data[i];
+      
+      // Check required collection properties
+      if (!collection.name) {
+        return { valid: false, message: `Collection at index ${i} missing name` };
+      }
+      if (!collection.type) {
+        return { valid: false, message: `Collection ${collection.name} missing type` };
+      }
+      if (!Array.isArray(collection.fields)) {
+        return { valid: false, message: `Collection ${collection.name} fields must be an array` };
+      }
+      
+      // Validate each field
+      for (let j = 0; j < collection.fields.length; j++) {
+        const field = collection.fields[j];
+        
+        if (!field.name) {
+          return { valid: false, message: `Field at index ${j} in ${collection.name} missing name` };
+        }
+        if (!field.type) {
+          return { valid: false, message: `Field ${field.name} in ${collection.name} missing type` };
+        }
+        if (field.required === undefined) {
+          return { valid: false, message: `Field ${field.name} in ${collection.name} missing required property` };
+        }
+        if (field.presentable === undefined) {
+          return { valid: false, message: `Field ${field.name} in ${collection.name} missing presentable property` };
+        }
+        
+        // Type-specific validations
+        if (field.type === 'text' && field.pattern) {
+          try {
+            new RegExp(field.pattern);
+          } catch (e) {
+            return { valid: false, message: `Invalid regex pattern in field ${field.name}` };
+          }
+        }
+        
+        if (field.type === 'json' && !field.maxSize) {
+          return { valid: false, message: `JSON field ${field.name} in ${collection.name} missing maxSize` };
+        }
+      }
+    }
+    
+    return { valid: true, message: 'Valid collection structure', data };
+  }
+  
+  function validateSeedStructure(data) {
+    if (!Array.isArray(data)) {
+      return { valid: false, message: 'Seeds must be an array' };
+    }
+    
+    for (let i = 0; i < data.length; i++) {
+      const seed = data[i];
+      
+      if (!seed.collection) {
+        return { valid: false, message: `Seed at index ${i} missing collection name` };
+      }
+      if (!Array.isArray(seed.records)) {
+        return { valid: false, message: `Seed for ${seed.collection} records must be an array` };
+      }
+      
+      // Validate template records
+      if (seed.collection === 'templates') {
+        for (let j = 0; j < seed.records.length; j++) {
+          const record = seed.records[j];
+          
+          if (!record.name) {
+            return { valid: false, message: `Template record at index ${j} missing name` };
+          }
+          if (!record.structure || typeof record.structure !== 'object') {
+            return { valid: false, message: `Template ${record.name} missing or invalid structure` };
+          }
+          
+          // Validate template structure
+          const structure = record.structure;
+          if (!Array.isArray(structure.prayer_times)) {
+            return { valid: false, message: `Template ${record.name} structure missing prayer_times array` };
+          }
+          if (!Array.isArray(structure.schedule)) {
+            return { valid: false, message: `Template ${record.name} structure missing schedule array` };
+          }
+        }
+      }
+    }
+    
+    return { valid: true, message: 'Valid seed structure', data };
   }
   
   function validateCollections() {
@@ -788,6 +892,79 @@
   "displayFields": ["name"]     // Fields to show in UI
 }`}</pre>
 
+    <h2>📊 Required Collections</h2>
+    
+    <h3>Templates Collection</h3>
+    <p>Stores planner structure templates:</p>
+    <pre>{`{
+  "name": "templates",
+  "type": "base",
+  "fields": [
+    {
+      "name": "name",
+      "type": "text",
+      "required": true,
+      "presentable": true,
+      "min": 1,
+      "max": 50
+    },
+    {
+      "name": "description",
+      "type": "text",
+      "required": false,
+      "presentable": false,
+      "max": 200
+    },
+    {
+      "name": "is_default",
+      "type": "bool",
+      "required": false,
+      "presentable": false
+    },
+    {
+      "name": "version",
+      "type": "number",
+      "required": false,
+      "presentable": false,
+      "min": 1,
+      "noDecimal": true
+    },
+    {
+      "name": "structure",
+      "type": "json",
+      "required": true,
+      "presentable": false,
+      "maxSize": 5242880  // 5MB
+    }
+  ]
+}`}</pre>
+
+    <h3>Planners Collection</h3>
+    <p>Stores weekly planner data:</p>
+    <pre>{`{
+  "name": "planners",
+  "type": "base",
+  "fields": [
+    {
+      "name": "week_id",
+      "type": "text",
+      "required": true,
+      "presentable": true,
+      "pattern": "^\\\\d{4}-W(0[1-9]|[1-4]\\\\d|5[0-3])$",
+      "min": 8,
+      "max": 8
+    },
+    {
+      "name": "template_id",
+      "type": "text",  // Converted to relation after creation
+      "required": false,
+      "presentable": true,
+      "max": 50
+    },
+    // ... other fields (title, city, prayer_times, etc.)
+  ]
+}`}</pre>
+
     <h2>📋 Collection Properties</h2>
     <pre>{`{
   "name": "planners",              // Collection name (a-z, 0-9, _)
@@ -832,6 +1009,53 @@
   "updateRule": "user = @request.auth.id",   // Update own records only
   "deleteRule": "user = @request.auth.id"    // Delete own records only
 }`}</pre>
+
+    <h2>🌱 Seed Data Structure</h2>
+    <p>Seeds must follow this format:</p>
+    <pre>{`[
+  {
+    "collection": "templates",
+    "records": [
+      {
+        "name": "default",
+        "description": "Default weekly planner template",
+        "is_default": true,
+        "version": 5,
+        "structure": {
+          "prayer_times": [
+            { "label": "Q", "value": "4:30AM" },
+            { "label": "F", "value": "5:30AM" },
+            // ... more prayer times
+          ],
+          "schedule": [
+            {
+              "name": "QIYAM",
+              "activities": [
+                { 
+                  "name": "DAILY: Wakeup early", 
+                  "max_per_day": 1, 
+                  "max_score": 7 
+                },
+                // ... more activities
+              ]
+            },
+            // ... more schedule sections
+          ],
+          "tasks": {
+            "count": 15,
+            "fields": ["num", "priority", "tag", "description", ...]
+          },
+          "workout": [...],
+          "meals": [...],
+          "grocery": { "categories": [...] },
+          "measurements": [...],
+          "financials": [...],
+          "city_default": "London"
+        }
+      }
+    ]
+  }
+]`}</pre>
 
     <h2>❌ CRITICAL ERRORS TO AVOID</h2>
     
