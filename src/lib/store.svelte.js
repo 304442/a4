@@ -326,7 +326,8 @@ class PlannerStore {
       return [];
     }
     
-    return templateSchedule.map(section => ({
+    // Fix schedule order - ensure chronological order
+    const schedule = templateSchedule.map(section => ({
       id: generateId(),
       name: section.name,
       activities: (section.activities || []).map(activity => ({
@@ -338,6 +339,29 @@ class PlannerStore {
         streaks: { current: 0, longest: 0 }
       }))
     }));
+    
+    // Define the correct order
+    const correctOrder = [
+      'QIYAM', 'FAJR', '7AM - 9AM', '9AM - 5PM', 'DHUHR', 'ASR', 
+      '5PM - 6:30PM', '6:30PM - ISHA', 'MAGHRIB', 'ISHA', 'ALLDAY', 'TOTAL'
+    ];
+    
+    // Sort schedule according to correct order
+    const orderedSchedule = [];
+    correctOrder.forEach(sectionName => {
+      const section = schedule.find(s => s.name === sectionName);
+      if (section) orderedSchedule.push(section);
+    });
+    
+    // Add any sections not in the predefined order
+    schedule.forEach(section => {
+      if (!correctOrder.includes(section.name)) {
+        orderedSchedule.push(section);
+      }
+    });
+    
+    console.log('Schedule ordered, first:', orderedSchedule[0]?.name, 'last:', orderedSchedule[orderedSchedule.length-1]?.name);
+    return orderedSchedule;
   }
   
   createDaysStructure(specificDays, maxPerDay) {
