@@ -20,32 +20,48 @@ This is an A4-sized weekly planner web application designed for both digital use
 
 ## Deployment
 
-When you push to this git repository, it automatically deploys to a VPS via Docker Compose with:
+The application has two deployment environments:
+- **Production (main branch)**: https://a4.48d1.cc
+- **Development (dev branch)**: https://dev.a4.48d1.cc
+
+Deployment happens automatically via Docker Compose with:
 - **Caddy**: Reverse proxy handling routing
 - **PocketBase**: Backend served at `/_/*` routes
 - **Static files**: Frontend served at root
 
 ## Application Access
 
+### Production Environment
 - **Main application**: https://a4.48d1.cc
 - **PocketBase Admin UI**: https://a4.48d1.cc/_/
 - **PocketBase API**: https://a4.48d1.cc/api/*
+
+### Development Environment
+- **Dev application**: https://dev.a4.48d1.cc
+- **PocketBase Admin UI**: https://dev.a4.48d1.cc/_/
+- **PocketBase API**: https://dev.a4.48d1.cc/api/*
 
 ## Key Architecture
 
 The application follows an offline-first architecture with localStorage for immediate persistence and PocketBase for cloud sync.
 
-### Main Files (Production)
-- `index.html` - Main HTML entry point
-- `assets/index-*.js` - Compiled Svelte application bundle
-- `assets/index-*.css` - Compiled CSS including A4-optimized styling (210mm × 297mm)
+### Main Files (Development)
+- `index.html` - Development HTML entry point
+- `src/` - Source code directory
 - `pocketbase.umd.js` - PocketBase SDK
+- `package.json` - Dependencies and scripts
+- `vite.config.js` - Vite build configuration
 
-### Source Files (in svelte-app/)
+### Source Files
 - `src/App.svelte` - Main application component
 - `src/lib/store.svelte.js` - Svelte 5 store with all application logic using runes
 - `src/components/` - Individual Svelte components for each section
 - `src/app.css` - A4-optimized styling including setup notification styles
+
+### Production Files (Generated)
+- `dist/` - Build output directory (gitignored)
+- `dist/index.html` - Production HTML
+- `dist/assets/` - Compiled JS and CSS bundles
 
 ### Data Flow
 1. User input → Svelte 5 reactive state (using $state runes)
@@ -239,27 +255,27 @@ No formal testing framework is used. Test manually by:
 
 ```
 /
-├── index.html          # Main HTML entry point
-├── assets/             # Compiled Svelte assets
-│   ├── index-*.js      # Compiled JavaScript bundle
-│   └── index-*.css     # Compiled CSS bundle
+├── src/                # Source code directory
+│   ├── App.svelte      # Main application component
+│   ├── app.css         # All styling including print styles
+│   ├── main.js         # Application entry point
+│   ├── vite-env.d.ts   # TypeScript declarations
+│   ├── lib/
+│   │   └── store.svelte.js  # Svelte store with application logic
+│   └── components/     # Individual UI components
+│       ├── Header.svelte
+│       ├── ScheduleTable.svelte
+│       ├── TasksSection.svelte
+│       ├── SetupModal.svelte
+│       └── ... (other components)
+├── index.html          # Development HTML entry point
+├── package.json        # Dependencies and scripts
+├── vite.config.js      # Vite build configuration
+├── svelte.config.js    # Svelte configuration
+├── jsconfig.json       # JavaScript configuration
 ├── pocketbase.umd.js   # PocketBase JavaScript SDK
-├── svelte-app/         # Svelte source code
-│   ├── src/
-│   │   ├── App.svelte  # Main application component
-│   │   ├── app.css     # All styling including print styles
-│   │   ├── lib/
-│   │   │   └── store.svelte.js  # Svelte store with application logic
-│   │   └── components/ # Individual UI components
-│   │       ├── Header.svelte
-│   │       ├── ScheduleTable.svelte
-│   │       ├── TasksSection.svelte
-│   │       ├── SetupModal.svelte
-│   │       └── ... (other components)
-│   ├── package.json    # Dependencies and scripts
-│   └── vite.config.js  # Vite build configuration
 ├── CLAUDE.md           # This documentation file
-└── old-alpine/         # Backup of original Alpine.js files
+└── .gitignore          # Git ignore file
 ```
 
 ## Key Functions and Methods
@@ -298,19 +314,22 @@ No formal testing framework is used. Test manually by:
 
 ### Development
 ```bash
-cd svelte-app
 npm install
 npm run dev
 ```
 
 ### Building for Production
 ```bash
-cd svelte-app
 npm run build
-# Copy build files to root
-cp -r dist/* ..
-# Update index.html paths to be relative (remove leading /)
+# This creates a dist/ folder with production files
+# Deploy the contents of dist/ to your server
 ```
+
+### Deployment Notes
+- The dev branch contains source code only
+- Build artifacts (dist/, assets/) are gitignored
+- Production files must be built before deployment
+- The main branch may contain pre-built production files
 
 ### Key Differences from Alpine.js Version
 1. **Reactivity**: Uses Svelte 5 $state runes instead of Alpine.js x-data
