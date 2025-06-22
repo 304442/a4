@@ -103,7 +103,11 @@ class PlannerStore {
     this.currentWeek = this.getCurrentIsoWeek();
     this.dateRange = this.getWeekDateRange(this.parseISOWeek(this.currentWeek));
     
+    console.log('Current week:', this.currentWeek);
+    console.log('Date range:', this.dateRange);
+    
     try {
+      console.log('Loading week data...');
       await this.loadWeek(this.currentWeek, true);
     } catch (error) {
       console.error('Error loading week during initialization:', error);
@@ -311,8 +315,11 @@ class PlannerStore {
   
   // Data Loading
   async loadWeek(isoWeek, isInitLoad = false) {
+    console.log('loadWeek called with:', isoWeek, 'isInitLoad:', isInitLoad);
+    
     if (!/^\\d{4}-W(0[1-9]|[1-4]\\d|5[0-3])$/.test(isoWeek)) {
       this.showMessage("Invalid week format");
+      if (isInitLoad) this.isInitializing = false;
       return;
     }
     
@@ -320,22 +327,39 @@ class PlannerStore {
     this.currentWeek = isoWeek;
     this.dateRange = this.getWeekDateRange(this.parseISOWeek(isoWeek));
     
-    let plannerRecord = await this.fetchPlannerRecord(isoWeek);
-    let template;
-    
-    if (plannerRecord?.template_id) {
-      template = await this.fetchTemplateById(plannerRecord.template_id);
-    } else {
-      template = await this.fetchTemplate("default");
+    try {
+      console.log('Fetching planner record...');
+      let plannerRecord = await this.fetchPlannerRecord(isoWeek);
+      console.log('Planner record:', plannerRecord);
+      
+      let template;
+      
+      if (plannerRecord?.template_id) {
+        console.log('Fetching template by ID:', plannerRecord.template_id);
+        template = await this.fetchTemplateById(plannerRecord.template_id);
+      } else {
+        console.log('Fetching default template...');
+        template = await this.fetchTemplate("default");
+      }
+      
+      console.log('Template fetched:', template);
+      
+      this.applyTemplateStructure(template);
+      if (plannerRecord) this.overlayUserData(plannerRecord);
+      
+      this.calculateScores();
+      if (isInitLoad && !this.times.some(t => t.value)) await this.getPrayerTimes();
+      this.lastSavedState = JSON.stringify(this.getCurrentUserData());
+      console.log('loadWeek completed successfully');
+    } catch (error) {
+      console.error('Error in loadWeek:', error);
+      this.showMessage('Error loading week data');
+    } finally {
+      if (isInitLoad) {
+        console.log('Setting isInitializing = false');
+        this.isInitializing = false;
+      }
     }
-    
-    this.applyTemplateStructure(template);
-    if (plannerRecord) this.overlayUserData(plannerRecord);
-    
-    this.calculateScores();
-    if (isInitLoad && !this.times.some(t => t.value)) await this.getPrayerTimes();
-    this.lastSavedState = JSON.stringify(this.getCurrentUserData());
-    if (isInitLoad) this.isInitializing = false;
   }
   
   async fetchPlannerRecord(isoWeek) {
