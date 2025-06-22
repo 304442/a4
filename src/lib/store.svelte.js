@@ -376,14 +376,18 @@ class PlannerStore {
   
   // Data Loading
   async loadWeek(isoWeek, isInitLoad = false) {
-    console.log('🚀 loadWeek START - v2:', isoWeek, 'isInitLoad:', isInitLoad);
+    console.log('🚀 loadWeek START - v3:', isoWeek, 'isInitLoad:', isInitLoad);
     
-    if (!/^\\d{4}-W(0[1-9]|[1-4]\\d|5[0-3])$/.test(isoWeek)) {
+    // Validate week format
+    const weekRegex = /^\d{4}-W(0[1-9]|[1-4]\d|5[0-3])$/;
+    if (!weekRegex.test(isoWeek)) {
+      console.log('Invalid week format:', isoWeek);
       this.showMessage("Invalid week format");
       if (isInitLoad) this.isInitializing = false;
       return;
     }
     
+    console.log('Week format valid, proceeding...');
     this.showWeekSelector = false;
     this.currentWeek = isoWeek;
     this.dateRange = this.getWeekDateRange(this.parseISOWeek(isoWeek));
