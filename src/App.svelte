@@ -92,7 +92,9 @@
     </div>
   </div>
 
-  <DropdownPortals />
+  {#key plannerStore.showCitySelector || plannerStore.showWeekSelector}
+    <DropdownPortals />
+  {/key}
 {:else}
   <!-- Show loading state when initializing -->
   <div style="position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; font-family: monospace;">
