@@ -53,7 +53,6 @@ class PlannerStore {
     if (window.PocketBase) {
       this.pb = new window.PocketBase(window.location.origin);
       this.pb.autoCancellation(false);
-    } else {
     }
     this.setupEventListeners();
   }
