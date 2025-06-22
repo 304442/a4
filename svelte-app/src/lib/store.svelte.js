@@ -1,5 +1,4 @@
-// Use global PocketBase from UMD script
-const PocketBase = window.PocketBase;
+// PocketBase will be accessed when needed, not at module load time
 
 let uniqueIdCounter = 0;
 const generateId = () => `id_${Date.now()}_${uniqueIdCounter++}`;
