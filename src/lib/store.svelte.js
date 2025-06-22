@@ -137,6 +137,20 @@ class PlannerStore {
       console.log('Attempting to fetch default template...');
       const template = await this.pb.collection('templates').getFirstListItem('is_default=true');
       console.log('Default template found:', template);
+      console.log('Template structure type:', typeof template.structure);
+      
+      // Verify template has proper structure
+      let structure = template.structure;
+      if (typeof structure === 'string') {
+        structure = JSON.parse(structure);
+      }
+      
+      if (!structure.schedule || !Array.isArray(structure.schedule)) {
+        console.error('Template structure is invalid - missing schedule array');
+        return false;
+      }
+      
+      console.log('Template structure validated, schedule has', structure.schedule.length, 'sections');
       return true;
     } catch (error) {
       console.error('Error checking database initialization:', error);
@@ -202,10 +216,14 @@ class PlannerStore {
     
     try {
       const filter = templateName === "default" ? 'is_default=true' : `name="${templateName}"`;
+      console.log('Fetching template with filter:', filter);
       const template = await this.pb.collection('templates').getFirstListItem(filter);
+      console.log('Template fetched from PocketBase:', template);
+      console.log('Template structure type:', typeof template.structure);
       localStorage.setItem(cacheKey, JSON.stringify(template));
       return template;
     } catch (error) {
+      console.error('Template fetch error:', error);
       this.showMessage("Template error: Using fallback");
       return this.getFallbackTemplate();
     }
@@ -247,13 +265,31 @@ class PlannerStore {
   }
   
   applyTemplateStructure(template) {
+    console.log('applyTemplateStructure called with template:', template);
     this.currentTemplate = template;
     this.currentTemplateId = template.id;
-    const s = template.structure;
+    
+    // Parse structure if it's a string (PocketBase might return JSON fields as strings)
+    let s = template.structure;
+    if (typeof s === 'string') {
+      console.log('Template structure is a string, parsing...');
+      try {
+        s = JSON.parse(s);
+      } catch (e) {
+        console.error('Failed to parse template structure:', e);
+        s = {};
+      }
+    }
+    
+    console.log('Template structure:', s);
+    console.log('Schedule from template:', s?.schedule);
     
     this.plannerTitle = s.title_default || 'Weekly Planner';
     this.times = [...(s.prayer_times || [])];
     this.schedule = this.buildScheduleFromTemplate(s.schedule || []);
+    
+    console.log('Built schedule:', this.schedule);
+    
     this.tasks = Array(s.tasks?.count || 15).fill().map(() => ({
       id: generateId(),
       priority: '',
@@ -271,9 +307,24 @@ class PlannerStore {
     this.bodyMeasurements = this.ensureIds([...(s.measurements || [])]);
     this.financials = this.ensureIds([...(s.financials || [])]);
     this.city = s.city_default || 'London';
+    
+    console.log('Template structure applied. Final state:', {
+      schedule: this.schedule,
+      tasks: this.tasks,
+      workoutPlan: this.workoutPlan,
+      meals: this.meals,
+      groceryList: this.groceryList
+    });
   }
   
   buildScheduleFromTemplate(templateSchedule) {
+    console.log('buildScheduleFromTemplate called with:', templateSchedule);
+    
+    if (!Array.isArray(templateSchedule)) {
+      console.error('templateSchedule is not an array:', templateSchedule);
+      return [];
+    }
+    
     return templateSchedule.map(section => ({
       id: generateId(),
       name: section.name,
@@ -409,8 +460,13 @@ class PlannerStore {
   
   async fetchTemplateById(templateId) {
     try {
-      return await this.pb.collection('templates').getOne(templateId);
+      console.log('Fetching template by ID:', templateId);
+      const template = await this.pb.collection('templates').getOne(templateId);
+      console.log('Template fetched by ID:', template);
+      console.log('Template structure type:', typeof template.structure);
+      return template;
     } catch (e) {
+      console.error('Error fetching template by ID:', e);
       return await this.fetchTemplate("default");
     }
   }

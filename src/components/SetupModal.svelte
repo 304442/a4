@@ -266,6 +266,13 @@
         log('🎉 Full setup complete!', 's');
         setupStats.health = '✅';
         
+        // Clear any cached templates before reload
+        for (let key of Object.keys(localStorage)) {
+          if (key.startsWith('template_')) {
+            localStorage.removeItem(key);
+          }
+        }
+        
         // Wait a moment before closing and reload
         setTimeout(() => {
           closeModal(true); // Pass true to reload after successful setup
