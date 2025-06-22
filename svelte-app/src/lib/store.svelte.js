@@ -138,21 +138,27 @@ class PlannerStore {
     // Create a persistent setup notification
     const notification = document.createElement('div');
     notification.className = 'setup-notification';
-    notification.innerHTML = `
-      <span>Database not initialized</span>
-      <button class="setup-notification-button">Setup</button>
-    `;
+    
+    // Create span element
+    const span = document.createElement('span');
+    span.textContent = 'Database not initialized';
+    notification.appendChild(span);
+    
+    // Create button element
+    const button = document.createElement('button');
+    button.className = 'setup-notification-button';
+    button.textContent = 'Setup';
+    notification.appendChild(button);
+    
+    // Add to DOM
     document.body.appendChild(notification);
     console.log('Setup notification added to DOM');
     
     // Add event listener to the button
-    const button = notification.querySelector('.setup-notification-button');
-    if (button) {
-      button.addEventListener('click', () => {
-        console.log('Setup button clicked');
-        this.showSetupModal = true;
-      });
-    }
+    button.addEventListener('click', () => {
+      console.log('Setup button clicked');
+      this.showSetupModal = true;
+    });
   }
   
   // Template Management

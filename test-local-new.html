@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Test New Build</title>
+    <script src="pocketbase.umd.js"></script>
+    <script type="module" src="assets/index-DPNXaqTU.js"></script>
+    <link rel="stylesheet" href="assets/index-CzxDvdnt.css">
+</head>
+<body>
+    <div id="app"></div>
+    <div id="test-log" style="position: fixed; bottom: 0; left: 0; right: 0; background: #f0f0f0; padding: 20px; font-family: monospace; max-height: 50vh; overflow-y: auto;"></div>
+    
+    <script>
+        const log = document.getElementById('test-log');
+        function addLog(msg, type = 'info') {
+            const color = { info: 'black', success: 'green', error: 'red', warning: 'orange' }[type];
+            log.innerHTML += `<div style="color: ${color}">${msg}</div>`;
+        }
+        
+        // Override console.log
+        const originalLog = console.log;
+        console.log = function(...args) {
+            originalLog.apply(console, args);
+            addLog('Console: ' + args.join(' '), 'info');
+        };
+        
+        // Override console.error
+        const originalError = console.error;
+        console.error = function(...args) {
+            originalError.apply(console, args);
+            addLog('Error: ' + args.join(' '), 'error');
+        };
+        
+        window.addEventListener('error', (e) => {
+            addLog(`Global error: ${e.message} at ${e.filename}:${e.lineno}:${e.colno}`, 'error');
+        });
+        
+        // Monitor DOM changes
+        const observer = new MutationObserver((mutations) => {
+            mutations.forEach((mutation) => {
+                if (mutation.type === 'childList') {
+                    mutation.addedNodes.forEach((node) => {
+                        if (node.className === 'setup-notification') {
+                            addLog('Setup notification added to DOM!', 'success');
+                            addLog('HTML: ' + node.outerHTML, 'info');
+                            
+                            // Check for button
+                            const button = node.querySelector('button');
+                            if (button) {
+                                addLog('Button found in notification!', 'success');
+                            } else {
+                                addLog('Button NOT found in notification!', 'error');
+                            }
+                        }
+                    });
+                }
+            });
+        });
+        
+        observer.observe(document.body, {
+            childList: true,
+            subtree: true
+        });
+        
+        addLog('Test page loaded', 'info');
+        
+        // Check after a delay
+        setTimeout(() => {
+            addLog('Checking after 3 seconds...', 'info');
+            
+            if (window.PocketBase) {
+                addLog('PocketBase loaded', 'success');
+            } else {
+                addLog('PocketBase NOT loaded', 'error');
+            }
+            
+            if (window.plannerStore) {
+                addLog('plannerStore exists', 'success');
+                addLog('isInitializing: ' + window.plannerStore.isInitializing, 'info');
+                
+                // Try manual trigger
+                if (window.plannerStore.showSetupNotification) {
+                    addLog('Manually calling showSetupNotification...', 'warning');
+                    window.plannerStore.showSetupNotification();
+                }
+            } else {
+                addLog('plannerStore NOT found', 'error');
+            }
+        }, 3000);
+    </script>
+</body>
+</html>
