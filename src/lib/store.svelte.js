@@ -71,32 +71,47 @@ class PlannerStore {
   }
   
   async init() {
+    console.log('PlannerStore init() started');
     
     // Ensure PocketBase is initialized
     if (!this.pb && window.PocketBase) {
+      console.log('Initializing PocketBase with origin:', window.location.origin);
       this.pb = new window.PocketBase(window.location.origin);
       this.pb.autoCancellation(false);
     }
     
     if (!this.pb) {
+      console.error('PocketBase not available, showing setup notification');
       this.showSetupNotification();
       this.isInitializing = false;
       return;
     }
     
     // Check if database is initialized
+    console.log('Checking if database is initialized...');
     if (!(await this.checkDatabaseInitialized())) {
+      console.log('Database not initialized, showing setup notification');
       // Show notification to setup database
       this.showSetupNotification();
       // Also set isInitializing to false so the app renders
       this.isInitializing = false;
       return;
     }
+    console.log('Database is initialized, proceeding with load');
     
     this.pendingSync = JSON.parse(localStorage.getItem('planner_pending_sync') || '[]');
     this.currentWeek = this.getCurrentIsoWeek();
     this.dateRange = this.getWeekDateRange(this.parseISOWeek(this.currentWeek));
-    await this.loadWeek(this.currentWeek, true);
+    
+    try {
+      await this.loadWeek(this.currentWeek, true);
+    } catch (error) {
+      console.error('Error loading week during initialization:', error);
+      this.showMessage('Error loading planner data. Please refresh the page.');
+      // Ensure we set isInitializing to false even on error so the UI renders
+      this.isInitializing = false;
+    }
+    
     setInterval(() => {
       if (!this.isInitializing && this.hasSignificantChanges()) this.saveData();
     }, 30000);
@@ -106,9 +121,12 @@ class PlannerStore {
   async checkDatabaseInitialized() {
     try {
       // Try to get the default template
+      console.log('Attempting to fetch default template...');
       const template = await this.pb.collection('templates').getFirstListItem('is_default=true');
+      console.log('Default template found:', template);
       return true;
     } catch (error) {
+      console.error('Error checking database initialization:', error);
       return false;
     }
   }
