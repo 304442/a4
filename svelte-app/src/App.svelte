@@ -13,6 +13,15 @@
   import DropdownPortals from './components/DropdownPortals.svelte';
   import SetupModal from './components/SetupModal.svelte';
   
+  // Create a local reactive reference to force reactivity
+  let showModal = $state(false);
+  
+  // Watch for changes in plannerStore
+  $effect(() => {
+    showModal = plannerStore.showSetupModal;
+    console.log('App.svelte: showSetupModal changed to', showModal);
+  });
+  
   onMount(() => {
     plannerStore.init();
   });
@@ -37,6 +46,8 @@
   <DropdownPortals />
 {/if}
 
-{#if plannerStore.showSetupModal}
+{#if showModal}
   <SetupModal />
+{:else}
+  <!-- Debug: Modal not showing, showModal = {showModal} -->
 {/if}

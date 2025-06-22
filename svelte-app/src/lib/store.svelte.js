@@ -157,7 +157,15 @@ class PlannerStore {
     // Add event listener to the button
     button.addEventListener('click', () => {
       console.log('Setup button clicked');
+      console.log('showSetupModal before:', this.showSetupModal);
       this.showSetupModal = true;
+      console.log('showSetupModal after:', this.showSetupModal);
+      
+      // Force check if modal appears
+      setTimeout(() => {
+        const modal = document.querySelector('.setup-modal-overlay');
+        console.log('Modal element exists:', modal ? 'YES' : 'NO');
+      }, 100);
     });
   }
   
