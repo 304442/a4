@@ -56,8 +56,8 @@ body {
 /* Schedule table column widths - Total must fit in 210mm page width with margins */
 /* Fixed column widths that won't change after database setup */
 .schedule-table { width: 100%; }
-.schedule-table th:nth-child(1), .schedule-table td:nth-child(1) { width: 18mm !important; text-align: left; padding-left: 1mm; } /* Time column */
-.schedule-table th:nth-child(2), .schedule-table td:nth-child(2) { width: 20mm !important; text-align: left; padding-left: 1mm; } /* Day column */
+.schedule-table th:nth-child(1), .schedule-table td:nth-child(1) { width: 22mm !important; text-align: left; padding-left: 1mm; } /* Time column */
+.schedule-table th:nth-child(2), .schedule-table td:nth-child(2) { width: 24mm !important; text-align: left; padding-left: 1mm; } /* Day column */
 .schedule-table th:nth-child(3), .schedule-table td:nth-child(3) { text-align: left; padding-left: 1mm; } /* ACTIVITY column - auto width */
 /* Day columns and score columns */
 .dc { width: 3.5mm; text-align: center; padding: 0; height: 3mm; }
