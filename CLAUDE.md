@@ -202,7 +202,7 @@ Prayer times use the Islamic Society of North America (ISNA) method. Modify calc
 - Color-coded progress bars (red/yellow/green)
 
 ### Tasks Section
-- 15 task rows by default
+- 20 task rows by default
 - Priority dropdown (A/B/C/D) with ⭐ header
 - Tag dropdown (Personal/Work) with 🏷️ header  
 - Date fields for Start/Due/Done

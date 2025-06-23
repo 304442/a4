@@ -174,6 +174,16 @@ tr:has(.task-done) td, tr:has(.task-done) td input:not(.task-done) { text-decora
 .text-sm { font-size: 8pt; line-height: 1.2; }
 .bold { font-weight: bold; }
 .text-center { text-align: center; }
+
+/* Workout day names */
+.grid p.bold { 
+  font-size: 7pt !important; 
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  margin: 0;
+  padding: 0;
+}
 .cell { font-size: 6pt; text-align: center; }
 .cell--color { color: #e67700; }
 

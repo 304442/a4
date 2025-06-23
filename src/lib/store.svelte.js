@@ -277,7 +277,7 @@ class PlannerStore {
     this.times = s.prayer_times || [];
     this.schedule = this.buildScheduleFromTemplate(s.schedule || []);
     
-    this.tasks = Array(s.tasks?.count || 15).fill().map(() => ({
+    this.tasks = Array(s.tasks?.count || 20).fill().map(() => ({
       id: generateId(),
       priority: '',
       tag: '',

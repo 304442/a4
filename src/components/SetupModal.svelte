@@ -593,7 +593,7 @@
                 }
               ],
               tasks: {
-                count: 15,
+                count: 20,
                 fields: ["priority", "description", "tag", "start_date", "expected_date", "actual_date", "completed"]
               },
               workout: [
@@ -1049,7 +1049,7 @@
             // ... more schedule sections
           ],
           "tasks": {
-            "count": 15,
+            "count": 20,
             "fields": ["num", "priority", "tag", "description", ...]
           },
           "workout": [...],
