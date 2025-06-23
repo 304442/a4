@@ -6,9 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview",
-    "debug:playwright": "node debug-playwright.js",
-    "debug:puppeteer": "node debug-site.js"
+    "preview": "vite preview"
   },
   "devDependencies": {
     "@sveltejs/vite-plugin-svelte": "^5.0.3",
@@ -16,8 +14,6 @@
     "vite": "^6.3.5"
   },
   "dependencies": {
-    "playwright": "^1.53.1",
-    "pocketbase": "^0.26.1",
-    "puppeteer": "^24.10.2"
+    "pocketbase": "^0.26.1"
   }
 }
