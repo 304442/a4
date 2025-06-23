@@ -1,13 +1,5 @@
 <script>
   import { plannerStore } from '../lib/store.svelte.js';
-  
-  // Debug logging
-  $effect(() => {
-    console.log('DropdownPortals reactive state:', {
-      showCitySelector: plannerStore.showCitySelector,
-      showWeekSelector: plannerStore.showWeekSelector
-    });
-  });
 </script>
 
 {#if plannerStore.showCitySelector}

@@ -71,11 +71,8 @@ class PlannerStore {
   }
   
   async init() {
-    console.log('PlannerStore init() started');
-    
     // Ensure PocketBase is initialized
     if (!this.pb && window.PocketBase) {
-      console.log('Initializing PocketBase with origin:', window.location.origin);
       this.pb = new window.PocketBase(window.location.origin);
       this.pb.autoCancellation(false);
     }
@@ -88,29 +85,20 @@ class PlannerStore {
     }
     
     // Check if database is initialized
-    console.log('Checking if database is initialized...');
     if (!(await this.checkDatabaseInitialized())) {
-      console.log('Database not initialized, showing setup notification');
       // Show notification to setup database
       this.showSetupNotification();
       // Also set isInitializing to false so the app renders
       this.isInitializing = false;
       return;
     }
-    console.log('Database is initialized, proceeding with load');
     
     this.pendingSync = JSON.parse(localStorage.getItem('planner_pending_sync') || '[]');
     this.currentWeek = this.getCurrentIsoWeek();
     this.dateRange = this.getWeekDateRange(this.parseISOWeek(this.currentWeek));
     
-    console.log('Current week:', this.currentWeek);
-    console.log('Date range:', this.dateRange);
-    
     try {
-      console.log('Loading week data...');
       await this.loadWeek(this.currentWeek, true);
-      console.log('Init complete, schedule items:', this.schedule?.length);
-      console.log('Week data loaded successfully, isInitializing should be false now');
     } catch (error) {
       console.error('Error loading week during initialization:', error);
       this.showMessage('Error loading planner data. Please refresh the page.');
@@ -135,10 +123,7 @@ class PlannerStore {
   async checkDatabaseInitialized() {
     try {
       // Try to get the default template
-      console.log('Attempting to fetch default template...');
       const template = await this.pb.collection('templates').getFirstListItem('is_default=true');
-      console.log('Default template found:', template);
-      console.log('Template structure type:', typeof template.structure);
       
       // Verify template has proper structure
       let structure = template.structure;
@@ -151,7 +136,6 @@ class PlannerStore {
         return false;
       }
       
-      console.log('Template structure validated, schedule has', structure.schedule.length, 'sections');
       return true;
     } catch (error) {
       console.error('Error checking database initialization:', error);
@@ -217,10 +201,7 @@ class PlannerStore {
     
     try {
       const filter = templateName === "default" ? 'is_default=true' : `name="${templateName}"`;
-      console.log('Fetching template with filter:', filter);
       const template = await this.pb.collection('templates').getFirstListItem(filter);
-      console.log('Template fetched from PocketBase:', template);
-      console.log('Template structure type:', typeof template.structure);
       localStorage.setItem(cacheKey, JSON.stringify(template));
       return template;
     } catch (error) {
@@ -266,14 +247,12 @@ class PlannerStore {
   }
   
   applyTemplateStructure(template) {
-    console.log('applyTemplateStructure called with template:', template);
     this.currentTemplate = template;
     this.currentTemplateId = template.id;
     
     // Parse structure if it's a string (PocketBase might return JSON fields as strings)
     let s = template.structure;
     if (typeof s === 'string') {
-      console.log('Template structure is a string, parsing...');
       try {
         s = JSON.parse(s);
       } catch (e) {
@@ -282,14 +261,9 @@ class PlannerStore {
       }
     }
     
-    console.log('Template structure:', s);
-    console.log('Schedule from template:', s?.schedule);
-    
     this.plannerTitle = s.title_default || 'Weekly Planner';
     this.times = [...(s.prayer_times || [])];
     this.schedule = this.buildScheduleFromTemplate(s.schedule || []);
-    
-    console.log('Built schedule:', this.schedule);
     
     this.tasks = Array(s.tasks?.count || 15).fill().map(() => ({
       id: generateId(),
@@ -308,19 +282,9 @@ class PlannerStore {
     this.bodyMeasurements = this.ensureIds([...(s.measurements || [])]);
     this.financials = this.ensureIds([...(s.financials || [])]);
     this.city = s.city_default || 'London';
-    
-    console.log('Template structure applied. Final state:', {
-      schedule: this.schedule,
-      tasks: this.tasks,
-      workoutPlan: this.workoutPlan,
-      meals: this.meals,
-      groceryList: this.groceryList
-    });
   }
   
   buildScheduleFromTemplate(templateSchedule) {
-    console.log('buildScheduleFromTemplate called with:', templateSchedule);
-    
     if (!Array.isArray(templateSchedule)) {
       console.error('templateSchedule is not an array:', templateSchedule);
       return [];
@@ -360,7 +324,6 @@ class PlannerStore {
       }
     });
     
-    console.log('Schedule ordered, first:', orderedSchedule[0]?.name, 'last:', orderedSchedule[orderedSchedule.length-1]?.name);
     return orderedSchedule;
   }
   
@@ -400,8 +363,6 @@ class PlannerStore {
   
   // Data Loading
   async loadWeek(isoWeek, isInitLoad = false) {
-    console.log('🚀 loadWeek START - v4 FIXED:', isoWeek, 'isInitLoad:', isInitLoad);
-    
     // REAL FIX: During init, ensure we have valid data
     if (!isoWeek) {
       console.error('ERROR: No week provided to loadWeek!');
@@ -412,71 +373,48 @@ class PlannerStore {
     // Validate week format
     const weekRegex = /^\d{4}-W(0[1-9]|[1-4]\d|5[0-3])$/;
     if (!weekRegex.test(isoWeek)) {
-      console.log('Invalid week format:', isoWeek);
       this.showMessage("Invalid week format");
       if (isInitLoad) this.isInitializing = false;
       return;
     }
-    
-    console.log('Week format valid, proceeding...');
     this.showWeekSelector = false;
     this.currentWeek = isoWeek;
     this.dateRange = this.getWeekDateRange(this.parseISOWeek(isoWeek));
     
     // REAL FIX: Just load the template directly during init
     if (isInitLoad && !this.currentTemplate) {
-      console.log('INIT LOAD: No template loaded yet, fetching default...');
       try {
         const template = await this.fetchTemplate("default");
-        console.log('INIT LOAD: Applying template...');
         this.applyTemplateStructure(template);
-        console.log('INIT LOAD: Template applied, schedule length:', this.schedule?.length);
       } catch (e) {
         console.error('INIT LOAD: Failed to load template:', e);
       }
     }
     
     try {
-      console.log('Fetching planner record...');
       let plannerRecord = await this.fetchPlannerRecord(isoWeek);
-      console.log('Planner record:', plannerRecord);
       
       let template;
       
       if (plannerRecord?.template_id) {
-        console.log('Fetching template by ID:', plannerRecord.template_id);
         template = await this.fetchTemplateById(plannerRecord.template_id);
       } else {
-        console.log('Fetching default template...');
         template = await this.fetchTemplate("default");
       }
       
-      console.log('Template fetched:', template);
-      
-      console.log('Applying template structure...');
       this.applyTemplateStructure(template);
-      console.log('Template structure applied');
       
       if (plannerRecord) {
-        console.log('Overlaying user data...');
         this.overlayUserData(plannerRecord);
-        console.log('User data overlayed');
       }
       
-      console.log('Calculating scores...');
       this.calculateScores();
-      console.log('Scores calculated');
       
       if (isInitLoad && !this.times.some(t => t.value)) {
-        console.log('Fetching prayer times...');
         await this.getPrayerTimes();
-        console.log('Prayer times fetched');
       }
       
-      console.log('Saving current state...');
       this.lastSavedState = JSON.stringify(this.getCurrentUserData());
-      console.log('loadWeek completed successfully');
-      console.log('🎉 Final schedule length:', this.schedule?.length);
     } catch (error) {
       console.error('❌ Error in loadWeek:', error);
       this.showMessage('Error loading week data');
@@ -484,10 +422,7 @@ class PlannerStore {
     
     // REAL FIX: Always set isInitializing to false if this is init load
     if (isInitLoad) {
-      console.log('🏁 INIT COMPLETE - Setting isInitializing = false');
       this.isInitializing = false;
-      console.log('✅ Schedule has', this.schedule?.length, 'items');
-      console.log('✅ Tasks has', this.tasks?.length, 'items');
     }
   }
   
@@ -513,10 +448,7 @@ class PlannerStore {
   
   async fetchTemplateById(templateId) {
     try {
-      console.log('Fetching template by ID:', templateId);
       const template = await this.pb.collection('templates').getOne(templateId);
-      console.log('Template fetched by ID:', template);
-      console.log('Template structure type:', typeof template.structure);
       return template;
     } catch (e) {
       console.error('Error fetching template by ID:', e);

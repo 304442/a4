@@ -6,8 +6,8 @@
   <h3 class="title">WORKOUT</h3>
   <div class="grid">
     {#each plannerStore.workoutPlan as day (day.id)}
-      <div class="p-1 workout-day-card">
-        <p class="bold text-center mb-1 workout-day-name">{day.name}</p>
+      <div>
+        <p class="bold text-center mb-1">{day.name}</p>
         {#each day.exercises as ex (ex.id)}
           <div class="exercise">
             <div class="exercise-name" title="{ex.prefix}{ex.name}">

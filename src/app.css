@@ -115,8 +115,6 @@ tr:has(.task-done) td, tr:has(.task-done) td input:not(.task-done) { text-decora
 /* Layout */
 .section { margin-top: 0.5mm; border-radius: 2px; background-color: var(--bg-section); padding: 1mm; }
 .title { margin-bottom: 0.5mm; font-size: 8pt; font-weight: bold; position: relative; display: flex; align-items: center; color: #2d3748; text-transform: uppercase; letter-spacing: 0.5px; }
-.list { padding-left: 2mm; margin-top: 0.5mm; list-style-type: disc; }
-.list-item { margin-bottom: 0.5mm; line-height: 1; }
 
 /* Status System */
 .status { position: fixed; right: 1%; padding: 5px 10px; border-radius: 5px; font-size: 12px; font-weight: bold; z-index: 1000; }
@@ -174,10 +172,9 @@ tr:has(.task-done) td, tr:has(.task-done) td input:not(.task-done) { text-decora
 /* Typography */
 .text-xs { font-size: 7pt; line-height: 1.2; }
 .text-sm { font-size: 8pt; line-height: 1.2; }
-.text-center { text-align: center; }
 .bold { font-weight: bold; }
+.text-center { text-align: center; }
 .cell { font-size: 6pt; text-align: center; }
-.cell--bold { font-weight: bold; }
 .cell--color { color: #e67700; }
 
 /* Interactive */
@@ -207,9 +204,7 @@ tr:has(.task-done) td, tr:has(.task-done) td input:not(.task-done) { text-decora
 .between { justify-content: space-between; }
 .center { align-items: center; }
 .mb-1 { margin-bottom: 1mm; }
-.mb-05 { margin-bottom: 0.5mm; }
 .ml-1 { margin-left: 1mm; }
-.p-1 { padding: 1mm; }
 
 /* Exercise */
 .exercise { display: flex; justify-content: space-between; align-items: center; height: 3mm; margin-bottom: 0.5mm; position: relative; }
@@ -219,9 +214,6 @@ tr:has(.task-done) td, tr:has(.task-done) td input:not(.task-done) { text-decora
 .exercise-inputs input { width: 4mm; height: 3mm; font-size: 7pt; }
 .exercise-inputs input.sets { width: 2mm; }
 .exercise-inputs input.reps { width: 3mm; }
-.exercise-unit { margin: 0 0.5mm; font-size: 7pt; }
-.workout-day-card { background-color: #f9fafb; border: 1px solid #e2e8f0; border-radius: 2px; }
-.workout-day-name { font-size: 7pt; }
 
 /* Progress & Streaks */
 .streak span { position: relative; }
