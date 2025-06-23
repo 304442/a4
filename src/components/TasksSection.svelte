@@ -38,7 +38,7 @@
         <tr class={getRowClass(task)}>
           <td class="dc">{i + 1}</td>
           <td>
-            <select class="input" bind:value={task.priority} onchange={() => plannerStore.saveData()}>
+            <select class="input" bind:value={task.priority} onchange={() => plannerStore.updateTaskField(task, 'priority', task.priority)}>
               <option value=""></option>
               <option value="A">A</option>
               <option value="B">B</option>
@@ -51,11 +51,11 @@
               type="text" 
               class="input input--text" 
               bind:value={task.description} 
-              onchange={() => plannerStore.saveData()}
+              onchange={() => plannerStore.updateTaskField(task, 'description', task.description)}
             >
           </td>
           <td>
-            <select class="input" bind:value={task.tag} onchange={() => plannerStore.saveData()}>
+            <select class="input" bind:value={task.tag} onchange={() => plannerStore.updateTaskField(task, 'tag', task.tag)}>
               <option value=""></option>
               <option value="P">Personal</option>
               <option value="W">Work</option>
@@ -66,7 +66,7 @@
               type="text" 
               class="input input--date" 
               bind:value={task.startDate} 
-              onchange={() => { plannerStore.calculateTaskDelay(task); plannerStore.saveData(); }}
+              onchange={() => plannerStore.updateTaskDate(task, 'startDate', task.startDate)}
             >
           </td>
           <td>
@@ -74,7 +74,7 @@
               type="text" 
               class="input input--date" 
               bind:value={task.expectedDate} 
-              onchange={() => { plannerStore.calculateTaskDelay(task); plannerStore.saveData(); }}
+              onchange={() => plannerStore.updateTaskDate(task, 'expectedDate', task.expectedDate)}
             >
           </td>
           <td class="dc cell cell--bold {getDelayClass(plannerStore.getTaskDelay(task))}">
@@ -85,7 +85,7 @@
               type="text" 
               class="input input--date" 
               bind:value={task.actualDate} 
-              onchange={() => { plannerStore.calculateTaskDelay(task); plannerStore.saveData(); }}
+              onchange={() => plannerStore.updateTaskDate(task, 'actualDate', task.actualDate)}
             >
           </td>
           <td>

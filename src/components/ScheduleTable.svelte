@@ -57,10 +57,9 @@
       {/each}
       {#if section.name === 'TOTAL' && section.activities?.length > 0 && section.activities[0].maxScore > 0}
         {@const totalActivity = section.activities[0]}
-        {@const percentage = totalActivity.maxScore > 0 ? Math.min(100, (totalActivity.score / totalActivity.maxScore) * 100) : 0}
-        {@const progressClass = totalActivity.maxScore > 0 ? 
-          (totalActivity.score / totalActivity.maxScore < 0.33 ? 'progress--low' : 
-           totalActivity.score / totalActivity.maxScore < 0.66 ? 'progress--medium' : 'progress--high') : ''}
+        {@const ratio = totalActivity.maxScore > 0 ? totalActivity.score / totalActivity.maxScore : 0}
+        {@const percentage = Math.min(100, ratio * 100)}
+        {@const progressClass = ratio < 0.33 ? 'progress--low' : ratio < 0.66 ? 'progress--medium' : 'progress--high'}
         <tr>
           <td colspan="19" class="progress">
             <div 

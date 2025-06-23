@@ -3,6 +3,18 @@
 let uniqueIdCounter = 0;
 const generateId = () => `id_${Date.now()}_${uniqueIdCounter++}`;
 
+// Constants
+const SAVE_DEBOUNCE_MS = 500;
+const SAVE_ERROR_TIMEOUT_MS = 3000;
+const SAVE_TIMEOUT_MS = 5000;
+const AUTO_SAVE_INTERVAL_MS = 30000;
+const GEOLOCATION_MAX_AGE_MS = 60000;
+const NOTIFICATION_TIMEOUT_MS = 3000;
+const MIN_PERCENTAGE = 0;
+const MAX_PERCENTAGE = 100;
+const PROGRESS_LOW_THRESHOLD = 0.33;
+const PROGRESS_MEDIUM_THRESHOLD = 0.66;
+
 class PlannerStore {
   // State
   pb = null;
@@ -111,12 +123,12 @@ class PlannerStore {
           console.error('Initialization timeout - forcing isInitializing to false');
           this.isInitializing = false;
         }
-      }, 5000);
+      }, SAVE_TIMEOUT_MS);
     }
     
     setInterval(() => {
       if (!this.isInitializing && this.hasSignificantChanges()) this.saveData();
-    }, 30000);
+    }, AUTO_SAVE_INTERVAL_MS);
     if (this.isOnline) this.syncPendingData();
   }
   
@@ -262,7 +274,7 @@ class PlannerStore {
     }
     
     this.plannerTitle = s.title_default || 'Weekly Planner';
-    this.times = [...(s.prayer_times || [])];
+    this.times = s.prayer_times || [];
     this.schedule = this.buildScheduleFromTemplate(s.schedule || []);
     
     this.tasks = Array(s.tasks?.count || 15).fill().map(() => ({
@@ -277,10 +289,10 @@ class PlannerStore {
     }));
     
     this.workoutPlan = this.buildWorkoutFromTemplate(s.workout || []);
-    this.meals = this.ensureIds([...(s.meals || [])]);
-    this.groceryList = this.ensureIds([...(s.grocery?.categories || [])]);
-    this.bodyMeasurements = this.ensureIds([...(s.measurements || [])]);
-    this.financials = this.ensureIds([...(s.financials || [])]);
+    this.meals = this.ensureIds(s.meals || []);
+    this.groceryList = this.ensureIds(s.grocery?.categories || []);
+    this.bodyMeasurements = this.ensureIds(s.measurements || []);
+    this.financials = this.ensureIds(s.financials || []);
     this.city = s.city_default || 'London';
   }
   
@@ -290,41 +302,28 @@ class PlannerStore {
       return [];
     }
     
-    // Fix schedule order - ensure chronological order
-    const schedule = templateSchedule.map(section => ({
-      id: generateId(),
-      name: section.name,
-      activities: (section.activities || []).map(activity => ({
+    // Define order map for efficient sorting
+    const orderMap = {
+      'QIYAM': 0, 'FAJR': 1, '7AM - 9AM': 2, '9AM - 5PM': 3, 
+      'DHUHR': 4, 'ASR': 5, '5PM - 6:30PM': 6, '6:30PM - ISHA': 7, 
+      'MAGHRIB': 8, 'ISHA': 9, 'ALLDAY': 10, 'TOTAL': 11
+    };
+    
+    // Map and sort in one pass
+    return templateSchedule
+      .map(section => ({
         id: generateId(),
-        name: activity.name,
-        days: this.createDaysStructure(activity.days, activity.max_per_day || 1),
-        score: 0,
-        maxScore: activity.max_score || 0,
-        streaks: { current: 0, longest: 0 }
+        name: section.name,
+        activities: (section.activities || []).map(activity => ({
+          id: generateId(),
+          name: activity.name,
+          days: this.createDaysStructure(activity.days, activity.max_per_day || 1),
+          score: 0,
+          maxScore: activity.max_score || 0,
+          streaks: { current: 0, longest: 0 }
+        }))
       }))
-    }));
-    
-    // Define the correct order
-    const correctOrder = [
-      'QIYAM', 'FAJR', '7AM - 9AM', '9AM - 5PM', 'DHUHR', 'ASR', 
-      '5PM - 6:30PM', '6:30PM - ISHA', 'MAGHRIB', 'ISHA', 'ALLDAY', 'TOTAL'
-    ];
-    
-    // Sort schedule according to correct order
-    const orderedSchedule = [];
-    correctOrder.forEach(sectionName => {
-      const section = schedule.find(s => s.name === sectionName);
-      if (section) orderedSchedule.push(section);
-    });
-    
-    // Add any sections not in the predefined order
-    schedule.forEach(section => {
-      if (!correctOrder.includes(section.name)) {
-        orderedSchedule.push(section);
-      }
-    });
-    
-    return orderedSchedule;
+      .sort((a, b) => (orderMap[a.name] ?? 999) - (orderMap[b.name] ?? 999));
   }
   
   createDaysStructure(specificDays, maxPerDay) {
@@ -602,18 +601,19 @@ class PlannerStore {
   
   // Selectors with Portal Positioning
   toggleSelector(event, type) {
-    const types = { city: 'week', week: 'city' };
-    const showProp = type === 'city' ? 'showCitySelector' : 'showWeekSelector';
-    const hideProp = type === 'city' ? 'showWeekSelector' : 'showCitySelector';
+    const selectors = { city: 'showCitySelector', week: 'showWeekSelector' };
+    const oppositeType = type === 'city' ? 'week' : 'city';
     
-    this[hideProp] = false;
+    // Close opposite selector
+    this[selectors[oppositeType]] = false;
     
-    if (this[showProp]) {
-      this[showProp] = false;
+    // Toggle current selector
+    if (this[selectors[type]]) {
+      this[selectors[type]] = false;
     } else {
       const rect = event.target.getBoundingClientRect();
       this[`${type}DropdownStyle`] = `position:fixed;top:${rect.bottom + 4}px;left:${Math.max(10, rect.left - 100)}px;z-index:9999;min-width:150px;max-width:250px;`;
-      this[showProp] = true;
+      this[selectors[type]] = true;
       if (type === 'week') this.fetchSavedWeeks();
     }
   }
@@ -635,8 +635,8 @@ class PlannerStore {
     try {
       const position = await new Promise((resolve, reject) =>
         navigator.geolocation.getCurrentPosition(resolve, reject, {
-          timeout: 5000,
-          maximumAge: 60000
+          timeout: SAVE_TIMEOUT_MS,
+          maximumAge: GEOLOCATION_MAX_AGE_MS
         })
       );
       const { latitude, longitude } = position.coords;
@@ -815,6 +815,18 @@ class PlannerStore {
     this.saveData();
   }
   
+  // Consolidated task update methods
+  updateTaskField(task, field, value) {
+    task[field] = value;
+    this.saveData();
+  }
+  
+  updateTaskDate(task, field, value) {
+    task[field] = value;
+    this.calculateTaskDelay(task);
+    this.saveData();
+  }
+  
   // Data Management
   saveData() {
     if (this.isInitializing) return;
@@ -844,9 +856,9 @@ class PlannerStore {
       } catch (e) {
         this.saveStatus = 'error';
         this.showMessage("Save error: " + e.message);
-        setTimeout(() => this.saveStatus = 'saved', 3000);
+        setTimeout(() => this.saveStatus = 'saved', SAVE_ERROR_TIMEOUT_MS);
       }
-    }, 500);
+    }, SAVE_DEBOUNCE_MS);
   }
   
   hasSignificantChanges() {
@@ -1050,7 +1062,7 @@ class PlannerStore {
     this.notificationMessage = message;
     this.showNotification = true;
     clearTimeout(this.notificationTimeout);
-    this.notificationTimeout = setTimeout(() => this.showNotification = false, 5000);
+    this.notificationTimeout = setTimeout(() => this.showNotification = false, NOTIFICATION_TIMEOUT_MS);
   }
 }
 
