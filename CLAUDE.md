@@ -50,23 +50,21 @@ Note: The dev branch builds automatically take ~1 minute after pushing
 
 The application follows an offline-first architecture with localStorage for immediate persistence and PocketBase for cloud sync.
 
-### Main Files (Development)
-- `index.html` - Development HTML entry point
+### Source Files
+- `index.html` - HTML entry point (loads PocketBase SDK from CDN)
 - `src/` - Source code directory
-- `pocketbase.umd.js` - PocketBase SDK
+  - `App.svelte` - Main application component
+  - `main.js` - Application entry point
+  - `app.css` - A4-optimized styling including setup notification styles
+  - `lib/store.svelte.js` - Svelte 5 store with all application logic using runes
+  - `components/` - Individual Svelte components for each section
 - `package.json` - Dependencies and scripts
 - `vite.config.js` - Vite build configuration
 
-### Source Files
-- `src/App.svelte` - Main application component
-- `src/lib/store.svelte.js` - Svelte 5 store with all application logic using runes
-- `src/components/` - Individual Svelte components for each section
-- `src/app.css` - A4-optimized styling including setup notification styles
-
-### Production Files (Generated)
-- `dist/` - Build output directory (gitignored)
-- `dist/index.html` - Production HTML
-- `dist/assets/` - Compiled JS and CSS bundles
+### Production Build
+- VPS automatically runs `npm install` and `npm run build` on push
+- Build output is served directly by the VPS
+- No build artifacts are committed to the repository
 
 ### Data Flow
 1. User input → Svelte 5 reactive state (using $state runes)
@@ -275,12 +273,11 @@ No formal testing framework is used. Test manually by:
 │       ├── TasksSection.svelte
 │       ├── SetupModal.svelte
 │       └── ... (other components)
-├── index.html          # Development HTML entry point
+├── index.html          # HTML entry point (references /src/main.js)
 ├── package.json        # Dependencies and scripts
 ├── vite.config.js      # Vite build configuration
 ├── svelte.config.js    # Svelte configuration
 ├── jsconfig.json       # JavaScript configuration
-├── pocketbase.umd.js   # PocketBase JavaScript SDK
 ├── CLAUDE.md           # This documentation file
 └── .gitignore          # Git ignore file
 ```
@@ -328,15 +325,16 @@ npm run dev
 ### Building for Production
 ```bash
 npm run build
-# This creates a dist/ folder with production files
-# Deploy the contents of dist/ to your server
+# VPS automatically builds and serves the application
+# No manual deployment steps required
 ```
 
-### Deployment Notes
-- The dev branch contains source code only
-- Build artifacts (dist/, assets/) are gitignored
-- Production files must be built before deployment
-- The main branch may contain pre-built production files
+### Key Differences from Alpine.js Version
+1. **Reactivity**: Uses Svelte 5 $state runes instead of Alpine.js x-data
+2. **Components**: Modular Svelte components instead of inline HTML
+3. **Build Step**: Requires compilation with Vite
+4. **State Management**: Centralized store with reactive class instance
+5. **Performance**: Compiled components with minimal runtime overhead
 
 
 ## Common Issues and Solutions
