@@ -331,12 +331,6 @@ npm run build
 - Production files must be built before deployment
 - The main branch may contain pre-built production files
 
-### Key Differences from Alpine.js Version
-1. **Reactivity**: Uses Svelte 5 $state runes instead of Alpine.js x-data
-2. **Components**: Modular Svelte components instead of inline HTML
-3. **Build Step**: Requires compilation with Vite
-4. **State Management**: Centralized store with reactive class instance
-5. **Performance**: Compiled components with minimal runtime overhead
 
 ## Common Issues and Solutions
 
