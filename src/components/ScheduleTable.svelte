@@ -9,8 +9,8 @@
 <table class="schedule-table">
   <thead>
     <tr>
-      <th>T</th>
-      <th>D</th>
+      <th style="text-align: left;">Time</th>
+      <th style="text-align: left;">Day</th>
       <th class="ac">ACTIVITY</th>
       {#each dayLabels as dayLabel, i}
         <th class="dc" class:current-day={i === (plannerStore.currentDay || 7) - 1}>{dayLabel}</th>
@@ -24,8 +24,8 @@
     {#each plannerStore.schedule as section}
       {#each section.activities as activity, aIdx}
         <tr class:total={section.name === 'TOTAL'}>
-          <td class="bold">{aIdx === 0 ? section.name : ''}</td>
-          <td class="bold">{activity.name.includes(':') ? activity.name.split(':')[0] : ''}</td>
+          <td style="text-align: left; padding-left: 1mm;" class="bold">{aIdx === 0 ? section.name : ''}</td>
+          <td style="text-align: left; padding-left: 1mm;" class="bold">{activity.name.includes(':') ? activity.name.split(':')[0] : ''}</td>
           <td class="ac">
             <span>{activity.name.includes(':') ? activity.name.split(':')[1].trim() : activity.name}</span>
           </td>
