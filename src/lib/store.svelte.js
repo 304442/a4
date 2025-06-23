@@ -1111,7 +1111,17 @@ class PlannerStore {
     const start = new Date(date);
     const end = new Date(start);
     end.setUTCDate(start.getUTCDate() + 6);
-    return `${this.formatDate(start)}-${this.formatDate(end)}`;
+    
+    // If same month, show compact format
+    if (start.getUTCMonth() === end.getUTCMonth()) {
+      const month = (start.getUTCMonth() + 1).toString().padStart(2, '0');
+      const startDay = start.getUTCDate().toString().padStart(2, '0');
+      const endDay = end.getUTCDate().toString().padStart(2, '0');
+      return `${month}/${startDay}-${endDay}`;
+    }
+    
+    // Different months, show full format
+    return `${this.formatDate(start)} - ${this.formatDate(end)}`;
   }
   
   formatDate(date) {
