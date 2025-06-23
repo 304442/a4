@@ -292,6 +292,9 @@ No formal testing framework is used. Test manually by:
 - `calculateScores()` - Updates all scores and streaks
 - `fetchPrayerTimes()` - Gets prayer times from API
 - `syncPendingData()` - Retries failed sync operations
+- `updateTaskField(task, field, value)` - Updates task field and saves
+- `updateTaskDate(task, field, value)` - Updates task date, recalculates delay, and saves
+- `toggleSelector(event, type)` - Simplified selector toggle logic
 - All state managed with Svelte 5 $state() runes
 
 ### In SetupModal.svelte:
@@ -313,6 +316,13 @@ No formal testing framework is used. Test manually by:
 5. **Score Calculation**: Real-time calculation based on daily inputs
 6. **Streak Tracking**: Counts consecutive days with activity
 7. **Sync Queue**: Failed syncs stored in `pendingSync` array for retry
+8. **Constants**: Timing values defined as constants at top of store.svelte.js:
+   - `SAVE_DEBOUNCE_MS`: 500ms debounce for save operations
+   - `SAVE_ERROR_TIMEOUT_MS`: 3000ms timeout for error messages
+   - `SAVE_TIMEOUT_MS`: 5000ms general save timeout
+   - `AUTO_SAVE_INTERVAL_MS`: 30000ms auto-save interval
+   - `GEOLOCATION_MAX_AGE_MS`: 60000ms max age for geolocation
+   - `NOTIFICATION_TIMEOUT_MS`: 3000ms notification display time
 
 ## Development & Building
 
