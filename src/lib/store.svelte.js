@@ -1112,16 +1112,20 @@ class PlannerStore {
     const end = new Date(start);
     end.setUTCDate(start.getUTCDate() + 6);
     
-    // If same month, show compact format
+    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    
+    // If same month, show: Jun 23-29
     if (start.getUTCMonth() === end.getUTCMonth()) {
-      const month = (start.getUTCMonth() + 1).toString().padStart(2, '0');
-      const startDay = start.getUTCDate().toString().padStart(2, '0');
-      const endDay = end.getUTCDate().toString().padStart(2, '0');
-      return `${month}/${startDay}-${endDay}`;
+      const month = monthNames[start.getUTCMonth()];
+      const startDay = start.getUTCDate();
+      const endDay = end.getUTCDate();
+      return `${month} ${startDay}-${endDay}`;
     }
     
-    // Different months, show full format
-    return `${this.formatDate(start)} - ${this.formatDate(end)}`;
+    // Different months, show: Jun 29 - Jul 5
+    const startMonth = monthNames[start.getUTCMonth()];
+    const endMonth = monthNames[end.getUTCMonth()];
+    return `${startMonth} ${start.getUTCDate()} - ${endMonth} ${end.getUTCDate()}`;
   }
   
   formatDate(date) {
