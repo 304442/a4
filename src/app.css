@@ -33,7 +33,7 @@ body {
   width: 100%;
   min-height: 100%;
   margin: 0;
-  padding: 20px 0;
+  padding: 5px 0;
   display: flex;
   justify-content: center;
   align-items: flex-start;
@@ -44,7 +44,7 @@ body {
 .card { 
   width: 210mm; 
   height: 297mm; 
-  padding: 5mm; 
+  padding: 3mm; 
   box-shadow: 0 4px 6px rgba(0,0,0,0.1); 
   background-color: white; 
   position: relative; 
@@ -113,8 +113,8 @@ tr:has(.input:focus) td { background-color: #f0f7ff !important; }
 tr:has(.task-done) td, tr:has(.task-done) td input:not(.task-done) { text-decoration: line-through; color: #6c757d; }
 
 /* Layout */
-.section { margin-top: 0.5mm; border-radius: 2px; background-color: var(--bg-section); padding: 1mm; }
-.title { margin-bottom: 0.5mm; font-size: 8pt; font-weight: bold; position: relative; display: flex; align-items: center; color: #2d3748; text-transform: uppercase; letter-spacing: 0.5px; }
+.section { border-radius: 2px; background-color: var(--bg-section); padding: 0.5mm; }
+.title { font-size: 8pt; font-weight: bold; position: relative; display: flex; align-items: center; color: #2d3748; text-transform: uppercase; letter-spacing: 0.5px; }
 
 /* Status System */
 .status { position: fixed; right: 1%; padding: 5px 10px; border-radius: 5px; font-size: 12px; font-weight: bold; z-index: 1000; }
@@ -203,11 +203,11 @@ tr:has(.task-done) td, tr:has(.task-done) td input:not(.task-done) { text-decora
 .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2mm; }
 .between { justify-content: space-between; }
 .center { align-items: center; }
-.mb-1 { margin-bottom: 1mm; }
+.mb-1 { }
 .ml-1 { margin-left: 1mm; }
 
 /* Exercise */
-.exercise { display: flex; justify-content: space-between; align-items: center; height: 3mm; margin-bottom: 0.5mm; position: relative; }
+.exercise { display: flex; justify-content: space-between; align-items: center; height: 3mm; position: relative; }
 .exercise-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex-grow: 1; margin-right: 0.5mm; cursor: pointer; font-size: 7pt; }
 .exercise-name span:first-child { color: #718096; }
 .exercise-inputs { display: flex; align-items: center; }
@@ -275,7 +275,7 @@ tr:has(.task-done) td, tr:has(.task-done) td input:not(.task-done) { text-decora
 /* Print */
 @media print {
   html, body { width: 210mm; height: 297mm; background-color: white; margin: 0; padding: 0; font-size: 7pt; }
-  .card { box-shadow: none; padding: 3mm; }
+  .card { box-shadow: none; padding: 2mm; }
   .status, .dropdown-portal, .notification { display: none !important; }
   * { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
   .section { background-color: white; break-inside: avoid; }
