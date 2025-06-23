@@ -572,11 +572,27 @@ class PlannerStore {
     return categories.length > 0 ? { categories } : null;
   }
   
+  // Helper to parse MM/DD or YYYY-MM-DD dates
+  parseTaskDate(dateStr) {
+    if (!dateStr) return null;
+    
+    // Handle MM/DD format
+    if (dateStr.includes('/') && !dateStr.includes('-')) {
+      const [month, day] = dateStr.split('/').map(n => parseInt(n));
+      const year = new Date().getFullYear();
+      return new Date(year, month - 1, day);
+    }
+    
+    // Handle YYYY-MM-DD format (for backwards compatibility)
+    return new Date(dateStr);
+  }
+  
   // Project Management
   getTaskDelay(task) {
     if (!task.expectedDate || !task.actualDate) return 0;
-    const expected = new Date(task.expectedDate);
-    const actual = new Date(task.actualDate);
+    const expected = this.parseTaskDate(task.expectedDate);
+    const actual = this.parseTaskDate(task.actualDate);
+    if (!expected || !actual) return 0;
     return Math.ceil((actual - expected) / (1000 * 60 * 60 * 24));
   }
   
@@ -595,7 +611,7 @@ class PlannerStore {
     if (task.completed === '✓') {
       // Auto-fill done date when checking
       if (!task.actualDate) {
-        task.actualDate = new Date().toISOString().split('T')[0];
+        task.actualDate = this.getTodayMMDD();
       }
     } else {
       // Clear done date when unchecking
@@ -827,7 +843,7 @@ class PlannerStore {
     
     // Auto-fill start date when description is entered
     if (field === 'description' && value && !task.startDate) {
-      task.startDate = new Date().toISOString().split('T')[0];
+      task.startDate = this.getTodayMMDD();
     }
     
     // Auto-tag based on keywords
@@ -847,17 +863,24 @@ class PlannerStore {
     
     // Auto-set priority based on due date urgency
     if (field === 'expectedDate' && value && !task.priority) {
-      const daysUntilDue = Math.floor((new Date(value) - new Date()) / (1000 * 60 * 60 * 24));
-      if (daysUntilDue <= 1) task.priority = 'A';
-      else if (daysUntilDue <= 3) task.priority = 'B';
-      else if (daysUntilDue <= 7) task.priority = 'C';
+      const dueDate = this.parseTaskDate(value);
+      if (dueDate) {
+        const daysUntilDue = Math.floor((dueDate - new Date()) / (1000 * 60 * 60 * 24));
+        if (daysUntilDue <= 1) task.priority = 'A';
+        else if (daysUntilDue <= 3) task.priority = 'B';
+        else if (daysUntilDue <= 7) task.priority = 'C';
+      }
     }
     
     // Auto-set expected date if start date is set but no expected date
     if (field === 'startDate' && value && !task.expectedDate) {
-      const startDate = new Date(value);
-      startDate.setDate(startDate.getDate() + 3);
-      task.expectedDate = startDate.toISOString().split('T')[0];
+      const startDate = this.parseTaskDate(value);
+      if (startDate) {
+        startDate.setDate(startDate.getDate() + 3);
+        const month = (startDate.getMonth() + 1).toString().padStart(2, '0');
+        const day = startDate.getDate().toString().padStart(2, '0');
+        task.expectedDate = `${month}/${day}`;
+      }
     }
     
     this.calculateTaskDelay(task);
@@ -1093,6 +1116,11 @@ class PlannerStore {
   
   formatDate(date) {
     return `${(date.getUTCMonth() + 1).toString().padStart(2, '0')}/${date.getUTCDate().toString().padStart(2, '0')}`;
+  }
+  
+  getTodayMMDD() {
+    const today = new Date();
+    return `${(today.getMonth() + 1).toString().padStart(2, '0')}/${today.getDate().toString().padStart(2, '0')}`;
   }
   
   showMessage(message) {

@@ -318,7 +318,7 @@ No formal testing framework is used. Test manually by:
 1. **Offline-First**: All data saves to localStorage first, then syncs to PocketBase when online
 2. **ID Generation**: Uses `id_${Date.now()}_${counter}` pattern for unique IDs
 3. **Week Format**: ISO 8601 week format (YYYY-Www, e.g., "2024-W15")
-4. **Date Format**: Dates stored as YYYY-MM-DD, displayed as MM/DD
+4. **Date Format**: Task dates use MM/DD format (no year) for simpler entry
 5. **Score Calculation**: Real-time calculation based on daily inputs
 6. **Streak Tracking**: Counts consecutive days with activity
 7. **Sync Queue**: Failed syncs stored in `pendingSync` array for retry
