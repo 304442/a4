@@ -1196,7 +1196,7 @@
   .setup-container {
     padding: 20px;
     font-family: monospace;
-    font-size: 11px;
+    font-size: 10px;
     line-height: 1.4;
     color: #333;
   }
@@ -1209,13 +1209,13 @@
   }
 
   .setup-container button {
-    padding: 6px 12px;
+    padding: 4px 8px;
     background: #007bff;
     color: white;
     border: 0;
     border-radius: 3px;
     cursor: pointer;
-    font-size: 11px;
+    font-size: 10px;
     margin: 2px;
     font-family: monospace;
   }
@@ -1254,8 +1254,8 @@
 
   .setup-row {
     display: flex;
-    gap: 10px;
-    margin: 10px 0;
+    gap: 8px;
+    margin: 8px 0;
     justify-content: center;
   }
 
@@ -1265,12 +1265,12 @@
 
   .setup-editor {
     width: 100%;
-    min-height: 200px;
+    min-height: 150px;
     font-family: monospace;
-    font-size: 10px;
+    font-size: 9px;
     border: 1px solid #ccc;
     border-radius: 3px;
-    padding: 6px;
+    padding: 4px;
     resize: vertical;
   }
 
@@ -1286,10 +1286,10 @@
 
   .setup-container input {
     width: 100%;
-    padding: 4px 6px;
+    padding: 3px 4px;
     border: 1px solid #ccc;
     border-radius: 3px;
-    font-size: 11px;
+    font-size: 10px;
     font-family: monospace;
   }
 
@@ -1307,10 +1307,10 @@
   }
 
   .setup-status {
-    padding: 4px 8px;
+    padding: 3px 6px;
     border-radius: 3px;
-    font-size: 10px;
-    margin-top: 5px;
+    font-size: 9px;
+    margin-top: 4px;
     display: inline-block;
   }
 
@@ -1331,11 +1331,11 @@
 
   .setup-stats {
     display: flex;
-    gap: 20px;
-    padding: 10px;
+    gap: 15px;
+    padding: 8px;
     background: #f8f9fa;
     border-radius: 5px;
-    margin-bottom: 10px;
+    margin-bottom: 8px;
     justify-content: center;
   }
 
@@ -1345,20 +1345,20 @@
 
   .setup-stat-val {
     font-weight: bold;
-    font-size: 16px;
+    font-size: 14px;
     display: block;
     color: #007bff;
   }
 
   .setup-output {
-    margin-top: 15px;
-    padding: 10px;
+    margin-top: 10px;
+    padding: 8px;
     background: #1e1e1e;
     color: #d4d4d4;
     border-radius: 5px;
     font-family: 'Consolas', 'Monaco', monospace;
-    font-size: 11px;
-    max-height: 250px;
+    font-size: 9px;
+    max-height: 180px;
     overflow-y: auto;
     line-height: 1.4;
   }
@@ -1403,55 +1403,55 @@
   .setup-help-content {
     background: white;
     margin: 2% auto;
-    padding: 30px;
-    width: 95%;
-    max-width: 1200px;
+    padding: 20px;
+    width: 90%;
+    max-width: 800px;
     border-radius: 8px;
-    max-height: 90vh;
+    max-height: 85vh;
     overflow-y: auto;
-    font-size: 12px;
-    line-height: 1.6;
+    font-size: 11px;
+    line-height: 1.5;
     position: relative;
   }
 
   .setup-help-close {
     position: absolute;
-    top: 15px;
-    right: 15px;
+    top: 10px;
+    right: 10px;
     background: #f8f9fa !important;
     border: 1px solid #dee2e6 !important;
-    padding: 8px 15px !important;
+    padding: 6px 12px !important;
     color: #333 !important;
   }
 
   .setup-help-content h1 {
-    font-size: 20px;
-    margin-bottom: 20px;
+    font-size: 16px;
+    margin-bottom: 15px;
     color: #333;
   }
 
   .setup-help-content h2 {
-    font-size: 16px;
-    margin: 25px 0 15px 0;
+    font-size: 13px;
+    margin: 20px 0 10px 0;
     color: #444;
     border-bottom: 1px solid #eee;
-    padding-bottom: 5px;
+    padding-bottom: 4px;
   }
 
   .setup-help-content h3 {
-    font-size: 14px;
-    margin: 15px 0 10px 0;
+    font-size: 12px;
+    margin: 12px 0 8px 0;
     color: #555;
   }
 
   .setup-help-content pre {
     background: #f8f9fa;
-    padding: 15px;
+    padding: 10px;
     border-radius: 5px;
-    margin: 10px 0;
+    margin: 8px 0;
     overflow-x: auto;
     border: 1px solid #e9ecef;
-    font-size: 11px;
+    font-size: 9px;
   }
 
   .setup-help-content .error-example {
@@ -1479,7 +1479,7 @@
     background: #f0f0f0;
     padding: 2px 6px;
     border-radius: 3px;
-    font-size: 11px;
+    font-size: 10px;
     color: #d73a49;
   }
 
