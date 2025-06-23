@@ -1,40 +1,138 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Production build files
+dist/
+dist-ssr/
+build/
+out/
+.output/
+.vercel/
+.netlify/
+assets/
+*.local
+
+# Development
+.vite/
+.svelte-kit/
+.parcel-cache/
+.cache/
+.temp/
+.tmp/
+
 # Logs
-logs
+logs/
 *.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
+.pnpm-debug.log*
 
-node_modules
-dist
-dist-ssr
-*.local
+# Testing
+coverage/
+.nyc_output/
+test-results/
+playwright-report/
+playwright/.cache/
+e2e/videos/
+e2e/screenshots/
+*.lcov
 
-# Editor directories and files
+# Environment files
+.env
+.env.*
+!.env.example
+!.env.template
+
+# IDE and Editor files
 .vscode/*
 !.vscode/extensions.json
-.idea
+!.vscode/settings.json.example
+.idea/
+*.sublime-project
+*.sublime-workspace
+.history/
+*.swp
+*.swo
+*~
+.project
+.classpath
+.c9/
+*.launch
+.settings/
+
+# OS files
 .DS_Store
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-*.sw?
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+.directory
 
-# Build outputs
-dist
-dist-ssr
-assets
-
-# Debug files
+# Debug and temporary files
 debug-*.png
 debug-*.jpg
-trace.zip
 *.trace
-
-# Temporary files
+trace.zip
 *.tmp
 *.temp
-.cache
+*.pid
+*.seed
+*.pid.lock
+.eslintcache
+.stylelintcache
+
+# Package manager files
+.npm/
+.yarn/
+.yarn-integrity
+.yarnrc.yml
+.pnpm-store/
+
+# Compiled files
+*.com
+*.class
+*.dll
+*.exe
+*.o
+*.so
+*.dylib
+
+# Archives
+*.7z
+*.dmg
+*.gz
+*.iso
+*.jar
+*.rar
+*.tar
+*.zip
+
+# Backup files
+*.bak
+*.backup
+*.old
+*~
+*.orig
+
+# Lock files (keep package-lock.json)
+yarn.lock
+pnpm-lock.yaml
+bun.lockb
+
+# Misc
+*.pem
+*.key
+*.cert
+.gitattributes
+.editorconfig
+.prettierignore
+.husky/
+.commitlintrc*
