@@ -592,10 +592,16 @@ class PlannerStore {
   
   toggleTaskCompletion(task) {
     task.completed = task.completed === '✓' ? '☐' : '✓';
-    if (task.completed === '✓' && !task.actualDate) {
-      task.actualDate = new Date().toISOString().split('T')[0];
-      this.calculateTaskDelay(task);
+    if (task.completed === '✓') {
+      // Auto-fill done date when checking
+      if (!task.actualDate) {
+        task.actualDate = new Date().toISOString().split('T')[0];
+      }
+    } else {
+      // Clear done date when unchecking
+      task.actualDate = '';
     }
+    this.calculateTaskDelay(task);
     this.saveData();
   }
   
@@ -818,11 +824,42 @@ class PlannerStore {
   // Consolidated task update methods
   updateTaskField(task, field, value) {
     task[field] = value;
+    
+    // Auto-fill start date when description is entered
+    if (field === 'description' && value && !task.startDate) {
+      task.startDate = new Date().toISOString().split('T')[0];
+    }
+    
+    // Auto-tag based on keywords
+    if (field === 'description' && value && !task.tag) {
+      const workKeywords = ['meeting', 'report', 'client', 'project', 'deadline', 'presentation', 'office', 'work', 'review', 'email'];
+      const lowerDesc = value.toLowerCase();
+      if (workKeywords.some(keyword => lowerDesc.includes(keyword))) {
+        task.tag = 'W';
+      }
+    }
+    
     this.saveData();
   }
   
   updateTaskDate(task, field, value) {
     task[field] = value;
+    
+    // Auto-set priority based on due date urgency
+    if (field === 'expectedDate' && value && !task.priority) {
+      const daysUntilDue = Math.floor((new Date(value) - new Date()) / (1000 * 60 * 60 * 24));
+      if (daysUntilDue <= 1) task.priority = 'A';
+      else if (daysUntilDue <= 3) task.priority = 'B';
+      else if (daysUntilDue <= 7) task.priority = 'C';
+    }
+    
+    // Auto-set expected date if start date is set but no expected date
+    if (field === 'startDate' && value && !task.expectedDate) {
+      const startDate = new Date(value);
+      startDate.setDate(startDate.getDate() + 3);
+      task.expectedDate = startDate.toISOString().split('T')[0];
+    }
+    
     this.calculateTaskDelay(task);
     this.saveData();
   }

@@ -209,6 +209,12 @@ Prayer times use the Islamic Society of North America (ISNA) method. Modify calc
 - Automatic delay calculation with color coding
 - Completion checkbox with ✓
 - Column order: # → ⭐ → Task → 🏷️ → Start → Due → Delay → Done → ✓
+- **Automatic features**:
+  - Start date auto-fills with today when task description is entered
+  - Done date auto-fills with today when task is checked (clears when unchecked)
+  - Priority auto-sets based on due date urgency (A: ≤1 day, B: ≤3 days, C: ≤7 days)
+  - Expected date defaults to Start date + 3 days when start date is set
+  - Tag auto-sets to Work if description contains work keywords (meeting, report, client, etc.)
 
 ### Workout Section
 - 3-column layout for different days
