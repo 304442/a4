@@ -594,7 +594,7 @@
               ],
               tasks: {
                 count: 20,
-                fields: ["priority", "description", "tag", "start_date", "expected_date", "actual_date", "completed"]
+                fields: ["priority", "description", "tag", "startDate", "expectedDate", "actualDate", "completed"]
               },
               workout: [
                 {
@@ -1050,7 +1050,8 @@
           ],
           "tasks": {
             "count": 20,
-            "fields": ["num", "priority", "tag", "description", ...]
+            "fields": ["priority", "description", "tag", "startDate", "expectedDate", "actualDate", "completed"],
+            "note": "Task dates use MM/DD format. Auto-features: startDate auto-fills today, done date auto-fills on check, priority auto-sets by urgency, tag auto-sets for work keywords"
           },
           "workout": [...],
           "meals": [...],
@@ -1063,6 +1064,31 @@
     ]
   }
 ]`}</pre>
+
+    <h2>🤖 Task Automation Features</h2>
+    <p>The planner includes smart task automations that activate when entering task data:</p>
+    
+    <h3>📅 Auto-Fill Dates</h3>
+    <ul>
+      <li><strong>Start Date:</strong> Automatically fills with today's date (MM/DD) when you enter a task description</li>
+      <li><strong>Done Date:</strong> Automatically fills with today's date when you check the task as complete</li>
+      <li><strong>Expected Date:</strong> Defaults to Start Date + 3 days when you set a start date</li>
+    </ul>
+    
+    <h3>⭐ Auto-Priority</h3>
+    <p>Priority automatically sets based on due date urgency:</p>
+    <ul>
+      <li><strong>A:</strong> Due in 1 day or less</li>
+      <li><strong>B:</strong> Due in 3 days or less</li>
+      <li><strong>C:</strong> Due in 7 days or less</li>
+    </ul>
+    
+    <h3>🏷️ Auto-Tag</h3>
+    <p>Tag automatically sets to "Work" if description contains keywords:</p>
+    <ul>
+      <li>meeting, report, client, project, deadline</li>
+      <li>presentation, office, work, review, email</li>
+    </ul>
 
     <h2>❌ CRITICAL ERRORS TO AVOID</h2>
     
