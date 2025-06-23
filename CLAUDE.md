@@ -24,10 +24,15 @@ The application has two deployment environments:
 - **Production (main branch)**: https://a4.48d1.cc
 - **Development (dev branch)**: https://dev.a4.48d1.cc
 
-Deployment happens automatically via Docker Compose with:
-- **Caddy**: Reverse proxy handling routing
-- **PocketBase**: Backend served at `/_/*` routes
-- **Static files**: Frontend served at root
+Deployment happens automatically when pushing to GitHub:
+- **VPS auto-build**: The VPS monitors the repository and automatically builds the Svelte app on push
+- **Build process**: Runs `npm install` and `npm run build` in the project directory
+- **Docker Compose** handles:
+  - **Caddy**: Reverse proxy handling routing
+  - **PocketBase**: Backend served at `/_/*` routes
+  - **Static files**: Frontend served at root
+
+Note: The dev branch builds automatically take ~1 minute after pushing
 
 ## Application Access
 
@@ -190,7 +195,9 @@ Prayer times use the Islamic Society of North America (ISNA) method. Modify calc
 ## Complete Feature List
 
 ### Schedule Section
-- Activities organized by categories (TOTAL, category names)
+- Time column (18mm, left-aligned) - shows section names (QIYAM, FAJR, etc.)
+- Day column (20mm, left-aligned) - shows activity prefixes
+- Activities organized by categories (prayer times, time blocks, ALLDAY, TOTAL)
 - Daily value inputs (0-9 or 0-99 based on max)
 - Automatic score calculation and progress bar
 - Streak tracking with 🔥 emoji
